@@ -65,3 +65,34 @@ export interface SignupError {
   code?: string;
 }
 
+// City types for the Cities GraphQL query
+export interface Country {
+  iso2: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface City {
+  id: string;
+  name: string;
+  country: Country;
+  timezone: string;
+  lat: number;
+  lon: number;
+  createdAt: string;
+}
+
+export interface CityFilter {
+  searchCities?: string;
+  country?: string;
+  region?: string;
+}
+
+export interface CitiesResponse {
+  cities: City[];
+}
+
+export interface CitiesVariables {
+  filters?: CityFilter;
+}
+

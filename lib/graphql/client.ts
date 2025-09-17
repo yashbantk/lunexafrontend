@@ -1,12 +1,16 @@
 import { GraphQLClient } from 'graphql-request';
 
 // GraphQL endpoint configuration
-export const GRAPHQL_URL = process.env.NEXT_PUBLIC_GRAPHQL_URL || 'https://your-graphql-endpoint.com/graphql';
+export const GRAPHQL_URL = process.env.NEXT_PUBLIC_GRAPHQL_URL || 'https://f49b62996ffc.ngrok-free.app/graphql-apollo/';
+
+// Authorization token
+const AUTH_TOKEN = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU4MTkxMzMzLCJpYXQiOjE3NTgxMDQ5MzMsImp0aSI6ImUwZjk0MjdlNjg1ZjQ3YWNiNTAxZTY0MzkyNDg5ZDVhIiwidXNlcl9pZCI6IjEifQ.Gz6i2pCnEp6vLE7SbXb-2e0ltNUOKG4cTycWLeYBqDg';
 
 // Create GraphQL client instance
 export const gqlClient = new GraphQLClient(GRAPHQL_URL, {
   headers: {
     'Content-Type': 'application/json',
+    'Authorization': AUTH_TOKEN,
   },
 });
 

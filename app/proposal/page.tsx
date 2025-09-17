@@ -21,11 +21,14 @@ import {
   Home,
   X
 } from "lucide-react"
+import { CitySearch } from "@/components/cities/CitySearch"
+import { City } from "@/types/graphql"
 
 interface Destination {
   id: string
   city: string
   nights: string
+  selectedCity?: City
 }
 
 export default function ProposalPage() {
@@ -60,6 +63,12 @@ export default function ProposalPage() {
   const updateDestination = (id: string, field: keyof Destination, value: string) => {
     setDestinations(destinations.map(dest => 
       dest.id === id ? { ...dest, [field]: value } : dest
+    ))
+  }
+
+  const handleCitySelect = (id: string, city: City) => {
+    setDestinations(destinations.map(dest => 
+      dest.id === id ? { ...dest, selectedCity: city } : dest
     ))
   }
 
@@ -147,12 +156,12 @@ export default function ProposalPage() {
                     className="flex gap-4 items-end"
                   >
                     <div className="flex-1">
-                      <Label htmlFor={`city-${destination.id}`}>City Name</Label>
-                      <Input
-                        id={`city-${destination.id}`}
-                        placeholder="Enter city name (e.g., Paris, Tokyo)"
+                      <CitySearch
                         value={destination.city}
-                        onChange={(e) => updateDestination(destination.id, "city", e.target.value)}
+                        onChange={(value) => updateDestination(destination.id, "city", value)}
+                        onSelectCity={(city) => handleCitySelect(destination.id, city)}
+                        placeholder="Search for a city (e.g., Paris, Tokyo)"
+                        label="City Name"
                         required
                       />
                     </div>
@@ -223,25 +232,12 @@ export default function ProposalPage() {
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="leavingFrom">Leaving From</Label>
-                    <Select
+                    <CitySearch
                       value={formData.leavingFrom}
-                      onValueChange={(value) => setFormData({ ...formData, leavingFrom: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select departure city" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="new-york">New York, USA</SelectItem>
-                        <SelectItem value="london">London, UK</SelectItem>
-                        <SelectItem value="paris">Paris, France</SelectItem>
-                        <SelectItem value="tokyo">Tokyo, Japan</SelectItem>
-                        <SelectItem value="sydney">Sydney, Australia</SelectItem>
-                        <SelectItem value="dubai">Dubai, UAE</SelectItem>
-                        <SelectItem value="singapore">Singapore</SelectItem>
-                        <SelectItem value="mumbai">Mumbai, India</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      onChange={(value) => setFormData({ ...formData, leavingFrom: value })}
+                      placeholder="Search departure city"
+                      label="Leaving From"
+                    />
                   </div>
 
                   <div className="space-y-2">
