@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useParams } from "next/navigation"
 import { motion } from "framer-motion"
 import { TopBar } from "@/components/proposals/TopBar"
 import { ProposalHeader } from "@/components/proposals/ProposalHeader"
@@ -18,8 +19,12 @@ import { Activity as ActivityType, ActivitySelection } from "@/types/activity"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { CreateItineraryProposalResponse } from "@/hooks/useCreateItineraryProposal"
 
 export default function CreateProposalPage() {
+  const params = useParams()
+  const tripId = params.id as string
+  
   const { proposal, updateProposal, saveProposal, isLoading } = useProposal()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalType, setModalType] = useState<'flight' | 'hotel' | 'activity' | 'day'>('flight')
@@ -28,6 +33,132 @@ export default function CreateProposalPage() {
   const [editingHotelIndex, setEditingHotelIndex] = useState<number | null>(null)
   const [isActivityExplorerOpen, setIsActivityExplorerOpen] = useState(false)
   const [editingDayIndex, setEditingDayIndex] = useState<number | null>(null)
+  
+  // State for the proposal data from the mutation response
+  const [proposalData, setProposalData] = useState<CreateItineraryProposalResponse['createItineraryProposal'] | null>(null)
+  const [isLoadingData, setIsLoadingData] = useState(true)
+
+  // Convert GraphQL response data to Proposal format
+  const convertToProposalFormat = (data: CreateItineraryProposalResponse['createItineraryProposal']): Proposal => {
+    const { trip, destinations, days, stays } = data
+    
+    // Convert destinations to a simple string format for the proposal
+    const destinationString = destinations.map(dest => `${dest.destination.title} (${dest.numberOfDays} days)`).join(', ')
+    
+    // Convert days to the existing Day format
+    const convertedDays: Day[] = days.map(day => ({
+      id: day.id,
+      dayNumber: day.dayNumber,
+      date: day.date,
+      title: `Day ${day.dayNumber} - ${day.city.name}`,
+      summary: day.stay ? `Stay at ${day.stay.roomsCount} room(s) for ${day.stay.nights} nights` : '',
+      activities: day.activityBookings.map(activity => ({
+        id: activity.id,
+        title: activity.activity.title,
+        description: `Duration: ${activity.activity.durationMinutes} minutes`,
+        time: activity.slot || 'TBD',
+        duration: `${activity.activity.durationMinutes} minutes`,
+        price: (activity.priceBaseCents + activity.priceAddonsCents) / 100,
+        currency: trip.currency.code,
+        type: 'morning' as const,
+        included: false
+      })),
+      accommodation: day.stay ? `${day.stay.roomsCount} room(s)` : undefined,
+      transfers: [],
+      meals: {
+        breakfast: day.stay?.mealPlan?.toLowerCase().includes('breakfast') || false,
+        lunch: day.stay?.mealPlan?.toLowerCase().includes('lunch') || false,
+        dinner: day.stay?.mealPlan?.toLowerCase().includes('dinner') || false
+      }
+    }))
+    
+    // Convert stays to Hotel format
+    const convertedHotels: Hotel[] = stays.map(stay => ({
+      id: stay.id,
+      name: stay.room.hotel.name,
+      address: stay.room.hotel.address,
+      rating: stay.room.hotel.star,
+      starRating: stay.room.hotel.star,
+      image: '/api/placeholder/300/200', // Placeholder image
+      checkIn: stay.checkIn,
+      checkOut: stay.checkOut,
+      roomType: stay.room.name,
+      boardBasis: stay.mealPlan,
+      bedType: stay.room.bedType,
+      nights: stay.nights,
+      refundable: true,
+      pricePerNight: stay.room.priceCents / 100 / stay.nights,
+      currency: trip.currency.code
+    }))
+    
+    // Create a basic price breakdown
+    const totalPrice = convertedHotels.reduce((sum, hotel) => sum + (hotel.pricePerNight * hotel.nights), 0)
+    const priceBreakdown: PriceBreakdown = {
+      pricePerAdult: totalPrice / trip.totalTravelers,
+      pricePerChild: totalPrice / trip.totalTravelers * 0.7, // 70% of adult price
+      subtotal: totalPrice,
+      taxes: totalPrice * 0.1, // 10% tax
+      markup: totalPrice * (trip.markupLandPercent / 100),
+      total: totalPrice * 1.1 + (totalPrice * (trip.markupLandPercent / 100)),
+      currency: trip.currency.code
+    }
+    
+    return {
+      id: trip.id,
+      tripName: `${trip.fromCity.name} to ${destinations.map(d => d.destination.title).join(', ')}`,
+      fromDate: trip.startDate.split('T')[0],
+      toDate: trip.endDate.split('T')[0],
+      origin: trip.fromCity.name,
+      nationality: trip.nationality.name,
+      starRating: trip.starRating?.toString() || '3',
+      landOnly: trip.landOnly,
+      addTransfers: !trip.transferOnly,
+      rooms: 1, // Default to 1 room since roomsCount is not in the trip object
+      adults: trip.travelerDetails?.adults || 2,
+      children: trip.travelerDetails?.children || 0,
+      clientName: trip.customer?.name || '',
+      clientEmail: trip.customer?.email || '',
+      clientPhone: trip.customer?.phone || '',
+      internalNotes: trip.travelerDetails?.specialRequests || '',
+      salesperson: trip.createdBy?.firstName + ' ' + trip.createdBy?.lastName || '',
+      validityDays: 7,
+      markupPercent: trip.markupLandPercent,
+      currency: trip.currency.code,
+      flights: [], // Empty for now
+      hotels: convertedHotels,
+      days: convertedDays,
+      priceBreakdown,
+      createdAt: trip.createdAt,
+      updatedAt: trip.updatedAt
+    }
+  }
+
+  // Load proposal data from sessionStorage on component mount
+  useEffect(() => {
+    const loadProposalData = () => {
+      try {
+        const storedData = sessionStorage.getItem('proposalData')
+        if (storedData) {
+          const parsedData = JSON.parse(storedData)
+          setProposalData(parsedData)
+          
+          // Convert the data to the existing proposal format and update the proposal
+          const convertedProposal = convertToProposalFormat(parsedData)
+          updateProposal(convertedProposal)
+          
+          console.log('Loaded and converted proposal data:', convertedProposal)
+        } else {
+          console.warn('No proposal data found in sessionStorage')
+        }
+      } catch (error) {
+        console.error('Error loading proposal data:', error)
+      } finally {
+        setIsLoadingData(false)
+      }
+    }
+
+    loadProposalData()
+  }, [updateProposal])
 
   // Auto-save functionality
   useEffect(() => {
@@ -228,10 +359,30 @@ export default function CreateProposalPage() {
     setIsModalOpen(false)
   }
 
-  if (isLoading) {
+  if (isLoading || isLoadingData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading proposal data...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!proposalData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">No Proposal Data Found</h2>
+          <p className="text-gray-600 mb-6">The proposal data could not be loaded. Please try creating a new proposal.</p>
+          <button 
+            onClick={() => window.location.href = '/proposal'}
+            className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Create New Proposal
+          </button>
+        </div>
       </div>
     )
   }
@@ -257,6 +408,7 @@ export default function CreateProposalPage() {
                 onUpdate={updateProposal}
               />
              </motion.div>
+
 
              {/* Date Availability Calendar */}
              <motion.div
