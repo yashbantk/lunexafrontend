@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -11,11 +11,14 @@ import { motion } from "framer-motion"
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, User } from "lucide-react"
 import { useSignup } from "@/hooks/useSignup"
 import { useToast, ToastContainer } from "@/hooks/useToast"
+import { useIsAuthenticated, useCurrentUser } from "@/hooks/useAuth"
 import type { SignupInput, SignupError } from "@/types/graphql"
 
 export default function SignUpPage() {
   const router = useRouter()
   const { toast, toasts, dismiss } = useToast()
+  const isAuthenticated = useIsAuthenticated()
+  const currentUser = useCurrentUser()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [formData, setFormData] = useState({
@@ -26,8 +29,18 @@ export default function SignUpPage() {
     confirmPassword: ""
   })
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && currentUser) {
+      console.log('User is already authenticated, redirecting to proposal page', { currentUser });
+      router.push('/proposal');
+    }
+  }, [isAuthenticated, currentUser, router]);
+
   const { signup, loading, errors, clearErrors } = useSignup({
     onSuccess: (result) => {
+      console.log('Signup success callback triggered', { result, isAuthenticated, currentUser });
+      
       toast({
         type: 'success',
         title: '🎉 Welcome to Deyor!',
@@ -37,6 +50,7 @@ export default function SignUpPage() {
       
       // Redirect to proposal page
       setTimeout(() => {
+        console.log('Redirecting to proposal page...');
         router.push('/proposal')
       }, 2000)
     },

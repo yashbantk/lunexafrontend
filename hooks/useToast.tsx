@@ -29,7 +29,7 @@ export const useToast = (): UseToastReturn => {
     setToasts(prev => [...prev, toastWithId]);
 
     // Auto-dismiss after duration
-    if (toastWithId.duration > 0) {
+    if (toastWithId.duration && toastWithId.duration > 0) {
       setTimeout(() => {
         dismiss(id);
       }, toastWithId.duration);

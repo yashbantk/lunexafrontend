@@ -13,9 +13,23 @@ export const gqlClient = new GraphQLClient(GRAPHQL_URL, {
 // Generic request helper
 export const gqlRequest = async <T = any>(query: string, variables?: Record<string, any>) => {
   try {
-    return await gqlClient.request<T>(query, variables);
+    console.log('GraphQL Request:', { query, variables });
+    const result = await gqlClient.request<T>(query, variables);
+    console.log('GraphQL Response:', result);
+    return result;
   } catch (error) {
     console.error('GraphQL request failed:', error);
+    
+    // Log detailed error information
+    if (error && typeof error === 'object') {
+      console.log('Error details:', {
+        message: (error as any).message,
+        response: (error as any).response,
+        request: (error as any).request,
+        stack: (error as any).stack
+      });
+    }
+    
     throw error;
   }
 };

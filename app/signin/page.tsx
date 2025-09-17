@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -11,16 +11,27 @@ import { motion } from "framer-motion"
 import { ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react"
 import { useSignin } from "@/hooks/useSignin"
 import { useToast, ToastContainer } from "@/hooks/useToast"
+import { useIsAuthenticated, useCurrentUser } from "@/hooks/useAuth"
 import type { LoginInput, SignupError } from "@/types/graphql"
 
 export default function SignInPage() {
   const router = useRouter()
   const { toast, toasts, dismiss } = useToast()
+  const isAuthenticated = useIsAuthenticated()
+  const currentUser = useCurrentUser()
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     email: "",
     password: ""
   })
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && currentUser) {
+      console.log('User is already authenticated, redirecting to proposal page', { currentUser });
+      router.push('/proposal');
+    }
+  }, [isAuthenticated, currentUser, router]);
 
   const { signin, loading, errors, clearErrors } = useSignin({
     onSuccess: (result) => {

@@ -38,7 +38,7 @@ export default function WelcomePage() {
                     Check Your Email
                   </h3>
                   <p className="text-sm text-blue-700 mt-1">
-                    We've sent you a verification email. Please check your inbox and click the verification link to activate your account.
+                    We&apos;ve sent you a verification email. Please check your inbox and click the verification link to activate your account.
                   </p>
                 </div>
               </div>
@@ -61,7 +61,7 @@ export default function WelcomePage() {
 
             <div className="text-center text-sm text-gray-500">
               <p>
-                Didn't receive the email?{" "}
+                Didn&apos;t receive the email?{" "}
                 <Link href="/auth/resend-verification" className="text-primary hover:underline">
                   Resend verification email
                 </Link>
