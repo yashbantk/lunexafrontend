@@ -22,17 +22,19 @@ import {
   X
 } from "lucide-react"
 import { CitySearch } from "@/components/cities/CitySearch"
-import { City } from "@/types/graphql"
+import { CountrySearch } from "@/components/countries/CountrySearch"
+import { DestinationSearch } from "@/components/destinations/DestinationSearch"
+import { City, Country, Destination } from "@/types/graphql"
 
-interface Destination {
+interface TripDestination {
   id: string
   city: string
   nights: string
-  selectedCity?: City
+  selectedDestination?: Destination
 }
 
 export default function ProposalPage() {
-  const [destinations, setDestinations] = useState<Destination[]>([
+  const [destinations, setDestinations] = useState<TripDestination[]>([
     { id: "1", city: "", nights: "1" }
   ])
   const [formData, setFormData] = useState({
@@ -48,6 +50,7 @@ export default function ProposalPage() {
     addTransfers: false,
     landOnly: false
   })
+  const [selectedCountry, setSelectedCountry] = useState<Country | null>(null)
 
   const addDestination = () => {
     const newId = (destinations.length + 1).toString()
@@ -60,21 +63,46 @@ export default function ProposalPage() {
     }
   }
 
-  const updateDestination = (id: string, field: keyof Destination, value: string) => {
+  const updateDestination = (id: string, field: keyof TripDestination, value: string) => {
     setDestinations(destinations.map(dest => 
       dest.id === id ? { ...dest, [field]: value } : dest
     ))
   }
 
-  const handleCitySelect = (id: string, city: City) => {
+  const handleDestinationSelect = (id: string, destination: Destination) => {
     setDestinations(destinations.map(dest => 
-      dest.id === id ? { ...dest, selectedCity: city } : dest
+      dest.id === id ? { ...dest, selectedDestination: destination } : dest
     ))
+  }
+
+  const handleCountrySelect = (country: Country) => {
+    setSelectedCountry(country)
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Proposal data:", { destinations, ...formData })
+    console.log("Proposal data:", { 
+      destinations: destinations.map(dest => ({
+        ...dest,
+        selectedDestination: dest.selectedDestination ? {
+          id: dest.selectedDestination.id,
+          title: dest.selectedDestination.title,
+          description: dest.selectedDestination.description,
+          heroImageUrl: dest.selectedDestination.heroImageUrl,
+          highlights: dest.selectedDestination.highlights,
+          isFeatured: dest.selectedDestination.isFeatured,
+          createdAt: dest.selectedDestination.createdAt,
+          updatedAt: dest.selectedDestination.updatedAt
+        } : null
+      })),
+      ...formData, 
+      selectedCountry: selectedCountry ? {
+        name: selectedCountry.name,
+        iso2: selectedCountry.iso2,
+        createdAt: selectedCountry.createdAt,
+        updatedAt: selectedCountry.updatedAt
+      } : null
+    })
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -156,12 +184,12 @@ export default function ProposalPage() {
                     className="flex gap-4 items-end"
                   >
                     <div className="flex-1">
-                      <CitySearch
+                      <DestinationSearch
                         value={destination.city}
                         onChange={(value) => updateDestination(destination.id, "city", value)}
-                        onSelectCity={(city) => handleCitySelect(destination.id, city)}
-                        placeholder="Search for a city (e.g., Paris, Tokyo)"
-                        label="City Name"
+                        onSelectDestination={(destinationData) => handleDestinationSelect(destination.id, destinationData)}
+                        placeholder="Search for a destination (e.g., Paris, Tokyo)"
+                        label="Destination"
                         required
                       />
                     </div>
@@ -241,26 +269,13 @@ export default function ProposalPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="nationality">Nationality</Label>
-                    <Select
+                    <CountrySearch
                       value={formData.nationality}
-                      onValueChange={(value) => setFormData({ ...formData, nationality: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select nationality" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="us">United States</SelectItem>
-                        <SelectItem value="uk">United Kingdom</SelectItem>
-                        <SelectItem value="ca">Canada</SelectItem>
-                        <SelectItem value="au">Australia</SelectItem>
-                        <SelectItem value="de">Germany</SelectItem>
-                        <SelectItem value="fr">France</SelectItem>
-                        <SelectItem value="jp">Japan</SelectItem>
-                        <SelectItem value="in">India</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      onChange={(value) => setFormData({ ...formData, nationality: value })}
+                      onSelectCountry={handleCountrySelect}
+                      placeholder="Search for your nationality"
+                      label="Nationality"
+                    />
                   </div>
 
                   <div className="space-y-2">
