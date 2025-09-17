@@ -260,3 +260,4 @@ export default function GalleryCarousel({ images, hotelName, className = '' }: G
 
 
 
+
