@@ -1,7 +1,8 @@
 // Zustand store for comprehensive authentication state management
+// Uses cookie-based storage for consistency across client and server
 
 import { create } from 'zustand';
-import { devtools, persist, subscribeWithSelector } from 'zustand/middleware';
+import { devtools, subscribeWithSelector } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { authConfig, AUTH_ERROR_CODES } from './config';
 import { authStorage } from './storage';
@@ -127,10 +128,9 @@ const sessionMiddleware: AuthMiddleware = {
  */
 export const useAuthStore = create<AuthState & AuthActions>()(
   devtools(
-    persist(
-      subscribeWithSelector(
-        immer((set, get) => ({
-          ...initialState,
+    subscribeWithSelector(
+      immer((set, get) => ({
+        ...initialState,
 
           // Authentication actions
           login: async (credentials: LoginCredentials): Promise<boolean> => {
@@ -178,7 +178,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                   lockoutUntil: null,
                 });
                 
-                // Store in secure storage
+                // Store in secure storage (cookies)
                 authStorage.setUser(user);
                 authStorage.setTokens(tokens);
                 authStorage.setSession(get().sessionId!, Date.now());
@@ -301,7 +301,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                       lockoutUntil: null,
                     });
                     
-                    // Store in secure storage
+                    // Store in secure storage (cookies)
                     authStorage.setUser(loggedInUser);
                     authStorage.setTokens(tokens);
                     authStorage.setSession(get().sessionId!, Date.now());
@@ -426,7 +426,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               isInitialized: true, // Keep initialized state
             });
             
-            // Clear storage
+            // Clear storage (cookies)
             authStorage.clearAll();
           },
 
@@ -651,20 +651,44 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           },
         }))
       ),
-      {
-        name: 'auth-store',
-        partialize: (state) => ({
-          // Only persist essential data, not sensitive information
-          isInitialized: state.isInitialized,
-          lastActivity: state.lastActivity,
-        }),
-      }
-    ),
     {
       name: 'auth-store',
     }
   )
 );
+
+/**
+ * Initialize authentication state from cookies
+ */
+export const initializeAuth = (): void => {
+  try {
+    const tokens = authStorage.getTokens();
+    const user = authStorage.getUser();
+    const session = authStorage.getSession();
+    const securityData = authStorage.getSecurityData();
+    
+    const isAuthenticated = authStorage.isAuthenticated();
+    
+    // Update store with data from cookies
+    useAuthStore.setState({
+      user,
+      tokens,
+      isAuthenticated,
+      isInitialized: true,
+      sessionId: session?.sessionId || null,
+      lastActivity: session?.lastActivity || Date.now(),
+      loginAttempts: securityData.loginAttempts || 0,
+      lastLoginAttempt: securityData.lastLoginAttempt || 0,
+      isLocked: securityData.isLocked || false,
+      lockoutUntil: securityData.lockoutUntil || null,
+    });
+    
+    console.log('Auth initialized from cookies:', { isAuthenticated, hasUser: !!user, hasTokens: !!tokens });
+  } catch (error) {
+    console.error('Failed to initialize auth from cookies:', error);
+    useAuthStore.setState({ isInitialized: true });
+  }
+};
 
 // Auto-refresh token when it's about to expire
 let refreshInterval: NodeJS.Timeout | null = null;

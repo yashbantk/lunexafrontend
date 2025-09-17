@@ -12,9 +12,14 @@ import { ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react"
 import { useSignin } from "@/hooks/useSignin"
 import { useToast, ToastContainer } from "@/hooks/useToast"
 import { useIsAuthenticated, useCurrentUser } from "@/hooks/useAuth"
+import { useRedirectHandler } from "@/lib/auth/redirect-handler"
+import { useChunkErrorHandler } from "@/components/ErrorBoundary"
 import type { LoginInput, SignupError } from "@/types/graphql"
 
 export default function SignInPage() {
+  // Handle chunk loading errors
+  useChunkErrorHandler()
+  
   const router = useRouter()
   const { toast, toasts, dismiss } = useToast()
   const isAuthenticated = useIsAuthenticated()
@@ -25,41 +30,52 @@ export default function SignInPage() {
     password: ""
   })
 
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (isAuthenticated && currentUser) {
-      console.log('User is already authenticated, redirecting to proposal page', { currentUser });
-      router.push('/proposal');
-    }
-  }, [isAuthenticated, currentUser, router]);
+  // Track if we've just completed a login to prevent automatic redirect
+  const [hasJustLoggedIn, setHasJustLoggedIn] = useState(false);
+
+  const { handlePostLoginRedirect } = useRedirectHandler();
 
   const { signin, loading, errors, clearErrors } = useSignin({
     onSuccess: (result) => {
+      console.log('Signin success callback triggered', { result });
+      
+      // Mark that we've just completed a login
+      setHasJustLoggedIn(true);
+      
       toast({
         type: 'success',
         title: '👋 Welcome Back!',
         description: `Hello ${result.user.firstName}! Ready to create some amazing travel proposals?`,
-        duration: 4000
+        duration: 2000
       })
       
-      // Redirect to proposal page
+      // Use the redirect handler to preserve intended destination
       setTimeout(() => {
-        router.push('/proposal')
-      }, 2000)
+        console.log('Attempting redirect to proposal page...');
+        handlePostLoginRedirect('/proposal')
+      }, 1000)
     },
     onError: (errors) => {
-      // Show general error toast for non-field specific errors
-      const generalErrors = errors.filter(error => !error.field)
-      if (generalErrors.length > 0) {
+      // Show error toast for any errors
+      if (errors.length > 0) {
+        const error = errors[0];
         toast({
           type: 'error',
           title: '❌ Sign In Failed',
-          description: generalErrors[0].message,
+          description: error.message,
           duration: 5000
         })
       }
     }
   })
+
+  // Redirect if already authenticated (only on initial load, not after login)
+  useEffect(() => {
+    if (isAuthenticated && currentUser && !loading && !hasJustLoggedIn) {
+      console.log('User is already authenticated, redirecting to proposal page', { currentUser });
+      router.push('/proposal');
+    }
+  }, [isAuthenticated, currentUser, loading, hasJustLoggedIn, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

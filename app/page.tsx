@@ -16,8 +16,12 @@ import {
   Globe
 } from "lucide-react"
 import Link from "next/link"
+import { useChunkErrorHandler } from "@/components/ErrorBoundary"
 
 export default function HomePage() {
+  // Handle chunk loading errors
+  useChunkErrorHandler()
+
   const features = [
     {
       icon: <Zap className="h-8 w-8 text-primary" />,

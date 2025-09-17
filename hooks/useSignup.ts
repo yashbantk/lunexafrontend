@@ -3,7 +3,7 @@
 
 import { useSignup as useNewSignup, useCurrentUser, useIsAuthenticated } from './useAuth';
 import type { SignupInput, User, SignupError } from '@/types/graphql';
-import { useEffect } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 
 export interface UseSignupOptions {
   onSuccess?: (result: User) => void;
@@ -26,6 +26,18 @@ export const useSignup = (options?: UseSignupOptions): UseSignupReturn => {
   const currentUser = useCurrentUser();
   const isAuthenticated = useIsAuthenticated();
   
+  // Use refs to track if we've already triggered the success callback
+  const hasTriggeredSuccess = useRef(false);
+  const lastUserRef = useRef<string | null>(null);
+  
+  // Memoize the success callback to prevent infinite loops
+  const onSuccessCallback = useCallback((user: User) => {
+    if (options?.onSuccess) {
+      console.log('useSignup: Triggering onSuccess callback', { user, isAuthenticated });
+      options.onSuccess(user);
+    }
+  }, [options?.onSuccess, isAuthenticated]);
+  
   // Convert new error format to legacy format
   const legacyErrors: SignupError[] = errors.map(error => ({
     field: error.field,
@@ -35,13 +47,24 @@ export const useSignup = (options?: UseSignupOptions): UseSignupReturn => {
   
   // Handle authentication state changes for success callback
   useEffect(() => {
-    if (isAuthenticated && currentUser && options?.onSuccess) {
-      // User is now authenticated after signup, trigger success callback
-      options.onSuccess(currentUser);
+    if (isAuthenticated && currentUser && !hasTriggeredSuccess.current) {
+      // Check if this is a new authentication (different user)
+      const currentUserKey = currentUser.id;
+      
+      if (lastUserRef.current !== currentUserKey) {
+        hasTriggeredSuccess.current = true;
+        lastUserRef.current = currentUserKey;
+        
+        onSuccessCallback(currentUser);
+      }
     }
-  }, [isAuthenticated, currentUser, options]);
+  }, [isAuthenticated, currentUser, onSuccessCallback]);
   
   const signup = async (input: SignupInput): Promise<User | null> => {
+    // Reset the success trigger flag to allow new callbacks
+    hasTriggeredSuccess.current = false;
+    lastUserRef.current = null;
+    
     const credentials = {
       email: input.email,
       firstName: input.firstName,

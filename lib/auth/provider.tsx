@@ -3,7 +3,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, ReactNode } from 'react';
-import { useAuthStore } from './store';
+import { useAuthStore, initializeAuth } from './store';
 import type { AuthState, AuthActions } from '@/types/auth';
 
 /**
@@ -29,12 +29,12 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const authState = useAuthStore();
   
-  // Initialize authentication on mount
+  // Initialize authentication from cookies on mount
   useEffect(() => {
     if (!authState.isInitialized) {
-      authState.initialize();
+      initializeAuth();
     }
-  }, [authState.isInitialized, authState.initialize, authState]);
+  }, [authState.isInitialized]);
   
   // Auto-validate session periodically
   useEffect(() => {

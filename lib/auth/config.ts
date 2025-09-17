@@ -26,6 +26,15 @@ export const authConfig: AuthConfig = {
   enableRateLimiting: true,
 };
 
+// Storage keys
+export const AUTH_STORAGE_KEYS = {
+  ACCESS_TOKEN: 'auth_access_token',
+  REFRESH_TOKEN: 'auth_refresh_token',
+  USER: 'auth_user',
+  SESSION: 'auth_session',
+  LAST_ACTIVITY: 'auth_last_activity',
+} as const;
+
 // Security constants
 export const SECURITY_CONSTANTS = {
   // Token expiry times (in minutes)

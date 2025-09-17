@@ -1,191 +1,12 @@
-// Secure storage utilities for authentication data
+// Cookie-based storage for authentication data
+// Provides consistent storage across client and server
 
 import { authConfig, SECURITY_CONSTANTS } from './config';
 import type { AuthTokens, User } from '@/types/auth';
+import { AuthCookieStorage } from './cookie-storage';
 
 /**
- * Secure storage interface for different storage mechanisms
- */
-interface SecureStorage {
-  getItem(key: string): string | null;
-  setItem(key: string, value: string): void;
-  removeItem(key: string): void;
-  clear(): void;
-}
-
-/**
- * LocalStorage implementation with security checks
- */
-class LocalSecureStorage implements SecureStorage {
-  private isClient = typeof window !== 'undefined';
-
-  getItem(key: string): string | null {
-    if (!this.isClient) return null;
-    
-    try {
-      return localStorage.getItem(key);
-    } catch (error) {
-      console.warn('Failed to read from localStorage:', error);
-      return null;
-    }
-  }
-
-  setItem(key: string, value: string): void {
-    if (!this.isClient) return;
-    
-    try {
-      localStorage.setItem(key, value);
-    } catch (error) {
-      console.warn('Failed to write to localStorage:', error);
-    }
-  }
-
-  removeItem(key: string): void {
-    if (!this.isClient) return;
-    
-    try {
-      localStorage.removeItem(key);
-    } catch (error) {
-      console.warn('Failed to remove from localStorage:', error);
-    }
-  }
-
-  clear(): void {
-    if (!this.isClient) return;
-    
-    try {
-      localStorage.clear();
-    } catch (error) {
-      console.warn('Failed to clear localStorage:', error);
-    }
-  }
-}
-
-/**
- * SessionStorage implementation with security checks
- */
-class SessionSecureStorage implements SecureStorage {
-  private isClient = typeof window !== 'undefined';
-
-  getItem(key: string): string | null {
-    if (!this.isClient) return null;
-    
-    try {
-      return sessionStorage.getItem(key);
-    } catch (error) {
-      console.warn('Failed to read from sessionStorage:', error);
-      return null;
-    }
-  }
-
-  setItem(key: string, value: string): void {
-    if (!this.isClient) return;
-    
-    try {
-      sessionStorage.setItem(key, value);
-    } catch (error) {
-      console.warn('Failed to write to sessionStorage:', error);
-    }
-  }
-
-  removeItem(key: string): void {
-    if (!this.isClient) return;
-    
-    try {
-      sessionStorage.removeItem(key);
-    } catch (error) {
-      console.warn('Failed to remove from sessionStorage:', error);
-    }
-  }
-
-  clear(): void {
-    if (!this.isClient) return;
-    
-    try {
-      sessionStorage.clear();
-    } catch (error) {
-      console.warn('Failed to clear sessionStorage:', error);
-    }
-  }
-}
-
-/**
- * Memory storage for server-side rendering
- */
-class MemoryStorage implements SecureStorage {
-  private storage = new Map<string, string>();
-
-  getItem(key: string): string | null {
-    return this.storage.get(key) || null;
-  }
-
-  setItem(key: string, value: string): void {
-    this.storage.set(key, value);
-  }
-
-  removeItem(key: string): void {
-    this.storage.delete(key);
-  }
-
-  clear(): void {
-    this.storage.clear();
-  }
-}
-
-// Storage instance based on environment
-const storage: SecureStorage = (() => {
-  if (typeof window === 'undefined') {
-    return new MemoryStorage();
-  }
-  
-  // Use sessionStorage for sensitive data in production
-  if (authConfig.useSecureStorage && process.env.NODE_ENV === 'production') {
-    return new SessionSecureStorage();
-  }
-  
-  return new LocalSecureStorage();
-})();
-
-/**
- * Encrypt sensitive data before storage
- */
-function encryptData(data: any): string {
-  try {
-    // In production, use proper encryption
-    if (process.env.NODE_ENV === 'production') {
-      // TODO: Implement proper encryption using Web Crypto API
-      return btoa(JSON.stringify(data));
-    }
-    
-    // Development: simple base64 encoding
-    return btoa(JSON.stringify(data));
-  } catch (error) {
-    console.error('Failed to encrypt data:', error);
-    throw new Error('Data encryption failed');
-  }
-}
-
-/**
- * Decrypt sensitive data after retrieval
- */
-function decryptData(encryptedData: string): any {
-  try {
-    // In production, use proper decryption
-    if (process.env.NODE_ENV === 'production') {
-      // TODO: Implement proper decryption using Web Crypto API
-      return JSON.parse(atob(encryptedData));
-    }
-    
-    // Development: simple base64 decoding
-    return JSON.parse(atob(encryptedData));
-  } catch (error) {
-    console.error('Failed to decrypt data:', error);
-    return null;
-  }
-}
-
-/**
- * Authentication storage manager
+ * Authentication storage manager using cookies
  */
 export class AuthStorage {
   private static instance: AuthStorage;
@@ -203,8 +24,7 @@ export class AuthStorage {
    */
   setTokens(tokens: AuthTokens): void {
     try {
-      const encryptedTokens = encryptData(tokens);
-      storage.setItem(`${this.storageKey}_tokens`, encryptedTokens);
+      AuthCookieStorage.setTokens(tokens);
     } catch (error) {
       console.error('Failed to store tokens:', error);
       throw new Error('Token storage failed');
@@ -216,21 +36,16 @@ export class AuthStorage {
    */
   getTokens(): AuthTokens | null {
     try {
-      const encryptedTokens = storage.getItem(`${this.storageKey}_tokens`);
-      if (!encryptedTokens) return null;
-      
-      const tokens = decryptData(encryptedTokens);
+      const tokens = AuthCookieStorage.getTokens();
       
       // Validate token structure
       if (!tokens || !tokens.access || !tokens.refresh) {
-        this.clearTokens();
         return null;
       }
       
-      return tokens;
+      return tokens as AuthTokens;
     } catch (error) {
       console.error('Failed to retrieve tokens:', error);
-      this.clearTokens();
       return null;
     }
   }
@@ -240,8 +55,7 @@ export class AuthStorage {
    */
   setUser(user: User): void {
     try {
-      const encryptedUser = encryptData(user);
-      storage.setItem(`${this.storageKey}_user`, encryptedUser);
+      AuthCookieStorage.setUser(user);
     } catch (error) {
       console.error('Failed to store user:', error);
       throw new Error('User storage failed');
@@ -253,21 +67,16 @@ export class AuthStorage {
    */
   getUser(): User | null {
     try {
-      const encryptedUser = storage.getItem(`${this.storageKey}_user`);
-      if (!encryptedUser) return null;
-      
-      const user = decryptData(encryptedUser);
+      const user = AuthCookieStorage.getUser();
       
       // Validate user structure
       if (!user || !user.id || !user.email) {
-        this.clearUser();
         return null;
       }
       
       return user;
     } catch (error) {
       console.error('Failed to retrieve user:', error);
-      this.clearUser();
       return null;
     }
   }
@@ -277,8 +86,7 @@ export class AuthStorage {
    */
   setSession(sessionId: string, lastActivity: number): void {
     try {
-      const sessionData = { sessionId, lastActivity };
-      storage.setItem(`${this.storageKey}_session`, JSON.stringify(sessionData));
+      AuthCookieStorage.setSession(sessionId, lastActivity);
     } catch (error) {
       console.error('Failed to store session:', error);
     }
@@ -289,10 +97,16 @@ export class AuthStorage {
    */
   getSession(): { sessionId: string; lastActivity: number } | null {
     try {
-      const sessionData = storage.getItem(`${this.storageKey}_session`);
-      if (!sessionData) return null;
+      const session = AuthCookieStorage.getSession();
       
-      return JSON.parse(sessionData);
+      if (!session.sessionId || !session.lastActivity) {
+        return null;
+      }
+      
+      return {
+        sessionId: session.sessionId,
+        lastActivity: session.lastActivity,
+      };
     } catch (error) {
       console.error('Failed to retrieve session:', error);
       return null;
@@ -301,10 +115,14 @@ export class AuthStorage {
 
   /**
    * Store security data (login attempts, etc.)
+   * Note: Security data is stored in memory for client-side only
    */
   setSecurityData(data: Record<string, any>): void {
     try {
-      storage.setItem(`${this.storageKey}_security`, JSON.stringify(data));
+      if (typeof window !== 'undefined') {
+        // Store in sessionStorage for security data (not cookies)
+        sessionStorage.setItem(`${this.storageKey}_security`, JSON.stringify(data));
+      }
     } catch (error) {
       console.error('Failed to store security data:', error);
     }
@@ -315,7 +133,9 @@ export class AuthStorage {
    */
   getSecurityData(): Record<string, any> {
     try {
-      const securityData = storage.getItem(`${this.storageKey}_security`);
+      if (typeof window === 'undefined') return {};
+      
+      const securityData = sessionStorage.getItem(`${this.storageKey}_security`);
       if (!securityData) return {};
       
       return JSON.parse(securityData);
@@ -330,10 +150,12 @@ export class AuthStorage {
    */
   clearAll(): void {
     try {
-      storage.removeItem(`${this.storageKey}_tokens`);
-      storage.removeItem(`${this.storageKey}_user`);
-      storage.removeItem(`${this.storageKey}_session`);
-      storage.removeItem(`${this.storageKey}_security`);
+      AuthCookieStorage.clearAuth();
+      
+      // Also clear security data from sessionStorage
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem(`${this.storageKey}_security`);
+      }
     } catch (error) {
       console.error('Failed to clear auth data:', error);
     }
@@ -343,40 +165,68 @@ export class AuthStorage {
    * Clear tokens only
    */
   clearTokens(): void {
-    storage.removeItem(`${this.storageKey}_tokens`);
+    try {
+      AuthCookieStorage.clearAuth();
+    } catch (error) {
+      console.error('Failed to clear tokens:', error);
+    }
   }
 
   /**
    * Clear user data only
    */
   clearUser(): void {
-    storage.removeItem(`${this.storageKey}_user`);
+    try {
+      AuthCookieStorage.clearAuth();
+    } catch (error) {
+      console.error('Failed to clear user:', error);
+    }
   }
 
   /**
    * Clear session data only
    */
   clearSession(): void {
-    storage.removeItem(`${this.storageKey}_session`);
+    try {
+      AuthCookieStorage.clearAuth();
+    } catch (error) {
+      console.error('Failed to clear session:', error);
+    }
   }
 
   /**
    * Check if user is authenticated based on stored data
    */
   isAuthenticated(): boolean {
-    const tokens = this.getTokens();
-    const user = this.getUser();
-    
-    if (!tokens || !user) return false;
-    
-    // Check if tokens are expired
-    const now = Date.now();
-    if (tokens.expiresAt && now >= tokens.expiresAt) {
-      this.clearTokens();
+    try {
+      return AuthCookieStorage.isAuthenticated();
+    } catch (error) {
+      console.error('Failed to check authentication status:', error);
       return false;
     }
-    
-    return true;
+  }
+
+  /**
+   * Update last activity timestamp
+   */
+  updateLastActivity(): void {
+    try {
+      AuthCookieStorage.updateLastActivity();
+    } catch (error) {
+      console.error('Failed to update last activity:', error);
+    }
+  }
+
+  /**
+   * Check if session is expired
+   */
+  isSessionExpired(maxAge: number = 7 * 24 * 60 * 60 * 1000): boolean {
+    try {
+      return AuthCookieStorage.isSessionExpired(maxAge);
+    } catch (error) {
+      console.error('Failed to check session expiration:', error);
+      return true;
+    }
   }
 
   /**
@@ -396,6 +246,8 @@ export class AuthStorage {
       lastActivity: session?.lastActivity ? new Date(session.lastActivity).toISOString() : null,
       loginAttempts: security.loginAttempts || 0,
       isLocked: security.isLocked || false,
+      isAuthenticated: this.isAuthenticated(),
+      sessionExpired: this.isSessionExpired(),
     };
   }
 }
