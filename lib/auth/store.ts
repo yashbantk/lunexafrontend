@@ -649,6 +649,32 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             set({ ...initialState });
             authStorage.clearAll();
           },
+
+          // Debug utility to help troubleshoot authentication issues
+          debugAuthState: () => {
+            const state = get();
+            const storageStats = authStorage.getStorageStats();
+            
+            const debugInfo = {
+              store: {
+                isAuthenticated: state.isAuthenticated,
+                hasUser: !!state.user,
+                hasTokens: !!state.tokens,
+                tokenExpiry: state.tokens?.expiresAt ? new Date(state.tokens.expiresAt).toISOString() : null,
+                refreshTokenExpiry: state.tokens?.refreshExpiresAt ? new Date(state.tokens.refreshExpiresAt).toISOString() : null,
+                sessionId: state.sessionId,
+                lastActivity: state.lastActivity ? new Date(state.lastActivity).toISOString() : null,
+                isLoading: state.isLoading,
+                isRefreshing: state.isRefreshing,
+                error: state.error,
+              },
+              storage: storageStats,
+              currentTime: new Date().toISOString(),
+            };
+            
+            console.log('🔍 Authentication Debug Info:', debugInfo);
+            return debugInfo;
+          },
         }))
       ),
     {

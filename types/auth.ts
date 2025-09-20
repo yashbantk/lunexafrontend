@@ -97,6 +97,9 @@ export interface AuthActions {
   // Initialization
   initialize: () => Promise<void>;
   reset: () => void;
+  
+  // Debug utilities
+  debugAuthState: () => any;
 }
 
 export interface AuthMiddleware {
