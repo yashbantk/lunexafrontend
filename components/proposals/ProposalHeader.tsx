@@ -35,7 +35,15 @@ export function ProposalHeader({ proposal, onUpdate }: ProposalHeaderProps) {
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Trip Details</h2>
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">Trip Details</h2>
+          <div className="flex items-center space-x-4 mt-2">
+            <span className="text-sm text-gray-600">Trip ID: {proposal.id}</span>
+            <span className="text-sm text-gray-600">Status: <span className="capitalize font-medium">{proposal.tripStatus || 'Draft'}</span></span>
+            <span className="text-sm text-gray-600">Type: <span className="capitalize font-medium">{proposal.tripType || 'Leisure'}</span></span>
+            <span className="text-sm text-gray-600">Duration: {proposal.durationDays || 1} day{(proposal.durationDays || 1) !== 1 ? 's' : ''}</span>
+          </div>
+        </div>
         <button
           onClick={() => setIsEditing(!isEditing)}
           className="text-primary hover:text-primary/80 text-sm font-medium"
@@ -200,6 +208,14 @@ export function ProposalHeader({ proposal, onUpdate }: ProposalHeaderProps) {
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        {/* Total Travelers */}
+        <div className="space-y-2">
+          <Label htmlFor="totalTravelers">Total Travelers</Label>
+          <div className="text-sm font-medium text-gray-900 p-2 bg-gray-50 rounded-md">
+            {proposal.totalTravelers || (proposal.adults + proposal.children)} travelers
+          </div>
         </div>
       </div>
 

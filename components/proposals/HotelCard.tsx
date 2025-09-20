@@ -15,11 +15,11 @@ interface HotelCardProps {
 }
 
 export function HotelCard({ hotel, onEdit, onRemove }: HotelCardProps) {
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-IN', {
+  const formatPrice = (price: number, currency: string = 'USD') => {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
+      currency: currency,
+      maximumFractionDigits: 2
     }).format(price)
   }
 
@@ -128,6 +128,13 @@ export function HotelCard({ hotel, onEdit, onRemove }: HotelCardProps) {
                     {hotel.nights} {hotel.nights === 1 ? 'night' : 'nights'}
                   </span>
                 </div>
+                {/* Confirmation Status */}
+                <div className="flex items-center space-x-2">
+                  <div className={`h-2 w-2 rounded-full ${hotel.confirmationStatus === 'confirmed' ? 'bg-green-500' : hotel.confirmationStatus === 'pending' ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
+                  <span className="text-sm text-gray-600">
+                    Status: <span className="font-medium capitalize">{hotel.confirmationStatus || 'Pending'}</span>
+                  </span>
+                </div>
                 {hotel.refundable && (
                   <div className="text-sm text-green-600 font-medium">
                     Fully refundable before {new Date(hotel.checkIn).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
@@ -138,7 +145,7 @@ export function HotelCard({ hotel, onEdit, onRemove }: HotelCardProps) {
               {/* Price */}
               <div className="text-right">
                 <div className="text-xl font-bold text-primary">
-                  {formatPrice(hotel.pricePerNight)}
+                  {formatPrice(hotel.pricePerNight, hotel.currency)}
                 </div>
                 <div className="text-sm text-gray-500">per night</div>
               </div>

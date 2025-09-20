@@ -25,6 +25,17 @@ export interface Proposal {
   priceBreakdown: PriceBreakdown
   createdAt?: string
   updatedAt?: string
+  // Additional fields for better data display
+  tripStatus?: string
+  tripType?: string
+  totalTravelers?: number
+  durationDays?: number
+  destinations?: Array<{
+    id: string
+    name: string
+    numberOfDays: number
+    order: number
+  }>
 }
 
 export interface Flight {
@@ -62,6 +73,7 @@ export interface Hotel {
   refundable: boolean
   pricePerNight: number
   currency: string
+  confirmationStatus?: string
 }
 
 export interface Activity {

@@ -204,6 +204,25 @@ export function DayAccordion({ day, onEdit, onRemove, onAddActivity }: DayAccord
                   </div>
                 )}
 
+                {/* Stay Details */}
+                {day.accommodation && (
+                  <div className="mb-4">
+                    <h4 className="font-medium text-gray-900 mb-3">Accommodation Details</h4>
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <div className="text-sm text-gray-600 mb-1">Rooms</div>
+                          <div className="font-medium text-gray-900">{day.accommodation}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-gray-600 mb-1">Nights</div>
+                          <div className="font-medium text-gray-900">{day.summary?.match(/(\d+) nights/)?.[1] || '1'} night{(day.summary?.match(/(\d+) nights/)?.[1] || '1') !== '1' ? 's' : ''}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Transfers */}
                 {day.transfers.length > 0 && (
                   <div className="mb-4">

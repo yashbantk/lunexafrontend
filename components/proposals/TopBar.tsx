@@ -6,15 +6,18 @@ import { Button } from "@/components/ui/button"
 
 interface TopBarProps {
   totalPrice: number
+  currency?: string
+  adults?: number
+  childrenCount?: number
   onSaveDraft: () => void
 }
 
-export function TopBar({ totalPrice, onSaveDraft }: TopBarProps) {
+export function TopBar({ totalPrice, currency = 'USD', adults = 2, childrenCount = 0, onSaveDraft }: TopBarProps) {
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-IN', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
+      currency: currency,
+      maximumFractionDigits: 2
     }).format(price)
   }
 
@@ -41,7 +44,7 @@ export function TopBar({ totalPrice, onSaveDraft }: TopBarProps) {
             </div>
             <div className="text-sm text-gray-500 flex items-center justify-center space-x-1">
               <Users className="h-4 w-4" />
-              <span>2 adults, 0 children</span>
+              <span>{adults} {adults === 1 ? 'adult' : 'adults'}, {childrenCount} {childrenCount === 1 ? 'child' : 'children'}</span>
             </div>
           </div>
 

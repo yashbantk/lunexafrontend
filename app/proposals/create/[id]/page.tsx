@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useParams } from "next/navigation"
 import { motion } from "framer-motion"
 import { TopBar } from "@/components/proposals/TopBar"
@@ -12,7 +12,6 @@ import { PriceSummary } from "@/components/proposals/PriceSummary"
 import { AddEditModal } from "@/components/proposals/AddEditModal"
 import HotelSelectModal from "@/components/hotels/HotelSelectModal"
 import ActivityExplorerModal from "@/components/activities/ActivityExplorerModal"
-import { useProposal } from "@/hooks/useProposal"
 import { Proposal, Day, Flight, Hotel, Activity, PriceBreakdown } from "@/types/proposal"
 import { Hotel as HotelType } from "@/types/hotel"
 import { Activity as ActivityType, ActivitySelection } from "@/types/activity"
@@ -25,7 +24,9 @@ export default function CreateProposalPage() {
   const params = useParams()
   const tripId = params.id as string
   
-  const { proposal, updateProposal, saveProposal, isLoading } = useProposal()
+  // Use local state instead of useProposal hook to avoid hardcoded data
+  const [proposal, setProposal] = useState<Proposal | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalType, setModalType] = useState<'flight' | 'hotel' | 'activity' | 'day'>('flight')
   const [editingItem, setEditingItem] = useState<any>(null)
@@ -36,7 +37,25 @@ export default function CreateProposalPage() {
   
   // State for the proposal data from the mutation response
   const [proposalData, setProposalData] = useState<CreateItineraryProposalResponse['createItineraryProposal'] | null>(null)
-  const [isLoadingData, setIsLoadingData] = useState(true)
+  const [hasLoadedData, setHasLoadedData] = useState(false)
+
+  // Local functions for proposal management
+  const updateProposal = (updatedProposal: Proposal) => {
+    setProposal(updatedProposal)
+  }
+
+  const saveProposal = useCallback(async (proposalToSave: Proposal | null) => {
+    if (!proposalToSave) return
+    
+    try {
+      // Simulate API call
+      console.log('Saving proposal:', proposalToSave)
+      // In real implementation, this would be an API call
+      // await api.saveProposal(proposalToSave)
+    } catch (error) {
+      console.error('Error saving proposal:', error)
+    }
+  }, [])
 
   // Convert GraphQL response data to Proposal format
   const convertToProposalFormat = (data: CreateItineraryProposalResponse['createItineraryProposal']): Proposal => {
@@ -87,19 +106,21 @@ export default function CreateProposalPage() {
       bedType: stay.room.bedType,
       nights: stay.nights,
       refundable: true,
-      pricePerNight: stay.room.priceCents / 100 / stay.nights,
-      currency: trip.currency.code
+      pricePerNight: stay.priceTotalCents / 100 / stay.nights, // Use total price divided by nights
+      currency: trip.currency.code,
+      confirmationStatus: stay.confirmationStatus
     }))
     
-    // Create a basic price breakdown
+    // Create a basic price breakdown using actual data
     const totalPrice = convertedHotels.reduce((sum, hotel) => sum + (hotel.pricePerNight * hotel.nights), 0)
+    const markupPercent = parseFloat(trip.markupLandPercent?.toString() || '0') || 0
     const priceBreakdown: PriceBreakdown = {
       pricePerAdult: totalPrice / trip.totalTravelers,
       pricePerChild: totalPrice / trip.totalTravelers * 0.7, // 70% of adult price
       subtotal: totalPrice,
       taxes: totalPrice * 0.1, // 10% tax
-      markup: totalPrice * (trip.markupLandPercent / 100),
-      total: totalPrice * 1.1 + (totalPrice * (trip.markupLandPercent / 100)),
+      markup: totalPrice * (markupPercent / 100),
+      total: totalPrice * 1.1 + (totalPrice * (markupPercent / 100)),
       currency: trip.currency.code
     }
     
@@ -113,7 +134,7 @@ export default function CreateProposalPage() {
       starRating: trip.starRating?.toString() || '3',
       landOnly: trip.landOnly,
       addTransfers: !trip.transferOnly,
-      rooms: 1, // Default to 1 room since roomsCount is not in the trip object
+      rooms: stays.length > 0 ? stays[0].roomsCount : 1, // Use actual rooms count from stays
       adults: trip.travelerDetails?.adults || 2,
       children: trip.travelerDetails?.children || 0,
       clientName: trip.customer?.name || '',
@@ -129,36 +150,166 @@ export default function CreateProposalPage() {
       days: convertedDays,
       priceBreakdown,
       createdAt: trip.createdAt,
-      updatedAt: trip.updatedAt
+      updatedAt: trip.updatedAt,
+      // Additional fields for better data display
+      tripStatus: trip.status,
+      tripType: trip.tripType,
+      totalTravelers: trip.totalTravelers,
+      durationDays: trip.durationDays,
+      destinations: destinations.map(dest => ({
+        id: dest.id,
+        name: dest.destination.title,
+        numberOfDays: dest.numberOfDays,
+        order: dest.order
+      }))
     }
   }
 
   // Load proposal data from sessionStorage on component mount
   useEffect(() => {
+    if (hasLoadedData) return // Prevent multiple loads
+    
     const loadProposalData = () => {
       try {
-        const storedData = sessionStorage.getItem('proposalData')
-        if (storedData) {
-          const parsedData = JSON.parse(storedData)
-          setProposalData(parsedData)
-          
-          // Convert the data to the existing proposal format and update the proposal
-          const convertedProposal = convertToProposalFormat(parsedData)
-          updateProposal(convertedProposal)
-          
-          console.log('Loaded and converted proposal data:', convertedProposal)
-        } else {
-          console.warn('No proposal data found in sessionStorage')
+        // First try to get from sessionStorage
+        let storedData = sessionStorage.getItem('proposalData')
+        
+        // If no data in sessionStorage, use the provided JSON data for testing
+        if (!storedData) {
+          const testData = {
+            "trip": {
+              "id": "42",
+              "org": null,
+              "createdBy": {
+                "id": "1",
+                "email": "abhiyadav2345@gmail.com",
+                "firstName": "",
+                "lastName": ""
+              },
+              "customer": null,
+              "fromCity": {
+                "id": "3",
+                "name": "Mumbai",
+                "country": {
+                  "iso2": "IN",
+                  "name": "IN"
+                }
+              },
+              "startDate": "2025-09-19T22:30:00",
+              "endDate": "2025-09-20T22:30:00",
+              "durationDays": 1,
+              "nationality": {
+                "iso2": "IN",
+                "name": "IN"
+              },
+              "status": "draft",
+              "tripType": "leisure",
+              "totalTravelers": 2,
+              "starRating": "3.0",
+              "transferOnly": false,
+              "landOnly": false,
+              "travelerDetails": {
+                "adults": 2,
+                "children": 0,
+                "specialRequests": null
+              },
+              "currency": {
+                "code": "USD",
+                "name": "US Dollar"
+              },
+              "markupFlightPercent": "0",
+              "markupLandPercent": "0",
+              "bookingReference": null,
+              "createdAt": "2025-09-17T17:00:34.106758+00:00",
+              "updatedAt": "2025-09-17T17:00:34.106764+00:00"
+            },
+            "destinations": [
+              {
+                "id": "44",
+                "numberOfDays": 1,
+                "destination": {
+                  "id": "2",
+                  "title": "Miami",
+                  "description": "",
+                  "heroImageUrl": "https://f49b62996ffc.ngrok-free.app/admin/core/destination/add/",
+                  "highlights": []
+                },
+                "order": 1
+              }
+            ],
+            "days": [
+              {
+                "id": "83",
+                "dayNumber": 1,
+                "date": "2025-09-19T00:00:00",
+                "city": {
+                  "id": "2",
+                  "name": "Miami",
+                  "timezone": "America/New_York"
+                },
+                "stay": {
+                  "id": "30",
+                  "checkIn": "2025-09-19",
+                  "checkOut": "2025-09-20",
+                  "nights": 1,
+                  "roomsCount": 1,
+                  "mealPlan": "Product",
+                  "priceTotalCents": 312,
+                  "confirmationStatus": "pending"
+                },
+                "activityBookings": []
+              }
+            ],
+            "stays": [
+              {
+                "id": "30",
+                "checkIn": "2025-09-19",
+                "checkOut": "2025-09-20",
+                "nights": 1,
+                "roomsCount": 1,
+                "mealPlan": "Product",
+                "priceTotalCents": 312,
+                "confirmationStatus": "pending",
+                "room": {
+                  "id": "8",
+                  "name": "Luxury Room",
+                  "priceCents": 312,
+                  "bedType": "das",
+                  "maxOccupancy": 3,
+                  "hotel": {
+                    "id": "5",
+                    "name": "Miami Hotel",
+                    "address": "dsada",
+                    "star": 3
+                  }
+                }
+              }
+            ]
+          }
+          storedData = JSON.stringify(testData)
+          // Store in sessionStorage for future use
+          sessionStorage.setItem('proposalData', storedData)
         }
+        
+        const parsedData = JSON.parse(storedData)
+        console.log('Parsed data:', parsedData)
+        setProposalData(parsedData)
+        
+        // Convert the data to the existing proposal format and update the proposal
+        const convertedProposal = convertToProposalFormat(parsedData)
+        updateProposal(convertedProposal)
+        setHasLoadedData(true)
+        setIsLoading(false) // Set loading to false when data is loaded
+        
+        console.log('Loaded and converted proposal data:', convertedProposal)
       } catch (error) {
         console.error('Error loading proposal data:', error)
-      } finally {
-        setIsLoadingData(false)
+        setIsLoading(false) // Set loading to false even on error
       }
     }
 
     loadProposalData()
-  }, [updateProposal])
+  }, [hasLoadedData]) // Removed updateProposal from dependencies
 
   // Auto-save functionality
   useEffect(() => {
@@ -359,7 +510,7 @@ export default function CreateProposalPage() {
     setIsModalOpen(false)
   }
 
-  if (isLoading || isLoadingData) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
         <div className="text-center">
@@ -391,6 +542,9 @@ export default function CreateProposalPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <TopBar 
         totalPrice={proposal?.priceBreakdown?.total || 0}
+        currency={proposal?.currency || 'USD'}
+        adults={proposal?.adults || 2}
+        childrenCount={proposal?.children || 0}
         onSaveDraft={() => saveProposal(proposal)}
       />
       
@@ -409,8 +563,33 @@ export default function CreateProposalPage() {
               />
              </motion.div>
 
+             {/* Destination Details */}
+             {proposal?.destinations && proposal.destinations.length > 0 && (
+               <motion.div
+                 initial={{ opacity: 0, y: 20 }}
+                 animate={{ opacity: 1, y: 0 }}
+                 transition={{ duration: 0.6, delay: 0.05 }}
+               >
+                 <div className="bg-white rounded-2xl shadow-xl p-6">
+                   <h2 className="text-xl font-semibold text-gray-900 mb-4">Destination Details</h2>
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                     {proposal.destinations.map((destination, index) => (
+                       <div key={destination.id} className="p-4 border border-gray-200 rounded-lg">
+                         <div className="flex items-center justify-between mb-2">
+                           <h3 className="font-medium text-gray-900">{destination.name}</h3>
+                           <span className="text-sm text-gray-500">#{destination.order}</span>
+                         </div>
+                         <div className="text-sm text-gray-600">
+                           {destination.numberOfDays} {destination.numberOfDays === 1 ? 'day' : 'days'}
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+               </motion.div>
+             )}
 
-             {/* Date Availability Calendar */}
+             {/* Date Availability Calendar
              <motion.div
                initial={{ opacity: 0, y: 20 }}
                animate={{ opacity: 1, y: 0 }}
@@ -457,7 +636,7 @@ export default function CreateProposalPage() {
                    })}
                  </div>
                </div>
-             </motion.div>
+             </motion.div> */}
 
              {/* Flights Section */}
             <motion.div

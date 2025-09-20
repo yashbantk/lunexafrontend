@@ -28,10 +28,11 @@ export function PriceSummary({ proposal, onSaveProposal, onExportPDF, onPreview 
   if (!proposal) return null
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-IN', {
+    const currency = proposal?.currency || 'USD'
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
+      currency: currency,
+      maximumFractionDigits: 2
     }).format(price)
   }
 
@@ -138,7 +139,7 @@ export function PriceSummary({ proposal, onSaveProposal, onExportPDF, onPreview 
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Flights */}
-            {proposal.flights.length > 0 && (
+            {proposal.flights && proposal.flights.length > 0 && (
               <div>
                 <h4 className="font-medium text-gray-900 mb-2 flex items-center">
                   <Plane className="h-4 w-4 mr-2 text-primary" />
@@ -156,7 +157,7 @@ export function PriceSummary({ proposal, onSaveProposal, onExportPDF, onPreview 
             )}
 
             {/* Hotels */}
-            {proposal.hotels.length > 0 && (
+            {proposal.hotels && proposal.hotels.length > 0 && (
               <div>
                 <h4 className="font-medium text-gray-900 mb-2 flex items-center">
                   <Home className="h-4 w-4 mr-2 text-primary" />
@@ -168,7 +169,7 @@ export function PriceSummary({ proposal, onSaveProposal, onExportPDF, onPreview 
                       <div className="flex items-center">
                         <CheckCircle className="h-3 w-3 text-green-500 mr-2 flex-shrink-0" />
                         <div>
-                          <div>{hotel.nights} {hotel.nights === 1 ? 'night' : 'nights'} in {hotel.name.split(' - ')[0]}</div>
+                          <div>{hotel.nights} {hotel.nights === 1 ? 'night' : 'nights'} in {hotel.name}</div>
                           <div className="text-xs text-gray-500">
                             {hotel.roomType} • {hotel.boardBasis}
                           </div>
