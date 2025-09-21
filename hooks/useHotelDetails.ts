@@ -4,6 +4,11 @@ import { Hotel, Room } from '@/types/hotel'
 import { GET_HOTEL_DETAILS } from '@/graphql/queries/hotel'
 import { transformGraphQLHotelToHotel } from '@/lib/transformers/hotel'
 
+// Type for the GraphQL response
+interface HotelDetailsResponse {
+  hotel?: any // We'll use any for now since the GraphQL response structure is complex
+}
+
 interface UseHotelDetailsProps {
   hotelId: string
   checkIn: string
@@ -18,6 +23,7 @@ interface UseHotelDetailsReturn {
   error: string | null
   refetch: () => void
   updateRoomPrices: (roomId: string, prices: { pricePerNight: number; totalPrice: number; refundable: boolean }) => void
+  manualFetch: () => Promise<void>
 }
 
 export function useHotelDetails({
@@ -29,21 +35,30 @@ export function useHotelDetails({
 }: UseHotelDetailsProps): UseHotelDetailsReturn {
   const [hotel, setHotel] = useState<Hotel | null>(null)
 
-  // Use Apollo Client's useQuery hook
-  const { data, loading, error, refetch } = useQuery(GET_HOTEL_DETAILS as any, {
+  // Use Apollo Client's useQuery hook with better error handling
+  const { data, loading, error, refetch } = useQuery<HotelDetailsResponse>(GET_HOTEL_DETAILS, {
     variables: { hotelId },
     skip: !hotelId, // Skip query if no hotelId
     errorPolicy: 'all', // Return both data and errors
-    notifyOnNetworkStatusChange: true
+    notifyOnNetworkStatusChange: true,
+    fetchPolicy: 'cache-and-network' // Try cache first, then network
   })
 
   // Handle data when it changes
   React.useEffect(() => {
-    if ((data as any)?.hotel) {
+    if (data?.hotel) {
       console.log('GraphQL response:', data)
-      const transformedHotel = transformGraphQLHotelToHotel((data as any).hotel)
-      setHotel(transformedHotel)
-      console.log('Transformed hotel:', transformedHotel)
+      try {
+        const transformedHotel = transformGraphQLHotelToHotel(data.hotel)
+        setHotel(transformedHotel)
+        console.log('Transformed hotel:', transformedHotel)
+      } catch (transformError) {
+        console.error('Error transforming hotel data:', transformError)
+        setHotel(null)
+      }
+    } else if (data && !data.hotel) {
+      console.warn('No hotel data found in response:', data)
+      setHotel(null)
     }
   }, [data])
 
@@ -51,8 +66,20 @@ export function useHotelDetails({
   React.useEffect(() => {
     if (error) {
       console.error('Error fetching hotel details:', error)
+      setHotel(null)
     }
   }, [error])
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('useHotelDetails state:', {
+      hotelId,
+      loading,
+      error: error?.message,
+      hasData: !!data,
+      hasHotel: !!data?.hotel
+    })
+  }, [hotelId, loading, error, data])
 
   const updateRoomPrices = useCallback((roomId: string, prices: { pricePerNight: number; totalPrice: number; refundable: boolean }) => {
     if (!hotel) return
@@ -73,12 +100,38 @@ export function useHotelDetails({
     })
   }, [hotel])
 
+  // Enhanced refetch function with error handling
+  const enhancedRefetch = useCallback(async () => {
+    try {
+      const result = await refetch()
+      return result
+    } catch (refetchError) {
+      console.error('Error during refetch:', refetchError)
+      throw refetchError
+    }
+  }, [refetch])
+
+  // Manual fetch function as fallback
+  const manualFetch = useCallback(async () => {
+    if (!hotelId) return
+    
+    try {
+      console.log('Manual fetch for hotel:', hotelId)
+      const fetchedHotel = await fetchHotelDetailsFromGraphQL({ hotelId })
+      setHotel(fetchedHotel)
+    } catch (fetchError) {
+      console.error('Manual fetch failed:', fetchError)
+      setHotel(null)
+    }
+  }, [hotelId])
+
   return {
     hotel,
     loading,
     error: error?.message || null,
-    refetch: () => refetch(),
-    updateRoomPrices
+    refetch: enhancedRefetch,
+    updateRoomPrices,
+    manualFetch
   }
 }
 
@@ -89,9 +142,10 @@ export const fetchHotelDetailsFromGraphQL = async (variables: {
   try {
     const { apolloClient } = await import('@/lib/graphql/client')
     const result = await apolloClient.query({
-      query: GET_HOTEL_DETAILS as any,
+      query: GET_HOTEL_DETAILS,
       variables,
-      errorPolicy: 'all'
+      errorPolicy: 'all',
+      fetchPolicy: 'network-only' // Always fetch fresh data
     })
     
     if ((result.data as any)?.hotel) {

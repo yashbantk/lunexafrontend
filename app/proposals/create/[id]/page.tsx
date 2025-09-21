@@ -47,6 +47,64 @@ export default function CreateProposalPage() {
     setProposal(updatedProposal)
   }
 
+  // Price calculation utility function
+  const calculatePriceBreakdown = (proposal: Proposal): PriceBreakdown => {
+    // Calculate hotel costs
+    const hotelCosts = proposal.hotels.reduce((sum, hotel) => {
+      return sum + (hotel.pricePerNight * hotel.nights)
+    }, 0)
+
+    // Calculate flight costs (if any)
+    const flightCosts = proposal.flights.reduce((sum, flight) => {
+      return sum + flight.price
+    }, 0)
+
+    // Calculate activity costs
+    const activityCosts = proposal.days.reduce((sum, day) => {
+      return sum + day.activities.reduce((daySum, activity) => {
+        return daySum + (activity.price || 0)
+      }, 0)
+    }, 0)
+
+    // Calculate subtotal
+    const subtotal = hotelCosts + flightCosts + activityCosts
+
+    // Calculate taxes (10%)
+    const taxes = subtotal * 0.1
+
+    // Calculate markup
+    const markupPercent = proposal.markupPercent || 0
+    const markup = subtotal * (markupPercent / 100)
+
+    // Calculate total
+    const total = subtotal + taxes + markup
+
+    // Calculate per-person prices
+    const totalTravelers = proposal.adults + proposal.children
+    const pricePerAdult = totalTravelers > 0 ? total / totalTravelers : 0
+    const pricePerChild = totalTravelers > 0 ? (total / totalTravelers) * 0.7 : 0
+
+    return {
+      pricePerAdult,
+      pricePerChild,
+      subtotal,
+      taxes,
+      markup,
+      total,
+      currency: proposal.currency
+    }
+  }
+
+  // Update proposal with recalculated prices
+  const updateProposalWithPrices = (updatedProposal: Proposal) => {
+    const recalculatedPrices = calculatePriceBreakdown(updatedProposal)
+    const proposalWithUpdatedPrices = {
+      ...updatedProposal,
+      priceBreakdown: recalculatedPrices
+    }
+    setProposal(proposalWithUpdatedPrices)
+  }
+
   const saveProposal = useCallback(async (proposalToSave: Proposal | null) => {
     if (!proposalToSave) return
     
@@ -114,20 +172,8 @@ export default function CreateProposalPage() {
       confirmationStatus: stay.confirmationStatus
     }))
     
-    // Create a basic price breakdown using actual data
-    const totalPrice = convertedHotels.reduce((sum, hotel) => sum + (hotel.pricePerNight * hotel.nights), 0)
-    const markupPercent = parseFloat(trip.markupLandPercent?.toString() || '0') || 0
-    const priceBreakdown: PriceBreakdown = {
-      pricePerAdult: totalPrice / trip.totalTravelers,
-      pricePerChild: totalPrice / trip.totalTravelers * 0.7, // 70% of adult price
-      subtotal: totalPrice,
-      taxes: totalPrice * 0.1, // 10% tax
-      markup: totalPrice * (markupPercent / 100),
-      total: totalPrice * 1.1 + (totalPrice * (markupPercent / 100)),
-      currency: trip.currency.code
-    }
-    
-    return {
+    // Create initial proposal without price breakdown (will be calculated later)
+    const initialProposal: Proposal = {
       id: trip.id,
       tripName: `${trip.fromCity.name} to ${destinations.map(d => d.destination.title).join(', ')}`,
       fromDate: trip.startDate.split('T')[0],
@@ -143,15 +189,23 @@ export default function CreateProposalPage() {
       clientName: trip.customer?.name || '',
       clientEmail: trip.customer?.email || '',
       clientPhone: trip.customer?.phone || '',
-      internalNotes: trip.travelerDetails?.specialRequests || '',
+      internalNotes: '',
       salesperson: trip.createdBy?.firstName + ' ' + trip.createdBy?.lastName || '',
-      validityDays: 7,
+      validityDays: 30,
       markupPercent: trip.markupLandPercent,
       currency: trip.currency.code,
       flights: [], // Empty for now
       hotels: convertedHotels,
       days: convertedDays,
-      priceBreakdown,
+      priceBreakdown: {
+        pricePerAdult: 0,
+        pricePerChild: 0,
+        subtotal: 0,
+        taxes: 0,
+        markup: 0,
+        total: 0,
+        currency: trip.currency.code
+      }, // Will be calculated by calculatePriceBreakdown
       createdAt: trip.createdAt,
       updatedAt: trip.updatedAt,
       // Additional fields for better data display
@@ -160,11 +214,19 @@ export default function CreateProposalPage() {
       totalTravelers: trip.totalTravelers,
       durationDays: trip.durationDays,
       destinations: destinations.map(dest => ({
-        id: dest.id,
+        id: dest.destination.id,
         name: dest.destination.title,
         numberOfDays: dest.numberOfDays,
         order: dest.order
       }))
+    }
+
+    // Calculate the price breakdown using the new function
+    const priceBreakdown = calculatePriceBreakdown(initialProposal)
+    
+    return {
+      ...initialProposal,
+      priceBreakdown
     }
   }
 
@@ -300,7 +362,7 @@ export default function CreateProposalPage() {
         
         // Convert the data to the existing proposal format and update the proposal
         const convertedProposal = convertToProposalFormat(parsedData)
-        updateProposal(convertedProposal)
+        updateProposalWithPrices(convertedProposal)
         setHasLoadedData(true)
         setIsLoading(false) // Set loading to false when data is loaded
         
@@ -408,16 +470,18 @@ export default function CreateProposalPage() {
       // Update existing hotel
       const updatedHotels = [...proposal.hotels]
       updatedHotels[editingHotelIndex] = proposalHotel
-      updateProposal({
+      const updatedProposal = {
         ...proposal,
         hotels: updatedHotels
-      })
+      }
+      updateProposalWithPrices(updatedProposal)
     } else {
       // Add new hotel
-      updateProposal({
+      const updatedProposal = {
         ...proposal,
         hotels: [...proposal.hotels, proposalHotel]
-      })
+      }
+      updateProposalWithPrices(updatedProposal)
     }
 
     setIsHotelSelectOpen(false)
@@ -458,10 +522,12 @@ export default function CreateProposalPage() {
       refundable: room.refundable
     }
 
-    updateProposal({
+    // Update proposal with recalculated prices
+    const updatedProposal = {
       ...proposal,
       hotels: updatedHotels
-    })
+    }
+    updateProposalWithPrices(updatedProposal)
 
     // Close the modal
     handleCloseHotelDetails()
@@ -490,10 +556,11 @@ export default function CreateProposalPage() {
         ...updatedDays[editingDayIndex],
         activities: [...(updatedDays[editingDayIndex].activities || []), proposalActivity]
       }
-      updateProposal({
+      const updatedProposal = {
         ...proposal,
         days: updatedDays
-      })
+      }
+      updateProposalWithPrices(updatedProposal)
     } else {
       // Add to first day or create a new day
       if (proposal.days.length > 0) {
@@ -502,10 +569,11 @@ export default function CreateProposalPage() {
           ...updatedDays[0],
           activities: [...(updatedDays[0].activities || []), proposalActivity]
         }
-        updateProposal({
+        const updatedProposal = {
           ...proposal,
           days: updatedDays
-        })
+        }
+        updateProposalWithPrices(updatedProposal)
       } else {
         // Create a new day with the activity
         const newDay: Day = {
@@ -534,10 +602,11 @@ export default function CreateProposalPage() {
             date: new Date().toISOString()
           }
         }
-        updateProposal({
+        const updatedProposal = {
           ...proposal,
           days: [...proposal.days, newDay]
-        })
+        }
+        updateProposalWithPrices(updatedProposal)
       }
     }
 
@@ -767,10 +836,11 @@ export default function CreateProposalPage() {
                       onChangeHotel={() => handleChangeHotel(index)}
                       onRemove={() => {
                         if (!proposal) return
-                        updateProposal({
+                        const updatedProposal = {
                           ...proposal,
                           hotels: proposal.hotels.filter((h: Hotel) => h.id !== hotel.id)
-                        })
+                        }
+                        updateProposalWithPrices(updatedProposal)
                       }}
                     />
                   ))}
