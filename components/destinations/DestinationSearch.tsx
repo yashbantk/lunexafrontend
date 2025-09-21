@@ -36,6 +36,13 @@ export function DestinationSearch({
   
   const { destinations, loading, error, searchDestinations, clearResults } = useDestinationsSearch();
 
+  // Debug logging
+  useEffect(() => {
+    console.log('DestinationSearch - destinations changed:', destinations);
+    console.log('DestinationSearch - loading:', loading);
+    console.log('DestinationSearch - error:', error);
+  }, [destinations, loading, error]);
+
   // Update input value when external value changes
   useEffect(() => {
     setInputValue(value);

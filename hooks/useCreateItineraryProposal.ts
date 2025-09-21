@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { gqlRequest } from '@/lib/graphql/client'
+import { useMutation } from '@apollo/client/react'
 import { CREATE_ITINERARY_PROPOSAL } from '@/graphql/mutations/proposal'
 
 // Type definitions for the mutation response
@@ -172,47 +172,30 @@ export interface CreateItineraryProposalInput {
 }
 
 export function useCreateItineraryProposal() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [createItineraryProposalMutation, { loading: isLoading, error }] = useMutation(CREATE_ITINERARY_PROPOSAL as any, {
+    errorPolicy: 'all'
+  })
 
   const createItineraryProposal = async (input: CreateItineraryProposalInput): Promise<CreateItineraryProposalResponse | null> => {
-    setIsLoading(true)
-    setError(null)
-
     try {
       console.log('Creating itinerary proposal with input:', input)
       
-      const response = await gqlRequest<CreateItineraryProposalResponse>(
-        CREATE_ITINERARY_PROPOSAL,
-        { input }
-      )
+      const response = await createItineraryProposalMutation({
+        variables: { input }
+      })
 
-      console.log('Itinerary proposal created successfully:', response)
-      return response
+      console.log('Itinerary proposal created successfully:', response.data)
+      return response.data as CreateItineraryProposalResponse
 
     } catch (err: any) {
       console.error('Error creating itinerary proposal:', err)
-      
-      // Extract error message from GraphQL response
-      let errorMessage = 'Failed to create itinerary proposal'
-      
-      if (err?.response?.errors?.[0]?.message) {
-        errorMessage = err.response.errors[0].message
-      } else if (err?.message) {
-        errorMessage = err.message
-      }
-      
-      setError(errorMessage)
       return null
-
-    } finally {
-      setIsLoading(false)
     }
   }
 
   return {
     createItineraryProposal,
     isLoading,
-    error
+    error: error?.message || null
   }
 }

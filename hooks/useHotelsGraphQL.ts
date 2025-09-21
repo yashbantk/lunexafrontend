@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { gqlRequest } from '@/lib/graphql/client'
+import React, { useState, useCallback, useMemo } from 'react'
+import { useQuery } from '@apollo/client/react'
 import { HOTELS_QUERY, HotelFilters, HotelOrder, GraphQLHotel, HotelsResponse } from '@/graphql/queries/hotels'
 import { Hotel } from '@/types/hotel'
 
@@ -80,8 +80,6 @@ export const useHotelsGraphQL = ({
   initialOrder: customOrder
 }: UseHotelsGraphQLParams = {}): UseHotelsGraphQLReturn => {
   const [hotels, setHotels] = useState<Hotel[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [total, setTotal] = useState(0)
   const [filters, setFiltersState] = useState<HotelFilters>({
     ...initialFilters,
@@ -113,41 +111,37 @@ export const useHotelsGraphQL = ({
     return baseFilters
   }, [filters, cityId, currentHotelName])
 
-  // Fetch hotels
-  const fetchHotels = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
+  // Build filters based on current state
+  const queryFilters = useMemo(() => buildFilters(), [buildFilters])
 
-      const queryFilters = buildFilters()
-      
-      console.log('Fetching hotels with filters:', queryFilters)
-      console.log('Order:', order)
-      console.log('City ID:', cityId)
-      console.log('Current Hotel Name:', currentHotelName)
+  // Use Apollo Client's useQuery hook
+  const { data, loading, error, refetch } = useQuery(HOTELS_QUERY as any, {
+    variables: {
+      filters: queryFilters,
+      order: order
+    },
+    errorPolicy: 'all',
+    notifyOnNetworkStatusChange: true
+  })
 
-      const response = await gqlRequest<HotelsResponse>(HOTELS_QUERY, {
-        filters: queryFilters,
-        order: order
-      })
-
-      const convertedHotels = response.hotels.map(convertGraphQLHotel)
+  // Handle data when it changes
+  React.useEffect(() => {
+    if ((data as any)?.hotels) {
+      console.log('Hotels GraphQL response:', data)
+      const convertedHotels = (data as any).hotels.map(convertGraphQLHotel)
       setHotels(convertedHotels)
       setTotal(convertedHotels.length)
-    } catch (err) {
-      console.error('Error fetching hotels:', err)
-      setError(err instanceof Error ? err.message : 'Failed to fetch hotels')
+    }
+  }, [data])
+
+  // Handle errors when they change
+  React.useEffect(() => {
+    if (error) {
+      console.error('Error fetching hotels:', error)
       setHotels([])
       setTotal(0)
-    } finally {
-      setLoading(false)
     }
-  }, [buildFilters, order])
-
-  // Fetch hotels when filters or order change
-  useEffect(() => {
-    fetchHotels()
-  }, [fetchHotels])
+  }, [error])
 
   // Set filters function
   const setFilters = useCallback((newFilters: Partial<HotelFilters>) => {
@@ -164,21 +158,16 @@ export const useHotelsGraphQL = ({
     setFiltersState(initialFilters)
   }, [])
 
-  // Refetch function
-  const refetch = useCallback(() => {
-    fetchHotels()
-  }, [fetchHotels])
-
   return {
     hotels,
     loading,
-    error,
+    error: error?.message || null,
     total,
     filters,
     order,
     setFilters,
     setOrder,
-    refetch,
+    refetch: () => refetch(),
     resetFilters
   }
 }

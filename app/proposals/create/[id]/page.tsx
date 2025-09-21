@@ -355,6 +355,30 @@ export default function CreateProposalPage() {
     })
   }
 
+  // Convert proposal Hotel to HotelType for the modal
+  const convertProposalHotelToHotelType = (proposalHotel: Hotel): HotelType | undefined => {
+    if (!proposalHotel) return undefined
+    
+    return {
+      id: proposalHotel.id,
+      name: proposalHotel.name,
+      location: proposalHotel.address,
+      address: proposalHotel.address,
+      rating: proposalHotel.rating,
+      ratingsCount: 0, // Default value since proposal hotel doesn't have this
+      starRating: proposalHotel.starRating,
+      images: [proposalHotel.image],
+      badges: proposalHotel.refundable ? ['Refundable'] : [],
+      rooms: [], // Will be populated by the modal
+      amenities: [],
+      minPrice: proposalHotel.pricePerNight,
+      maxPrice: proposalHotel.pricePerNight,
+      refundable: proposalHotel.refundable,
+      preferred: false,
+      coordinates: { lat: 0, lng: 0 } // Default coordinates
+    }
+  }
+
   const handleHotelSelect = (hotel: HotelType, room: any) => {
     if (!proposal) return
 
@@ -915,13 +939,15 @@ export default function CreateProposalPage() {
           setEditingHotelIndex(null)
         }}
         onSelectHotel={handleHotelSelect}
-        currentHotel={editingHotelIndex !== null ? proposal?.hotels[editingHotelIndex] : undefined}
+        currentHotel={editingHotelIndex !== null && proposal?.hotels[editingHotelIndex] ? convertProposalHotelToHotelType(proposal.hotels[editingHotelIndex]) : undefined}
         stayId="stay-1"
         checkIn={proposal?.hotels[editingHotelIndex || 0]?.checkIn || new Date().toISOString()}
         checkOut={proposal?.hotels[editingHotelIndex || 0]?.checkOut || new Date().toISOString()}
         nights={proposal?.hotels[editingHotelIndex || 0]?.nights || 1}
         adults={proposal?.adults || 2}
         childrenCount={proposal?.children || 0}
+        cityId={proposal?.destinations?.[0]?.id || '2'}
+        cityName={proposal?.destinations?.[0]?.name || 'Miami'}
       />
 
       {/* Activity Explorer Modal */}

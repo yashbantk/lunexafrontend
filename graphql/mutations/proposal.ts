@@ -1,4 +1,4 @@
-import { gql } from 'graphql-request'
+import { gql } from '@apollo/client'
 
 export const CREATE_ITINERARY_PROPOSAL = gql`
   mutation CreateItineraryProposal($input: CreateItineraryProposalInput!) {

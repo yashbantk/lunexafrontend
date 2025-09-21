@@ -1,4 +1,4 @@
-import { gql } from 'graphql-request'
+import { gql } from '@apollo/client'
 
 export const HOTELS_QUERY = gql`
   query Hotels($order: HotelOrder, $filters: HotelFilter) {

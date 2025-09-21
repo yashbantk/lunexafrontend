@@ -1,4 +1,4 @@
-import { gql } from 'graphql-request';
+import { gql } from '@apollo/client';
 
 export const CITIES_QUERY = gql`
   query Cities($filters: CityFilter) {

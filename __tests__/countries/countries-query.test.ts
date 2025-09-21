@@ -1,10 +1,10 @@
-import { gqlRequest } from '@/lib/graphql/client';
+import { apolloClient } from '@/lib/graphql/client';
 import { COUNTRIES_QUERY, COUNTRIES_SIMPLE_QUERY } from '@/graphql/queries/countries';
 import { CountriesVariables, CountriesResponse, CountriesSimpleResponse } from '@/types/graphql';
 
-// Mock the GraphQL client
+// Mock the Apollo Client
 jest.mock('@/lib/graphql/client');
-const mockGqlRequest = gqlRequest as jest.MockedFunction<typeof gqlRequest>;
+const mockApolloClient = apolloClient as jest.Mocked<typeof apolloClient>;
 
 describe('Countries GraphQL Queries', () => {
   beforeEach(() => {
@@ -49,19 +49,25 @@ describe('Countries GraphQL Queries', () => {
         }
       };
 
-      mockGqlRequest.mockResolvedValueOnce(mockResponse);
+      mockApolloClient.query.mockResolvedValueOnce({ data: mockResponse } as any);
 
       const variables: CountriesVariables = {
         pagination: { limit: 20, offset: 0 },
         sort: { field: 'name', direction: 'ASC' }
       };
 
-      const result = await gqlRequest<CountriesResponse>(COUNTRIES_QUERY, variables);
+      const result = await apolloClient.query({
+        query: COUNTRIES_QUERY as any,
+        variables
+      });
 
-      expect(mockGqlRequest).toHaveBeenCalledWith(COUNTRIES_QUERY, variables);
-      expect(result.countries.data).toHaveLength(2);
-      expect(result.countries.pagination.total).toBe(195);
-      expect(result.countries.pagination.hasNextPage).toBe(true);
+      expect(mockApolloClient.query).toHaveBeenCalledWith({
+        query: COUNTRIES_QUERY,
+        variables
+      });
+      expect(result.data.countries.data).toHaveLength(2);
+      expect(result.data.countries.pagination.total).toBe(195);
+      expect(result.data.countries.pagination.hasNextPage).toBe(true);
     });
 
     it('should filter countries by name', async () => {
@@ -91,16 +97,22 @@ describe('Countries GraphQL Queries', () => {
         }
       };
 
-      mockGqlRequest.mockResolvedValueOnce(mockResponse);
+      mockApolloClient.query.mockResolvedValueOnce({ data: mockResponse } as any);
 
       const variables: CountriesVariables = {
         filters: { name: 'united' }
       };
 
-      const result = await gqlRequest<CountriesResponse>(COUNTRIES_QUERY, variables);
+      const result = await apolloClient.query({
+        query: COUNTRIES_QUERY as any,
+        variables
+      });
 
-      expect(mockGqlRequest).toHaveBeenCalledWith(COUNTRIES_QUERY, variables);
-      expect(result.countries.data[0].name).toBe('United States');
+      expect(mockApolloClient.query).toHaveBeenCalledWith({
+        query: COUNTRIES_QUERY,
+        variables
+      });
+      expect(result.data.countries.data[0].name).toBe('United States');
     });
 
     it('should filter countries by ISO2 code', async () => {
@@ -130,16 +142,22 @@ describe('Countries GraphQL Queries', () => {
         }
       };
 
-      mockGqlRequest.mockResolvedValueOnce(mockResponse);
+      mockApolloClient.query.mockResolvedValueOnce({ data: mockResponse } as any);
 
       const variables: CountriesVariables = {
         filters: { iso2: 'US' }
       };
 
-      const result = await gqlRequest<CountriesResponse>(COUNTRIES_QUERY, variables);
+      const result = await apolloClient.query({
+        query: COUNTRIES_QUERY as any,
+        variables
+      });
 
-      expect(mockGqlRequest).toHaveBeenCalledWith(COUNTRIES_QUERY, variables);
-      expect(result.countries.data[0].iso2).toBe('US');
+      expect(mockApolloClient.query).toHaveBeenCalledWith({
+        query: COUNTRIES_QUERY,
+        variables
+      });
+      expect(result.data.countries.data[0].iso2).toBe('US');
     });
 
     it('should filter countries by continent codes', async () => {
@@ -179,17 +197,23 @@ describe('Countries GraphQL Queries', () => {
         }
       };
 
-      mockGqlRequest.mockResolvedValueOnce(mockResponse);
+      mockApolloClient.query.mockResolvedValueOnce({ data: mockResponse } as any);
 
       const variables: CountriesVariables = {
         filters: { continentCode: ['EU'] }
       };
 
-      const result = await gqlRequest<CountriesResponse>(COUNTRIES_QUERY, variables);
+      const result = await apolloClient.query({
+        query: COUNTRIES_QUERY as any,
+        variables
+      });
 
-      expect(mockGqlRequest).toHaveBeenCalledWith(COUNTRIES_QUERY, variables);
-      expect(result.countries.data).toHaveLength(2);
-      expect(result.countries.data.every(country => country.continentCode === 'EU')).toBe(true);
+      expect(mockApolloClient.query).toHaveBeenCalledWith({
+        query: COUNTRIES_QUERY,
+        variables
+      });
+      expect(result.data.countries.data).toHaveLength(2);
+      expect(result.data.countries.data.every(country => country.continentCode === 'EU')).toBe(true);
     });
 
     it('should filter countries by currency code', async () => {
@@ -219,16 +243,22 @@ describe('Countries GraphQL Queries', () => {
         }
       };
 
-      mockGqlRequest.mockResolvedValueOnce(mockResponse);
+      mockApolloClient.query.mockResolvedValueOnce({ data: mockResponse } as any);
 
       const variables: CountriesVariables = {
         filters: { currencyCode: 'EUR' }
       };
 
-      const result = await gqlRequest<CountriesResponse>(COUNTRIES_QUERY, variables);
+      const result = await apolloClient.query({
+        query: COUNTRIES_QUERY as any,
+        variables
+      });
 
-      expect(mockGqlRequest).toHaveBeenCalledWith(COUNTRIES_QUERY, variables);
-      expect(result.countries.data[0].currencyCode).toBe('EUR');
+      expect(mockApolloClient.query).toHaveBeenCalledWith({
+        query: COUNTRIES_QUERY,
+        variables
+      });
+      expect(result.data.countries.data[0].currencyCode).toBe('EUR');
     });
 
     it('should handle combined filters', async () => {
@@ -258,7 +288,7 @@ describe('Countries GraphQL Queries', () => {
         }
       };
 
-      mockGqlRequest.mockResolvedValueOnce(mockResponse);
+      mockApolloClient.query.mockResolvedValueOnce({ data: mockResponse } as any);
 
       const variables: CountriesVariables = {
         filters: { 
@@ -267,11 +297,17 @@ describe('Countries GraphQL Queries', () => {
         }
       };
 
-      const result = await gqlRequest<CountriesResponse>(COUNTRIES_QUERY, variables);
+      const result = await apolloClient.query({
+        query: COUNTRIES_QUERY as any,
+        variables
+      });
 
-      expect(mockGqlRequest).toHaveBeenCalledWith(COUNTRIES_QUERY, variables);
-      expect(result.countries.data[0].continentCode).toBe('EU');
-      expect(result.countries.data[0].currencyCode).toBe('EUR');
+      expect(mockApolloClient.query).toHaveBeenCalledWith({
+        query: COUNTRIES_QUERY,
+        variables
+      });
+      expect(result.data.countries.data[0].continentCode).toBe('EU');
+      expect(result.data.countries.data[0].currencyCode).toBe('EUR');
     });
 
     it('should handle pagination', async () => {
@@ -290,18 +326,24 @@ describe('Countries GraphQL Queries', () => {
         }
       };
 
-      mockGqlRequest.mockResolvedValueOnce(mockResponse);
+      mockApolloClient.query.mockResolvedValueOnce({ data: mockResponse } as any);
 
       const variables: CountriesVariables = {
         pagination: { limit: 10, offset: 20 }
       };
 
-      const result = await gqlRequest<CountriesResponse>(COUNTRIES_QUERY, variables);
+      const result = await apolloClient.query({
+        query: COUNTRIES_QUERY as any,
+        variables
+      });
 
-      expect(mockGqlRequest).toHaveBeenCalledWith(COUNTRIES_QUERY, variables);
-      expect(result.countries.pagination.offset).toBe(20);
-      expect(result.countries.pagination.limit).toBe(10);
-      expect(result.countries.pagination.currentPage).toBe(3);
+      expect(mockApolloClient.query).toHaveBeenCalledWith({
+        query: COUNTRIES_QUERY,
+        variables
+      });
+      expect(result.data.countries.pagination.offset).toBe(20);
+      expect(result.data.countries.pagination.limit).toBe(10);
+      expect(result.data.countries.pagination.currentPage).toBe(3);
     });
 
     it('should handle sorting', async () => {
@@ -341,17 +383,23 @@ describe('Countries GraphQL Queries', () => {
         }
       };
 
-      mockGqlRequest.mockResolvedValueOnce(mockResponse);
+      mockApolloClient.query.mockResolvedValueOnce({ data: mockResponse } as any);
 
       const variables: CountriesVariables = {
         sort: { field: 'name', direction: 'ASC' }
       };
 
-      const result = await gqlRequest<CountriesResponse>(COUNTRIES_QUERY, variables);
+      const result = await apolloClient.query({
+        query: COUNTRIES_QUERY as any,
+        variables
+      });
 
-      expect(mockGqlRequest).toHaveBeenCalledWith(COUNTRIES_QUERY, variables);
-      expect(result.countries.data[0].name).toBe('Canada');
-      expect(result.countries.data[1].name).toBe('United States');
+      expect(mockApolloClient.query).toHaveBeenCalledWith({
+        query: COUNTRIES_QUERY,
+        variables
+      });
+      expect(result.data.countries.data[0].name).toBe('Canada');
+      expect(result.data.countries.data[1].name).toBe('United States');
     });
   });
 
@@ -372,20 +420,29 @@ describe('Countries GraphQL Queries', () => {
         ]
       };
 
-      mockGqlRequest.mockResolvedValueOnce(mockResponse);
+      mockApolloClient.query.mockResolvedValueOnce({ data: mockResponse } as any);
 
-      const result = await gqlRequest<CountriesSimpleResponse>(COUNTRIES_SIMPLE_QUERY, {});
+      const result = await apolloClient.query({
+        query: COUNTRIES_SIMPLE_QUERY as any,
+        variables: {}
+      });
 
-      expect(mockGqlRequest).toHaveBeenCalledWith(COUNTRIES_SIMPLE_QUERY, {});
-      expect(result.countries).toHaveLength(1);
-      expect(result.countries[0].name).toBe('United States');
+      expect(mockApolloClient.query).toHaveBeenCalledWith({
+        query: COUNTRIES_SIMPLE_QUERY,
+        variables: {}
+      });
+      expect(result.data.countries).toHaveLength(1);
+      expect(result.data.countries[0].name).toBe('United States');
     });
 
     it('should handle errors gracefully', async () => {
       const error = new Error('GraphQL error');
-      mockGqlRequest.mockRejectedValueOnce(error);
+      mockApolloClient.query.mockRejectedValueOnce(error);
 
-      await expect(gqlRequest<CountriesResponse>(COUNTRIES_QUERY, {})).rejects.toThrow('GraphQL error');
+      await expect(apolloClient.query({
+        query: COUNTRIES_QUERY as any,
+        variables: {}
+      })).rejects.toThrow('GraphQL error');
     });
   });
 });

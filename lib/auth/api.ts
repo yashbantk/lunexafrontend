@@ -1,6 +1,6 @@
 // Secure API client for authentication operations
 
-import { gqlRequest } from '@/lib/graphql/client';
+import { apolloClient } from '@/lib/graphql/client';
 import { LOGIN_MUTATION, SIGNUP_MUTATION } from '@/graphql/mutations/user';
 import { authConfig, AUTH_ERROR_CODES } from './config';
 import type { 
@@ -154,7 +154,10 @@ export class AuthAPI {
 
       // Execute GraphQL mutation with timeout
       const response = await Promise.race([
-        gqlRequest<LoginResponse>(LOGIN_MUTATION, variables),
+        apolloClient.mutate({
+          mutation: LOGIN_MUTATION as any,
+          variables
+        }).then(result => result.data as LoginResponse),
         new Promise((_, reject) => 
           setTimeout(() => reject(new Error('TIMEOUT')), this.timeout)
         )
@@ -221,7 +224,10 @@ export class AuthAPI {
 
       // Execute GraphQL mutation with timeout
       const response = await Promise.race([
-        gqlRequest<SignupResponse>(SIGNUP_MUTATION, variables),
+        apolloClient.mutate({
+          mutation: SIGNUP_MUTATION as any,
+          variables
+        }).then(result => result.data as SignupResponse),
         new Promise((_, reject) => 
           setTimeout(() => reject(new Error('TIMEOUT')), this.timeout)
         )

@@ -21,7 +21,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { RoomSelectorProps } from '@/types/hotel'
-import { getRoomPrices } from '@/lib/api/hotels'
+import { useHotelDetails } from '@/hooks/useHotelDetails'
 
 const amenityIcons: Record<string, any> = {
   'WiFi': Wifi,
@@ -42,44 +42,40 @@ export default function RoomSelector({
   adults,
   childrenCount
 }: RoomSelectorProps) {
-  const [rooms, setRooms] = useState<any[]>([])
   const [selectedRoomId, setSelectedRoomId] = useState<string>('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
-  const loadRoomPrices = useCallback(async () => {
-    if (!hotel) return
+  // Use the GraphQL hotel details hook to get room data
+  const { hotel: hotelDetails, loading, error } = useHotelDetails({
+    hotelId: hotel?.id || '',
+    checkIn,
+    checkOut,
+    adults,
+    children: childrenCount
+  })
 
-    setLoading(true)
-    setError(null)
-    
-    try {
-      const roomPrices = await getRoomPrices(hotel.id, checkIn, checkOut, adults, childrenCount)
-      setRooms(roomPrices)
-      
-      // Pre-select the first room if available
-      if (roomPrices.length > 0) {
-        setSelectedRoomId(roomPrices[0].id)
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load room prices')
-    } finally {
-      setLoading(false)
-    }
-  }, [hotel, checkIn, checkOut, adults, childrenCount])
+  // Get rooms from the hotel details
+  const rooms = hotelDetails?.rooms || []
 
+  // Pre-select the first room when rooms are loaded
   useEffect(() => {
-    if (isOpen && hotel) {
-      loadRoomPrices()
+    if (rooms.length > 0 && !selectedRoomId) {
+      setSelectedRoomId(rooms[0].id)
     }
-  }, [isOpen, hotel, loadRoomPrices])
+  }, [rooms, selectedRoomId])
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-IN', {
+  // Reset selected room when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedRoomId('')
+    }
+  }, [isOpen])
+
+  const formatPrice = (price: number, currency: string = 'USD') => {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(price)
   }
 
@@ -148,8 +144,8 @@ export default function RoomSelector({
               <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Error loading rooms</h3>
               <p className="text-gray-600 mb-4">{error}</p>
-              <Button onClick={loadRoomPrices} variant="outline">
-                Try Again
+              <Button onClick={onClose} variant="outline">
+                Close
               </Button>
             </div>
           ) : rooms.length === 0 ? (
@@ -206,10 +202,10 @@ export default function RoomSelector({
                               
                               <div className="text-right">
                                 <div className="text-2xl font-bold text-primary">
-                                  {formatPrice(room.totalPrice)}
+                                  {formatPrice(room.totalPrice, room.currency)}
                                 </div>
                                 <div className="text-sm text-gray-500">
-                                  {formatPrice(room.pricePerNight)} per night
+                                  {formatPrice(room.pricePerNight, room.currency)} per night
                                 </div>
                               </div>
                             </div>
@@ -261,7 +257,7 @@ export default function RoomSelector({
                   <span className="font-medium">Selected: </span>
                   <span>{selectedRoom.name}</span>
                   <span className="ml-2 font-bold text-primary">
-                    {formatPrice(selectedRoom.totalPrice)}
+                    {formatPrice(selectedRoom.totalPrice, selectedRoom.currency)}
                   </span>
                 </div>
               )}

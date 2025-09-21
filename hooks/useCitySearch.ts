@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { gqlRequest } from '@/lib/graphql/client';
+import { useLazyQuery } from '@apollo/client/react';
 import { CITIES_QUERY } from '@/graphql/queries/cities';
 import { City, CityFilter, CitiesResponse } from '@/types/graphql';
 
@@ -31,38 +31,43 @@ function debounce<T extends (...args: any[]) => any>(
 
 export function useCitySearch(): UseCitySearchReturn {
   const [cities, setCities] = useState<City[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  
+  const [fetchCities, { data, loading, error }] = useLazyQuery(CITIES_QUERY as any, {
+    errorPolicy: 'all'
+  });
 
-  const fetchCities = useCallback(async (searchQuery: string) => {
-    if (!searchQuery.trim()) {
-      setCities([]);
-      setError(null);
-      return;
+  // Handle data when it changes
+  useEffect(() => {
+    if (data?.cities) {
+      console.log('Cities search response:', data);
+      setCities(data.cities);
     }
+  }, [data]);
 
-    try {
-      setLoading(true);
-      setError(null);
+  // Handle errors when they change
+  useEffect(() => {
+    if (error) {
+      console.error('City search error:', error);
+      setCities([]);
+    }
+  }, [error]);
+
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    debounce((searchQuery: string) => {
+      if (!searchQuery.trim()) {
+        setCities([]);
+        return;
+      }
 
       const filters: CityFilter = {
         searchCities: searchQuery.trim()
       };
 
-      const response = await gqlRequest<CitiesResponse>(CITIES_QUERY, { filters });
-      setCities(response.cities || []);
-    } catch (err) {
-      console.error('City search error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to search cities');
-      setCities([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Debounced search function
-  const debouncedSearch = useCallback(
-    debounce(fetchCities, 300),
+      fetchCities({
+        variables: { filters }
+      });
+    }, 300),
     [fetchCities]
   );
 
@@ -72,13 +77,12 @@ export function useCitySearch(): UseCitySearchReturn {
 
   const clearResults = useCallback(() => {
     setCities([]);
-    setError(null);
   }, []);
 
   return {
     cities,
     loading,
-    error,
+    error: error?.message || null,
     searchCities,
     clearResults
   };

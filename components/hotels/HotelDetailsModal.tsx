@@ -89,12 +89,12 @@ export default function HotelDetailsModal({
     setShowPriceConfirmation(false)
   }
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-IN', {
+  const formatPrice = (price: number, currency: string = 'USD') => {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(price)
   }
 
@@ -286,7 +286,7 @@ export default function HotelDetailsModal({
                     <div>
                       <h3 className="font-medium text-gray-900">{selectedRoom.name}</h3>
                       <p className="text-sm text-gray-600">
-                        {formatPrice(selectedRoom.totalPrice)} for {nights} night{nights !== 1 ? 's' : ''}
+                        {formatPrice(selectedRoom.totalPrice, hotel?.rooms[0]?.currency || 'USD')} for {nights} night{nights !== 1 ? 's' : ''}
                       </p>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -356,7 +356,7 @@ export default function HotelDetailsModal({
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">New Total:</span>
                     <span className="font-semibold text-gray-900">
-                      {formatPrice(selectedRoom.totalPrice)}
+                      {formatPrice(selectedRoom.totalPrice, hotel?.rooms[0]?.currency || 'USD')}
                     </span>
                   </div>
                 </div>

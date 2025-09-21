@@ -40,6 +40,7 @@ export interface Room {
   roomSize: string
   amenities: string[]
   images: string[]
+  currency?: string
 }
 
 export interface HotelSearchParams {
@@ -87,6 +88,8 @@ export interface HotelSelectModalProps {
   nights: number
   adults: number
   childrenCount: number
+  cityId?: string
+  cityName?: string
 }
 
 export interface RoomSelectorProps {

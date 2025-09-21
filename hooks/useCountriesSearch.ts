@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { gqlRequest } from '@/lib/graphql/client';
+import { useLazyQuery } from '@apollo/client/react';
 import { COUNTRIES_QUERY, COUNTRIES_SIMPLE_QUERY } from '@/graphql/queries/countries';
 import { 
   Country, 
@@ -51,57 +51,74 @@ function debounce<T extends (...args: any[]) => any>(
 
 export function useCountriesSearch(): UseCountriesSearchReturn {
   const [countries, setCountries] = useState<Country[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState<UseCountriesSearchReturn['pagination']>(null);
   const [currentFilters, setCurrentFilters] = useState<CountryFilter>({});
   const [currentPagination, setCurrentPagination] = useState<PaginationInput>({ limit: 20, offset: 0 });
   const [currentSort, setCurrentSort] = useState<SortInput>({ field: 'name', direction: 'ASC' });
 
-  const fetchCountries = useCallback(async (
+  const [fetchCountries, { data, loading, error }] = useLazyQuery(COUNTRIES_QUERY as any, {
+    errorPolicy: 'all'
+  });
+
+  // Handle data when it changes
+  useEffect(() => {
+    if (data?.countries) {
+      console.log('Countries search response:', data);
+      setCountries(data.countries.data || []);
+      setPagination(data.countries.pagination || null);
+    }
+  }, [data]);
+
+  // Handle errors when they change
+  useEffect(() => {
+    if (error) {
+      console.error('Countries search error:', error);
+      setCountries([]);
+      setPagination(null);
+    }
+  }, [error]);
+
+  const searchCountries = useCallback(async (
     filters: CountryFilter, 
     paginationInput?: PaginationInput, 
     sort?: SortInput
   ) => {
-    try {
-      setLoading(true);
-      setError(null);
+    const variables: CountriesVariables = {
+      filters,
+      pagination: paginationInput || currentPagination,
+      sort: sort || currentSort
+    };
 
+    setCurrentFilters(filters);
+    setCurrentPagination(paginationInput || currentPagination);
+    setCurrentSort(sort || currentSort);
+
+    await fetchCountries({
+      variables
+    });
+  }, [fetchCountries, currentPagination, currentSort]);
+
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    debounce((filters: CountryFilter, paginationInput?: PaginationInput, sort?: SortInput) => {
       const variables: CountriesVariables = {
         filters,
         pagination: paginationInput || currentPagination,
         sort: sort || currentSort
       };
 
-      const response = await gqlRequest<CountriesResponse>(COUNTRIES_QUERY, variables);
-      
-      if (response.countries) {
-        setCountries(response.countries.data || []);
-        setPagination(response.countries.pagination || null);
-        setCurrentFilters(filters);
-        setCurrentPagination(paginationInput || currentPagination);
-        setCurrentSort(sort || currentSort);
-      } else {
-        setCountries([]);
-        setPagination(null);
-      }
-    } catch (err) {
-      console.error('Countries search error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to search countries');
-      setCountries([]);
-      setPagination(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentPagination, currentSort]);
+      setCurrentFilters(filters);
+      setCurrentPagination(paginationInput || currentPagination);
+      setCurrentSort(sort || currentSort);
 
-  // Debounced search function
-  const debouncedSearch = useCallback(
-    debounce(fetchCountries, 300),
-    [fetchCountries]
+      fetchCountries({
+        variables
+      });
+    }, 300),
+    [fetchCountries, currentPagination, currentSort]
   );
 
-  const searchCountries = useCallback((
+  const searchCountriesDebounced = useCallback((
     filters: CountryFilter, 
     paginationInput?: PaginationInput, 
     sort?: SortInput
@@ -115,8 +132,8 @@ export function useCountriesSearch(): UseCountriesSearchReturn {
     const nextOffset = currentPagination.offset + (currentPagination.limit || 20);
     const nextPagination = { ...currentPagination, offset: nextOffset };
     
-    fetchCountries(currentFilters, nextPagination, currentSort);
-  }, [pagination, loading, currentPagination, currentFilters, currentSort, fetchCountries]);
+    searchCountries(currentFilters, nextPagination, currentSort);
+  }, [pagination, loading, currentPagination, currentFilters, currentSort, searchCountries]);
 
   const fetchPreviousPage = useCallback(() => {
     if (!pagination?.hasPreviousPage || loading) return;
@@ -124,8 +141,8 @@ export function useCountriesSearch(): UseCountriesSearchReturn {
     const prevOffset = Math.max(0, currentPagination.offset - (currentPagination.limit || 20));
     const prevPagination = { ...currentPagination, offset: prevOffset };
     
-    fetchCountries(currentFilters, prevPagination, currentSort);
-  }, [pagination, loading, currentPagination, currentFilters, currentSort, fetchCountries]);
+    searchCountries(currentFilters, prevPagination, currentSort);
+  }, [pagination, loading, currentPagination, currentFilters, currentSort, searchCountries]);
 
   const setPage = useCallback((page: number) => {
     if (loading || !pagination) return;
@@ -133,12 +150,11 @@ export function useCountriesSearch(): UseCountriesSearchReturn {
     const offset = (page - 1) * (currentPagination.limit || 20);
     const newPagination = { ...currentPagination, offset };
     
-    fetchCountries(currentFilters, newPagination, currentSort);
-  }, [loading, pagination, currentPagination, currentFilters, currentSort, fetchCountries]);
+    searchCountries(currentFilters, newPagination, currentSort);
+  }, [loading, pagination, currentPagination, currentFilters, currentSort, searchCountries]);
 
   const clearResults = useCallback(() => {
     setCountries([]);
-    setError(null);
     setPagination(null);
     setCurrentFilters({});
     setCurrentPagination({ limit: 20, offset: 0 });
@@ -148,9 +164,9 @@ export function useCountriesSearch(): UseCountriesSearchReturn {
   return {
     countries,
     loading,
-    error,
+    error: error?.message || null,
     pagination,
-    searchCountries,
+    searchCountries: searchCountriesDebounced,
     fetchNextPage,
     fetchPreviousPage,
     clearResults,
@@ -167,34 +183,41 @@ export function useCountriesSimple(): {
   clearResults: () => void;
 } {
   const [countries, setCountries] = useState<Country[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  
+  const [fetchCountriesQuery, { data, loading, error }] = useLazyQuery(COUNTRIES_SIMPLE_QUERY as any, {
+    errorPolicy: 'all'
+  });
+
+  // Handle data when it changes
+  useEffect(() => {
+    if (data?.countries) {
+      console.log('Countries simple response:', data);
+      setCountries(data.countries);
+    }
+  }, [data]);
+
+  // Handle errors when they change
+  useEffect(() => {
+    if (error) {
+      console.error('Countries fetch error:', error);
+      setCountries([]);
+    }
+  }, [error]);
 
   const fetchCountries = useCallback(async (filters?: CountryFilter) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await gqlRequest<CountriesSimpleResponse>(COUNTRIES_SIMPLE_QUERY, { filters });
-      setCountries(response.countries || []);
-    } catch (err) {
-      console.error('Countries fetch error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch countries');
-      setCountries([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    await fetchCountriesQuery({
+      variables: { filters: filters || {} }
+    });
+  }, [fetchCountriesQuery]);
 
   const clearResults = useCallback(() => {
     setCountries([]);
-    setError(null);
   }, []);
 
   return {
     countries,
     loading,
-    error,
+    error: error?.message || null,
     fetchCountries,
     clearResults
   };

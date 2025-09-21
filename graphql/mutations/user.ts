@@ -1,6 +1,8 @@
 // GraphQL mutations for user operations
 
-export const SIGNUP_MUTATION = `
+import { gql } from '@apollo/client';
+
+export const SIGNUP_MUTATION = gql`
   mutation MyMutation($firstName: String = "", $email: String = "", $lastName: String = "", $password: String = "") {
     register(
       input: {email: $email, password: $password, lastName: $lastName, firstName: $firstName}
@@ -18,7 +20,7 @@ export const SIGNUP_MUTATION = `
   }
 `;
 
-export const LOGIN_MUTATION = `
+export const LOGIN_MUTATION = gql`
   mutation MyMutation($email: String = "", $password: String = "") {
     login(input: {email: $email, password: $password}) {
       tokens {

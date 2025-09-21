@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { gqlRequest } from '@/lib/graphql/client';
+import { useState, useCallback, useEffect } from 'react';
+import { useLazyQuery } from '@apollo/client/react';
 import { DESTINATIONS_QUERY } from '@/graphql/queries/destinations';
 import { Destination, DestinationFilter, DestinationsResponse } from '@/types/graphql';
 
@@ -31,38 +31,47 @@ function debounce<T extends (...args: any[]) => any>(
 
 export function useDestinationsSearch(): UseDestinationsSearchReturn {
   const [destinations, setDestinations] = useState<Destination[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  
+  const [fetchDestinations, { data, loading, error }] = useLazyQuery(DESTINATIONS_QUERY as any, {
+    errorPolicy: 'all'
+  });
 
-  const fetchDestinations = useCallback(async (searchQuery: string) => {
-    if (!searchQuery.trim()) {
-      setDestinations([]);
-      setError(null);
-      return;
+  // Handle data when it changes
+  useEffect(() => {
+    console.log('useDestinationsSearch - data changed:', data);
+    if (data?.destinations) {
+      console.log('Destinations search response:', data);
+      console.log('Setting destinations:', data.destinations);
+      setDestinations(data.destinations);
+    } else {
+      console.log('No destinations in data or data is null');
     }
+  }, [data]);
 
-    try {
-      setLoading(true);
-      setError(null);
+  // Handle errors when they change
+  useEffect(() => {
+    if (error) {
+      console.error('Destinations search error:', error);
+      setDestinations([]);
+    }
+  }, [error]);
+
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    debounce((searchQuery: string) => {
+      if (!searchQuery.trim()) {
+        setDestinations([]);
+        return;
+      }
 
       const filters: DestinationFilter = {
         searchDestinations: searchQuery.trim()
       };
 
-      const response = await gqlRequest<DestinationsResponse>(DESTINATIONS_QUERY, { filters });
-      setDestinations(response.destinations || []);
-    } catch (err) {
-      console.error('Destinations search error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to search destinations');
-      setDestinations([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Debounced search function
-  const debouncedSearch = useCallback(
-    debounce(fetchDestinations, 300),
+      fetchDestinations({
+        variables: { filters }
+      });
+    }, 300),
     [fetchDestinations]
   );
 
@@ -72,13 +81,12 @@ export function useDestinationsSearch(): UseDestinationsSearchReturn {
 
   const clearResults = useCallback(() => {
     setDestinations([]);
-    setError(null);
   }, []);
 
   return {
     destinations,
     loading,
-    error,
+    error: error?.message || null,
     searchDestinations,
     clearResults
   };

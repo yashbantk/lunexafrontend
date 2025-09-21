@@ -28,7 +28,9 @@ export default function HotelSelectModal({
   checkOut,
   nights,
   adults,
-  childrenCount
+  childrenCount,
+  cityId,
+  cityName
 }: HotelSelectModalProps) {
   const [showMap, setShowMap] = useState(false)
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
@@ -43,8 +45,9 @@ export default function HotelSelectModal({
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('ASC')
   const [isSearching, setIsSearching] = useState(false)
 
-  // Extract city ID from current hotel or use a default
-  const cityId = currentHotel?.location?.cityId || '2' // Default to Miami city ID
+  // Extract city ID from props, current hotel, or use a default
+  const resolvedCityId = cityId || currentHotel?.location?.cityId || '2' // Default to Miami city ID
+  const resolvedCityName = cityName || currentHotel?.location || 'Miami'
   const currentHotelName = currentHotel?.name
 
   // Debug logging
@@ -71,7 +74,7 @@ export default function HotelSelectModal({
     refetch,
     resetFilters
   } = useHotelsGraphQL({
-    cityId,
+    cityId: resolvedCityId,
     currentHotelName
   })
 
@@ -178,7 +181,7 @@ export default function HotelSelectModal({
                 <div className="flex items-center space-x-4">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900">
-                      {currentHotelName ? 'Change Hotel' : 'Select Hotel'} - {nights} Nights
+                      {currentHotelName ? 'Change Hotel' : 'Select Hotel'} - {nights} Nights {resolvedCityName}
                     </h2>
                     <p className="text-sm text-gray-600 mt-1">
                       {formatDate(checkIn)} - {formatDate(checkOut)} • {adults} adults, {childrenCount} children

@@ -31,15 +31,19 @@ export function useAuthDebug() {
     try {
       console.log('🧪 Simulating API request to test token usage...');
       
-      // Import the gqlRequest function dynamically to avoid circular dependencies
-      const { gqlRequest } = await import('@/lib/graphql/client');
+      // Import the apolloClient dynamically to avoid circular dependencies
+      const { apolloClient } = await import('@/lib/graphql/client');
+      const { gql } = await import('@apollo/client');
       
       // Make a simple request to test token usage
-      const result = await gqlRequest(`
-        query TestAuth {
-          __typename
-        }
-      `);
+      const result = await apolloClient.query({
+        query: gql`
+          query TestAuth {
+            __typename
+          }
+        `,
+        fetchPolicy: 'no-cache'
+      });
       
       console.log('✅ API request successful:', result);
       return { success: true, result };
