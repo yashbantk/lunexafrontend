@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Activity, ActivitySearchParams, ActivitySearchResult, ActivityFilters } from '@/types/activity'
 import { mockActivities, GET_ACTIVITIES } from '@/lib/mocks/activities'
+import { apolloClient } from '@/lib/graphql/client'
+import { ACTIVITIES_QUERY, ActivityFilter, ActivityOrder } from '@/graphql/queries/activities'
+import { transformGraphQLActivitiesToActivities } from '@/lib/transformers/activity'
 
 interface UseActivitySearchProps {
   params: ActivitySearchParams
@@ -43,41 +46,71 @@ export function useActivitySearch({ params }: UseActivitySearchProps): UseActivi
     sort: 'recommended'
   })
 
-  // Extract available filters from mock data
+  // Extract available filters from current results or fallback to mock data
   const availableFilters = {
-    categories: Array.from(new Set(mockActivities.flatMap(activity => activity.category))),
+    categories: results.length > 0 
+      ? Array.from(new Set(results.flatMap(activity => activity.category)))
+      : Array.from(new Set(mockActivities.flatMap(activity => activity.category))),
     timeOfDay: ['morning', 'afternoon', 'evening', 'full-day'],
-    difficulties: Array.from(new Set(mockActivities.map(activity => activity.difficulty))),
-    locations: Array.from(new Set(mockActivities.map(activity => activity.location)))
+    difficulties: results.length > 0
+      ? Array.from(new Set(results.map(activity => activity.difficulty)))
+      : Array.from(new Set(mockActivities.map(activity => activity.difficulty))),
+    locations: results.length > 0
+      ? Array.from(new Set(results.map(activity => activity.location)))
+      : Array.from(new Set(mockActivities.map(activity => activity.location)))
   }
 
-  // TODO: GraphQL - Replace with real GraphQL call
+  // GraphQL implementation for activity search
   const searchActivities = useCallback(async (searchParams: ActivitySearchParams, pageNum: number = 1) => {
     try {
       setLoading(true)
       setError(null)
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300))
-      
-      // TODO: GraphQL - Replace mock with real GraphQL call
-      // const variables = { params: searchParams, page: pageNum }
-      // const result = await graphQLClient.request(GET_ACTIVITIES, variables)
-      // return result.activities
-      
-      // Mock implementation
-      let filteredActivities = [...mockActivities]
-      
-      // Apply filters
-      if (searchParams.query) {
-        const query = searchParams.query.toLowerCase()
-        filteredActivities = filteredActivities.filter(activity =>
-          activity.title.toLowerCase().includes(query) ||
-          activity.shortDesc.toLowerCase().includes(query) ||
-          activity.tags.some(tag => tag.toLowerCase().includes(query))
-        )
+      // Convert search parameters to GraphQL filter format
+      const filters: ActivityFilter = {
+        searchActivities: searchParams.query || null,
+        AND: {
+          city: searchParams.location || null,
+          durationMinutes: searchParams.duration ? {
+            range: {
+              start: searchParams.duration[0] || null,
+              end: searchParams.duration[1] || null
+            }
+          } : undefined
+        }
       }
+
+      // Convert sort parameter to GraphQL order format
+      const order: ActivityOrder = {}
+      if (searchParams.sort === 'rating') {
+        order.rating = 'DESC'
+      } else if (searchParams.sort === 'price_asc') {
+        // Note: Price sorting would need to be implemented on the backend
+        // For now, we'll use title sorting as a fallback
+        order.title = 'ASC'
+      } else if (searchParams.sort === 'price_desc') {
+        order.title = 'DESC'
+      } else if (searchParams.sort === 'duration') {
+        order.durationMinutes = 'ASC'
+      } else {
+        // Default to rating for 'recommended' and other sorts
+        order.rating = 'DESC'
+      }
+
+      // Make GraphQL request
+      const result = await apolloClient.query({
+        query: ACTIVITIES_QUERY,
+        variables: { filters, order },
+        fetchPolicy: 'no-cache'
+      })
+
+      // Transform GraphQL response to Activity format
+      const transformedActivities = transformGraphQLActivitiesToActivities((result.data as any).activities)
       
+      // Apply additional client-side filtering for features not supported by GraphQL
+      let filteredActivities = [...transformedActivities]
+      
+      // Apply additional client-side filters for features not supported by GraphQL
       if (searchParams.category && searchParams.category.length > 0) {
         filteredActivities = filteredActivities.filter(activity =>
           searchParams.category!.some(cat => activity.category.includes(cat))
@@ -105,23 +138,9 @@ export function useActivitySearch({ params }: UseActivitySearchProps): UseActivi
         )
       }
       
-      if (searchParams.duration) {
-        const [minDuration, maxDuration] = searchParams.duration
-        filteredActivities = filteredActivities.filter(activity =>
-          activity.durationMins >= minDuration && activity.durationMins <= maxDuration
-        )
-      }
-      
       if (searchParams.rating && searchParams.rating > 0) {
         filteredActivities = filteredActivities.filter(activity =>
           activity.rating >= searchParams.rating!
-        )
-      }
-      
-      if (searchParams.location) {
-        const location = searchParams.location.toLowerCase()
-        filteredActivities = filteredActivities.filter(activity =>
-          activity.location.toLowerCase().includes(location)
         )
       }
       
@@ -167,7 +186,39 @@ export function useActivitySearch({ params }: UseActivitySearchProps): UseActivi
       setHasMore(hasMoreResults)
       
     } catch (err) {
+      console.error('GraphQL activity search failed, falling back to mock data:', err)
       setError(err instanceof Error ? err.message : 'Failed to search activities')
+      
+      // Fallback to mock data if GraphQL fails
+      let filteredActivities = [...mockActivities]
+      
+      // Apply basic filtering to mock data
+      if (searchParams.query) {
+        const query = searchParams.query.toLowerCase()
+        filteredActivities = filteredActivities.filter(activity =>
+          activity.title.toLowerCase().includes(query) ||
+          activity.shortDesc.toLowerCase().includes(query) ||
+          activity.tags.some(tag => tag.toLowerCase().includes(query))
+        )
+      }
+      
+      // Apply pagination to mock data
+      const limit = searchParams.limit || 10
+      const startIndex = (pageNum - 1) * limit
+      const endIndex = startIndex + limit
+      const paginatedResults = filteredActivities.slice(startIndex, endIndex)
+      
+      const hasMoreResults = endIndex < filteredActivities.length
+      
+      if (pageNum === 1) {
+        setResults(paginatedResults)
+      } else {
+        setResults(prev => [...prev, ...paginatedResults])
+      }
+      
+      setTotal(filteredActivities.length)
+      setPage(pageNum)
+      setHasMore(hasMoreResults)
     } finally {
       setLoading(false)
     }

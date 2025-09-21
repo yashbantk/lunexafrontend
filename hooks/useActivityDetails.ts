@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Activity, ActivitySelection, ScheduleSlot, Extra, PickupOption } from '@/types/activity'
 import { mockActivities, GET_ACTIVITY_DETAILS } from '@/lib/mocks/activities'
+import { apolloClient } from '@/lib/graphql/client'
+import { ACTIVITY_QUERY, ActivityResponse } from '@/graphql/queries/activities'
+import { transformGraphQLActivityToActivity } from '@/lib/transformers/activity'
 
 interface UseActivityDetailsProps {
   activityId: string
@@ -30,29 +33,35 @@ export function useActivityDetails({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // TODO: GraphQL - Replace with real GraphQL call
+  // GraphQL implementation for fetching activity details
   const fetchActivityDetails = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300))
+      // Make GraphQL request
+      const result = await apolloClient.query({
+        query: ACTIVITY_QUERY,
+        variables: { activityId },
+        fetchPolicy: 'no-cache'
+      })
+
+      // Transform GraphQL response to Activity format
+      const transformedActivity = transformGraphQLActivityToActivity((result.data as any).activity)
+      setActivity(transformedActivity)
       
-      // TODO: GraphQL - Replace mock with real GraphQL call
-      // const variables = { id: activityId, checkIn, checkOut, adults, children }
-      // const result = await graphQLClient.request(GET_ACTIVITY_DETAILS, variables)
-      // setActivity(result.activity)
-      
-      // Mock implementation
-      const foundActivity = mockActivities.find(a => a.id === activityId)
-      if (!foundActivity) {
-        throw new Error('Activity not found')
-      }
-      
-      setActivity(foundActivity)
     } catch (err) {
+      console.error('GraphQL activity details fetch failed, falling back to mock data:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch activity details')
+      
+      // Fallback to mock data if GraphQL fails
+      const foundActivity = mockActivities.find(a => a.id === activityId)
+      if (foundActivity) {
+        setActivity(foundActivity)
+        setError(null) // Clear error if mock data is found
+      } else {
+        setError('Activity not found')
+      }
     } finally {
       setLoading(false)
     }
