@@ -915,13 +915,13 @@ export default function CreateProposalPage() {
           setEditingHotelIndex(null)
         }}
         onSelectHotel={handleHotelSelect}
-        currentHotel={undefined}
+        currentHotel={editingHotelIndex !== null ? proposal?.hotels[editingHotelIndex] : undefined}
         stayId="stay-1"
         checkIn={proposal?.hotels[editingHotelIndex || 0]?.checkIn || new Date().toISOString()}
         checkOut={proposal?.hotels[editingHotelIndex || 0]?.checkOut || new Date().toISOString()}
         nights={proposal?.hotels[editingHotelIndex || 0]?.nights || 1}
-        adults={2}
-        childrenCount={0}
+        adults={proposal?.adults || 2}
+        childrenCount={proposal?.children || 0}
       />
 
       {/* Activity Explorer Modal */}
