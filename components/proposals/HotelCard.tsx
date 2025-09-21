@@ -12,9 +12,11 @@ interface HotelCardProps {
   hotel: Hotel
   onEdit: () => void
   onRemove: () => void
+  onChangeRoom?: () => void
+  onChangeHotel?: () => void
 }
 
-export function HotelCard({ hotel, onEdit, onRemove }: HotelCardProps) {
+export function HotelCard({ hotel, onEdit, onRemove, onChangeRoom, onChangeHotel }: HotelCardProps) {
   const formatPrice = (price: number, currency: string = 'USD') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -155,14 +157,14 @@ export function HotelCard({ hotel, onEdit, onRemove }: HotelCardProps) {
             <div className="flex flex-col space-y-3 min-w-[140px]">
               <Button
                 variant="outline"
-                onClick={onEdit}
+                onClick={onChangeRoom || onEdit}
                 className="text-sm px-4 py-2 h-10 border-primary text-primary hover:bg-primary hover:text-white transition-colors font-medium"
               >
                 Change Room
               </Button>
               <Button
                 variant="outline"
-                onClick={onEdit}
+                onClick={onChangeHotel || onEdit}
                 className="text-sm px-4 py-2 h-10 border-primary text-primary hover:bg-primary hover:text-white transition-colors font-medium"
               >
                 Change Hotel

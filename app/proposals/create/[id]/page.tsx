@@ -11,6 +11,7 @@ import { DayAccordion } from "@/components/proposals/DayAccordion"
 import { PriceSummary } from "@/components/proposals/PriceSummary"
 import { AddEditModal } from "@/components/proposals/AddEditModal"
 import HotelSelectModal from "@/components/hotels/HotelSelectModal"
+import HotelDetailsModal from "@/components/hotels/HotelDetailsModal"
 import ActivityExplorerModal from "@/components/activities/ActivityExplorerModal"
 import { Proposal, Day, Flight, Hotel, Activity, PriceBreakdown } from "@/types/proposal"
 import { Hotel as HotelType } from "@/types/hotel"
@@ -32,6 +33,8 @@ export default function CreateProposalPage() {
   const [editingItem, setEditingItem] = useState<any>(null)
   const [isHotelSelectOpen, setIsHotelSelectOpen] = useState(false)
   const [editingHotelIndex, setEditingHotelIndex] = useState<number | null>(null)
+  const [isHotelDetailsOpen, setIsHotelDetailsOpen] = useState(false)
+  const [selectedHotelForDetails, setSelectedHotelForDetails] = useState<Hotel | null>(null)
   const [isActivityExplorerOpen, setIsActivityExplorerOpen] = useState(false)
   const [editingDayIndex, setEditingDayIndex] = useState<number | null>(null)
   
@@ -93,7 +96,7 @@ export default function CreateProposalPage() {
     
     // Convert stays to Hotel format
     const convertedHotels: Hotel[] = stays.map(stay => ({
-      id: stay.id,
+      id: stay.room.hotel.id, // Use the actual hotel ID, not the stay ID
       name: stay.room.hotel.name,
       address: stay.room.hotel.address,
       rating: stay.room.hotel.star,
@@ -426,6 +429,44 @@ export default function CreateProposalPage() {
     setIsHotelSelectOpen(true)
   }
 
+  const handleChangeRoom = (hotel: Hotel) => {
+    setSelectedHotelForDetails(hotel)
+    setIsHotelDetailsOpen(true)
+  }
+
+  const handleCloseHotelDetails = () => {
+    setIsHotelDetailsOpen(false)
+    setSelectedHotelForDetails(null)
+  }
+
+  const handleRoomSelect = (room: any) => {
+    if (!proposal || !selectedHotelForDetails) return
+
+    // Find the hotel index in the proposal
+    const hotelIndex = proposal.hotels.findIndex(h => h.id === selectedHotelForDetails.id)
+    if (hotelIndex === -1) return
+
+    // Update the hotel with new room details
+    const updatedHotels = [...proposal.hotels]
+    updatedHotels[hotelIndex] = {
+      ...updatedHotels[hotelIndex],
+      roomType: room.name,
+      boardBasis: room.board,
+      bedType: room.bedType,
+      pricePerNight: room.pricePerNight,
+      currency: room.currency || 'USD',
+      refundable: room.refundable
+    }
+
+    updateProposal({
+      ...proposal,
+      hotels: updatedHotels
+    })
+
+    // Close the modal
+    handleCloseHotelDetails()
+  }
+
   const handleActivitySelect = (activity: ActivityType, selection: ActivitySelection) => {
     if (!proposal) return
 
@@ -722,6 +763,8 @@ export default function CreateProposalPage() {
                       key={hotel.id}
                       hotel={hotel}
                       onEdit={() => handleChangeHotel(index)}
+                      onChangeRoom={() => handleChangeRoom(hotel)}
+                      onChangeHotel={() => handleChangeHotel(index)}
                       onRemove={() => {
                         if (!proposal) return
                         updateProposal({
@@ -949,6 +992,22 @@ export default function CreateProposalPage() {
         cityId={proposal?.destinations?.[0]?.id || '2'}
         cityName={proposal?.destinations?.[0]?.name || 'Miami'}
       />
+
+      {/* Hotel Details Modal for Room Selection */}
+      {selectedHotelForDetails && (
+        <HotelDetailsModal
+          isOpen={isHotelDetailsOpen}
+          onClose={handleCloseHotelDetails}
+          hotelId={selectedHotelForDetails.id}
+          onSelectRoom={handleRoomSelect}
+          checkIn={selectedHotelForDetails.checkIn}
+          checkOut={selectedHotelForDetails.checkOut}
+          nights={selectedHotelForDetails.nights}
+          adults={proposal?.adults || 2}
+          childrenCount={proposal?.children || 0}
+          mode="modal"
+        />
+      )}
 
       {/* Activity Explorer Modal */}
       <ActivityExplorerModal
