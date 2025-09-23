@@ -2,7 +2,7 @@ import { Activity, Extra, ScheduleSlot, PickupOption } from '@/types/activity'
 
 export const mockActivities: Activity[] = [
   {
-    id: 'activity-1',
+    id: '1',
     title: 'Bali Sunrise Trekking at Mount Batur',
     shortDesc: 'Experience the magical sunrise from Mount Batur with a guided trekking adventure',
     longDesc: 'Start your day with an unforgettable sunrise trekking experience at Mount Batur, an active volcano in Bali. This moderate difficulty trek takes you through beautiful landscapes and offers breathtaking panoramic views of the sunrise over the island. Our experienced guides will ensure your safety while providing interesting insights about the local geology and culture. The trek includes a light breakfast at the summit and plenty of photo opportunities.',
@@ -117,7 +117,7 @@ export const mockActivities: Activity[] = [
     cancellationHours: 24
   },
   {
-    id: 'activity-2',
+    id: '2',
     title: 'Ubud Rice Terraces & Waterfall Tour',
     shortDesc: 'Explore the famous Tegalalang Rice Terraces and hidden waterfalls',
     longDesc: 'Discover the beauty of Bali\'s iconic rice terraces and stunning waterfalls on this half-day tour. Visit the famous Tegalalang Rice Terraces, learn about traditional farming methods, and capture amazing photos. Then explore hidden waterfalls including Tegenungan and Kanto Lampo, where you can swim in crystal-clear waters. This tour combines cultural insights with natural beauty, perfect for families and photography enthusiasts.',
@@ -222,7 +222,7 @@ export const mockActivities: Activity[] = [
     cancellationHours: 12
   },
   {
-    id: 'activity-3',
+    id: '3',
     title: 'Bali Snorkeling & Island Hopping',
     shortDesc: 'Explore crystal-clear waters and vibrant marine life around Nusa Penida',
     longDesc: 'Embark on an unforgettable snorkeling adventure around the pristine waters of Nusa Penida and nearby islands. Discover vibrant coral reefs, swim with tropical fish, and visit stunning beaches including Kelingking Beach and Angel\'s Billabong. This full-day adventure includes multiple snorkeling spots, lunch on the beach, and plenty of time to relax and enjoy the natural beauty of Bali\'s surrounding islands.',
@@ -329,7 +329,7 @@ export const mockActivities: Activity[] = [
     cancellationHours: 48
   },
   {
-    id: 'activity-4',
+    id: '4',
     title: 'Bali Cooking Class & Market Tour',
     shortDesc: 'Learn authentic Balinese cooking with a local chef and visit traditional markets',
     longDesc: 'Immerse yourself in Balinese culture through food! Start with a visit to a traditional market where you\'ll learn about local ingredients and spices. Then join a hands-on cooking class with a local chef to prepare authentic Balinese dishes including Nasi Goreng, Gado-Gado, and traditional sambal. This cultural experience includes recipe cards to take home and a delicious meal of your own creation.',
@@ -434,7 +434,7 @@ export const mockActivities: Activity[] = [
     cancellationHours: 6
   },
   {
-    id: 'activity-5',
+    id: '5',
     title: 'Bali Sunset Dinner Cruise',
     shortDesc: 'Romantic sunset dinner cruise with live music and stunning views',
     longDesc: 'Experience a magical evening on the water with our sunset dinner cruise. Sail along Bali\'s coastline as the sun sets over the horizon, creating a romantic and unforgettable atmosphere. Enjoy a delicious dinner with live music, traditional dance performances, and breathtaking views. Perfect for couples, anniversaries, or special celebrations. The cruise includes welcome drinks, multi-course dinner, and entertainment.',
@@ -539,7 +539,7 @@ export const mockActivities: Activity[] = [
     cancellationHours: 24
   },
   {
-    id: 'activity-6',
+    id: '6',
     title: 'Bali ATV Adventure & Waterfall',
     shortDesc: 'Exciting ATV ride through rice fields and jungle to hidden waterfalls',
     longDesc: 'Get your adrenaline pumping with an exciting ATV adventure through Bali\'s countryside! Ride through lush rice fields, traditional villages, and dense jungle trails to reach hidden waterfalls. This adventure combines off-road excitement with natural beauty, perfect for thrill-seekers and nature lovers. Includes safety equipment, professional guide, and time to swim in the refreshing waterfall pools.',

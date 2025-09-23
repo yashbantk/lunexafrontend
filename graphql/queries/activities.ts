@@ -139,7 +139,11 @@ export const ACTIVITIES_QUERY = gql`
 export interface ActivityFilter {
   searchActivities?: string | null
   AND?: {
-    city?: string | null
+    city?: {
+      id:{
+        exact?: string | null
+      }
+    }
     durationMinutes?: {
       range?: {
         start?: number | null

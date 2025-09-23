@@ -13,6 +13,7 @@ import { AddEditModal } from "@/components/proposals/AddEditModal"
 import HotelSelectModal from "@/components/hotels/HotelSelectModal"
 import HotelDetailsModal from "@/components/hotels/HotelDetailsModal"
 import ActivityExplorerModal from "@/components/activities/ActivityExplorerModal"
+import ActivityDetailsModal from "@/components/activities/ActivityDetailsModal"
 import { Proposal, Day, Flight, Hotel, Activity, PriceBreakdown } from "@/types/proposal"
 import { Hotel as HotelType } from "@/types/hotel"
 import { Activity as ActivityType, ActivitySelection } from "@/types/activity"
@@ -36,6 +37,8 @@ export default function CreateProposalPage() {
   const [isHotelDetailsOpen, setIsHotelDetailsOpen] = useState(false)
   const [selectedHotelForDetails, setSelectedHotelForDetails] = useState<Hotel | null>(null)
   const [isActivityExplorerOpen, setIsActivityExplorerOpen] = useState(false)
+  const [isActivityDetailsOpen, setIsActivityDetailsOpen] = useState(false)
+  const [selectedActivityForDetails, setSelectedActivityForDetails] = useState<Activity | null>(null)
   const [editingDayIndex, setEditingDayIndex] = useState<number | null>(null)
   
   // State for the proposal data from the mutation response
@@ -538,7 +541,7 @@ export default function CreateProposalPage() {
 
     // Convert activity selection to proposal activity
     const proposalActivity: Activity = {
-      id: `activity-${Date.now()}`,
+      id: activity.id, // Use the original GraphQL activity ID
       title: activity.title,
       description: activity.shortDesc,
       duration: `${Math.floor(activity.durationMins / 60)}h ${activity.durationMins % 60}m`,
@@ -869,6 +872,7 @@ export default function CreateProposalPage() {
                     <DayAccordion
                       key={day.id}
                       day={day}
+                      dayIndex={index}
                       onEdit={() => handleEditItem('day', day)}
                       onRemove={() => {
                         if (!proposal) return
@@ -878,6 +882,25 @@ export default function CreateProposalPage() {
                         })
                       }}
                       onAddActivity={() => handleAddActivity(index)}
+                      onEditActivity={(activity, dayIndex) => {
+                        // Open activity details modal for editing
+                        setSelectedActivityForDetails(activity)
+                        setIsActivityDetailsOpen(true)
+                        setEditingDayIndex(dayIndex)
+                        console.log('Edit activity:', activity, 'in day:', dayIndex)
+                      }}
+                      onRemoveActivity={(activityId, dayIndex) => {
+                        if (!proposal) return
+                        const updatedDays = [...proposal.days]
+                        updatedDays[dayIndex] = {
+                          ...updatedDays[dayIndex],
+                          activities: updatedDays[dayIndex].activities.filter(a => a.id !== activityId)
+                        }
+                        updateProposalWithPrices({
+                          ...proposal,
+                          days: updatedDays
+                        })
+                      }}
                     />
                   ))}
                 </div>
@@ -1090,6 +1113,25 @@ export default function CreateProposalPage() {
         dayId={editingDayIndex !== null ? proposal?.days[editingDayIndex]?.id || 'day-1' : 'day-1'}
         mode="add"
       />
+
+      {/* Activity Details Modal */}
+      {selectedActivityForDetails && (
+        <ActivityDetailsModal
+          isOpen={isActivityDetailsOpen}
+          onClose={() => {
+            setIsActivityDetailsOpen(false)
+            setSelectedActivityForDetails(null)
+            setEditingDayIndex(null)
+          }}
+          activityId={selectedActivityForDetails.id}
+          onAddToPackage={handleActivitySelect}
+          dayId={editingDayIndex !== null ? proposal?.days[editingDayIndex]?.id || 'day-1' : 'day-1'}
+          checkIn={proposal?.fromDate || ''}
+          checkOut={proposal?.toDate || ''}
+          adults={proposal?.adults || 0}
+          childrenCount={proposal?.children || 0}
+        />
+      )}
     </div>
   )
 }

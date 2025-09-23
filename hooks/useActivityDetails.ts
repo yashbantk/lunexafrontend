@@ -39,10 +39,10 @@ export function useActivityDetails({
       setLoading(true)
       setError(null)
       
-      // Make GraphQL request
+      // Make GraphQL request with the activity ID as-is
       const result = await apolloClient.query({
         query: ACTIVITY_QUERY,
-        variables: { activityId },
+        variables: { activityId: activityId },
         fetchPolicy: 'no-cache'
       })
 
@@ -55,13 +55,13 @@ export function useActivityDetails({
       setError(err instanceof Error ? err.message : 'Failed to fetch activity details')
       
       // Fallback to mock data if GraphQL fails
-      const foundActivity = mockActivities.find(a => a.id === activityId)
-      if (foundActivity) {
-        setActivity(foundActivity)
-        setError(null) // Clear error if mock data is found
-      } else {
-        setError('Activity not found')
-      }
+      // const foundActivity = mockActivities.find(a => a.id === activityId)
+      // if (foundActivity) {
+      //   setActivity(foundActivity)
+      //   setError(null) // Clear error if mock data is found
+      // } else {
+      //   setError('Activity not found')
+      // }
     } finally {
       setLoading(false)
     }
@@ -168,7 +168,7 @@ export const fetchActivityDetailsFromGraphQL = async (variables: {
   throw new Error('GraphQL integration not implemented yet')
 }
 
-// GraphQL Query Placeholder for documentation
-export const GRAPHQL_QUERIES = {
-  GET_ACTIVITY_DETAILS
-} as const
+// // GraphQL Query Placeholder for documentation
+// export const GRAPHQL_QUERIES = {
+//   GET_ACTIVITY_DETAILS
+// } as const

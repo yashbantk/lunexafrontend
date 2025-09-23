@@ -26,10 +26,10 @@ export function useActivityCard({ activityId }: UseActivityCardProps): UseActivi
       setLoading(true)
       setError(null)
       
-      // Make GraphQL request
+      // Make GraphQL request with the activity ID as-is
       const result = await apolloClient.query({
         query: ACTIVITY_QUERY,
-        variables: { activityId },
+        variables: { activityId: activityId },
         fetchPolicy: 'no-cache'
       })
 
@@ -42,13 +42,7 @@ export function useActivityCard({ activityId }: UseActivityCardProps): UseActivi
       setError(err instanceof Error ? err.message : 'Failed to fetch activity')
       
       // Fallback to mock data if GraphQL fails
-      const foundActivity = mockActivities.find(a => a.id === activityId)
-      if (foundActivity) {
-        setActivity(foundActivity)
-        setError(null) // Clear error if mock data is found
-      } else {
-        setError('Activity not found')
-      }
+
     } finally {
       setLoading(false)
     }

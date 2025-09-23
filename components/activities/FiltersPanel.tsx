@@ -11,6 +11,7 @@ import { Slider } from '@/components/ui/slider'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { ActivityFilters } from '@/types/activity'
+import CitySearchDropdown from './CitySearchDropdown'
 
 interface FiltersPanelProps {
   filters: ActivityFilters
@@ -127,28 +128,14 @@ export default function FiltersPanel({
         </div>
 
         {/* Location */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium text-gray-700 flex items-center">
-            <MapPin className="h-4 w-4 mr-1" />
-            Location
-          </Label>
-          <Select
-            value={localFilters.location || 'all'}
-            onValueChange={(value) => handleFilterChange('location', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="All locations" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All locations</SelectItem>
-              {availableFilters.locations.map((location) => (
-                <SelectItem key={location} value={location}>
-                  {location}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <CitySearchDropdown
+          value={localFilters.location}
+          onChange={(_, cityId) => {
+            handleFilterChange('cityId', cityId || '')
+          }}
+          placeholder="Search for a city..."
+          label="Location"
+        />
 
         {/* Time of Day */}
         <div className="space-y-3">

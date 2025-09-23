@@ -21,12 +21,15 @@ import { Day, Activity } from "@/types/proposal"
 
 interface DayAccordionProps {
   day: Day
+  dayIndex: number
   onEdit: () => void
   onRemove: () => void
   onAddActivity: () => void
+  onEditActivity?: (activity: Activity, dayIndex: number) => void
+  onRemoveActivity?: (activityId: string, dayIndex: number) => void
 }
 
-export function DayAccordion({ day, onEdit, onRemove, onAddActivity }: DayAccordionProps) {
+export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, onEditActivity, onRemoveActivity }: DayAccordionProps) {
   const [isExpanded, setIsExpanded] = useState(day.dayNumber <= 2) // Open first 2 days by default
 
   const formatTime = (time: string) => {
@@ -187,13 +190,17 @@ export function DayAccordion({ day, onEdit, onRemove, onAddActivity }: DayAccord
                               variant="outline"
                               size="sm"
                               className="h-6 w-6 p-0"
+                              onClick={() => onEditActivity?.(activity, dayIndex)}
+                              title="Edit activity"
                             >
                               <Edit className="h-3 w-3" />
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                              className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => onRemoveActivity?.(activity.id, dayIndex)}
+                              title="Remove activity"
                             >
                               <X className="h-3 w-3" />
                             </Button>

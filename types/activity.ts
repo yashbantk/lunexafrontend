@@ -68,6 +68,7 @@ export interface ActivitySearchParams {
   difficulty?: string[]
   rating?: number
   location?: string
+  cityId?: string
   page?: number
   limit?: number
   sort?: 'recommended' | 'price_asc' | 'price_desc' | 'rating' | 'duration' | 'popularity'
@@ -97,6 +98,7 @@ export interface ActivityFilters {
   difficulty: string[]
   rating: number
   location: string
+  cityId?: string
   sort: 'recommended' | 'price_asc' | 'price_desc' | 'rating' | 'duration' | 'popularity'
 }
 
