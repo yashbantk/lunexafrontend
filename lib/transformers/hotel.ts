@@ -188,10 +188,11 @@ export function transformGraphQLHotelToHotel(graphqlHotel: GraphQLHotelResponse)
       cancellation: graphqlHotel.cancellationPolicy,
       checkIn: '14:00',
       checkOut: '12:00',
-      instructions: graphqlHotel.instructions,
-      policy: graphqlHotel.policy,
-      inclusions: graphqlHotel.inclusions,
-      exclusions: graphqlHotel.exclusions
+      children: '',
+      infants: '',
+      pets: '',
+      smoking: '',
+      ageRestriction: ''
     },
     reviews: [] // Reviews would need a separate query
   }

@@ -62,10 +62,11 @@ export function useCountriesSearch(): UseCountriesSearchReturn {
 
   // Handle data when it changes
   useEffect(() => {
-    if (data?.countries) {
+    if (data && typeof data === 'object' && data !== null && 'countries' in data) {
       console.log('Countries search response:', data);
-      setCountries(data.countries.data || []);
-      setPagination(data.countries.pagination || null);
+      const countriesData = (data as any).countries;
+      setCountries(countriesData?.data || []);
+      setPagination(countriesData?.pagination || null);
     }
   }, [data]);
 
@@ -129,7 +130,7 @@ export function useCountriesSearch(): UseCountriesSearchReturn {
   const fetchNextPage = useCallback(() => {
     if (!pagination?.hasNextPage || loading) return;
     
-    const nextOffset = currentPagination.offset + (currentPagination.limit || 20);
+    const nextOffset = (currentPagination.offset || 0) + (currentPagination.limit || 20);
     const nextPagination = { ...currentPagination, offset: nextOffset };
     
     searchCountries(currentFilters, nextPagination, currentSort);
@@ -138,7 +139,7 @@ export function useCountriesSearch(): UseCountriesSearchReturn {
   const fetchPreviousPage = useCallback(() => {
     if (!pagination?.hasPreviousPage || loading) return;
     
-    const prevOffset = Math.max(0, currentPagination.offset - (currentPagination.limit || 20));
+    const prevOffset = Math.max(0, (currentPagination.offset || 0) - (currentPagination.limit || 20));
     const prevPagination = { ...currentPagination, offset: prevOffset };
     
     searchCountries(currentFilters, prevPagination, currentSort);
@@ -190,9 +191,9 @@ export function useCountriesSimple(): {
 
   // Handle data when it changes
   useEffect(() => {
-    if (data?.countries) {
+    if (data && typeof data === 'object' && data !== null && 'countries' in data) {
       console.log('Countries simple response:', data);
-      setCountries(data.countries);
+      setCountries((data as any).countries);
     }
   }, [data]);
 

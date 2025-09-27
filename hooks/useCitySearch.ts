@@ -38,9 +38,9 @@ export function useCitySearch(): UseCitySearchReturn {
 
   // Handle data when it changes
   useEffect(() => {
-    if (data?.cities) {
+    if (data && typeof data === 'object' && data !== null && 'cities' in data) {
       console.log('Cities search response:', data);
-      setCities(data.cities);
+      setCities((data as any).cities);
     }
   }, [data]);
 

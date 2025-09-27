@@ -46,8 +46,8 @@ export default function HotelSelectModal({
   const [isSearching, setIsSearching] = useState(false)
 
   // Extract city ID from props, current hotel, or use a default
-  const resolvedCityId = cityId || currentHotel?.location?.cityId || '2' // Default to Miami city ID
-  const resolvedCityName = cityName || currentHotel?.location || 'Miami'
+  const resolvedCityId = cityId || '2' // Default to Miami city ID
+  const resolvedCityName = cityName || 'Miami'
   const currentHotelName = currentHotel?.name
 
   // Debug logging

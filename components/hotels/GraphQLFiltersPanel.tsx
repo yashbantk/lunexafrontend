@@ -76,7 +76,7 @@ export default function GraphQLFiltersPanel({ filters, onFiltersChange, onReset 
       })
     } else {
       onFiltersChange({
-        star: { exact: null }
+        star: undefined
       })
     }
   }

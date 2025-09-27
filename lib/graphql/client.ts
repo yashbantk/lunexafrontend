@@ -1,5 +1,6 @@
 import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client';
 import { ErrorLink } from '@apollo/client/link/error';
+import { setContext } from '@apollo/client/link/context';
 import { authStorage } from '@/lib/auth/storage';
 
 // GraphQL endpoint configuration
@@ -24,12 +25,23 @@ function getAuthToken(): string {
   return '';
 }
 
-// Create HTTP link with authentication headers
+// Create HTTP link
 const httpLink = new HttpLink({
   uri: GRAPHQL_URL,
-  headers: {
-    authorization: getAuthToken(),
-  },
+});
+
+// Create auth context link to dynamically set authorization header
+const authLink = setContext((_, { headers }) => {
+  // Get the current token
+  const token = getAuthToken();
+  
+  // Return the headers to the context so httpLink can read them
+  return {
+    headers: {
+      ...headers,
+      authorization: token,
+    }
+  }
 });
 
 // Create error link for handling authentication errors
@@ -59,9 +71,9 @@ const errorLink = new ErrorLink(({ error, operation, forward }) => {
   return forward(operation);
 });
 
-// Create Apollo Client
+// Create Apollo Client with auth link chain
 export const apolloClient = new ApolloClient({
-  link: errorLink.concat(httpLink),
+  link: authLink.concat(httpLink),
   cache: new InMemoryCache(),
   defaultOptions: {
     watchQuery: {

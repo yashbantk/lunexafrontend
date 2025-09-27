@@ -144,7 +144,7 @@ export function CountrySearch({
                   <div className="max-h-60 overflow-y-auto">
                     {countries.map((country, index) => (
                       <motion.div
-                        key={country.id}
+                        key={country.iso2}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.2, delay: index * 0.05 }}

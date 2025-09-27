@@ -60,10 +60,10 @@ export function CountriesExplorer({ onSelectCountry, className = "" }: Countries
 
   const handleSearch = () => {
     const searchFilters: CountryFilter = {
-      ...(nameSearch && { name: nameSearch }),
-      ...(iso2Search && { iso2: iso2Search }),
-      ...(currencySearch && { currencyCode: currencySearch }),
-      ...(selectedContinents.length > 0 && { continentCode: selectedContinents })
+      ...(nameSearch && { name: { iContains: nameSearch } }),
+      ...(iso2Search && { iso2: { exact: iso2Search } }),
+      // Note: currencyCode and continentCode are not part of the CountryFilter interface
+      // These would need to be handled differently or the filter interface updated
     };
 
     setFilters(searchFilters);
@@ -250,7 +250,7 @@ export function CountriesExplorer({ onSelectCountry, className = "" }: Countries
                 <AnimatePresence>
                   {countries.map((country, index) => (
                     <motion.div
-                      key={country.id}
+                      key={country.iso2}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
@@ -267,16 +267,10 @@ export function CountriesExplorer({ onSelectCountry, className = "" }: Countries
                           <div className="flex items-center space-x-4 text-sm text-gray-500">
                             <span className="flex items-center space-x-1">
                               <span className="font-mono">{country.iso2}</span>
-                              <span>/</span>
-                              <span className="font-mono">{country.iso3}</span>
                             </span>
                             <span className="flex items-center space-x-1">
                               <Globe className="h-3 w-3" />
-                              <span>{continentOptions.find(c => c.code === country.continentCode)?.name || country.continentCode}</span>
-                            </span>
-                            <span className="flex items-center space-x-1">
-                              <DollarSign className="h-3 w-3" />
-                              <span className="font-mono">{country.currencyCode}</span>
+                              <span>Country</span>
                             </span>
                           </div>
                         </div>

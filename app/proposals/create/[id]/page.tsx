@@ -12,6 +12,7 @@ import { PriceSummary } from "@/components/proposals/PriceSummary"
 import { AddEditModal } from "@/components/proposals/AddEditModal"
 import HotelSelectModal from "@/components/hotels/HotelSelectModal"
 import HotelDetailsModal from "@/components/hotels/HotelDetailsModal"
+import { SplitStayManager } from "@/components/hotels/SplitStayManager"
 import ActivityExplorerModal from "@/components/activities/ActivityExplorerModal"
 import ActivityDetailsModal from "@/components/activities/ActivityDetailsModal"
 import { Proposal, Day, Flight, Hotel, Activity, PriceBreakdown } from "@/types/proposal"
@@ -40,6 +41,10 @@ export default function CreateProposalPage() {
   const [isActivityDetailsOpen, setIsActivityDetailsOpen] = useState(false)
   const [selectedActivityForDetails, setSelectedActivityForDetails] = useState<Activity | null>(null)
   const [editingDayIndex, setEditingDayIndex] = useState<number | null>(null)
+  
+  // Split Stay state
+  const [isSplitStayEnabled, setIsSplitStayEnabled] = useState(false)
+  const [splitStaySegments, setSplitStaySegments] = useState<any[]>([])
   
   // State for the proposal data from the mutation response
   const [proposalData, setProposalData] = useState<CreateItineraryProposalResponse['createItineraryProposal'] | null>(null)
@@ -506,6 +511,51 @@ export default function CreateProposalPage() {
     setSelectedHotelForDetails(null)
   }
 
+  // Split Stay handlers
+  const handleSplitStayChange = (segments: any[]) => {
+    setSplitStaySegments(segments)
+    
+    if (segments.length > 0 && segments.every(segment => segment.hotel)) {
+      // Convert split stay segments to regular hotels
+      const splitStayHotels: Hotel[] = segments.map(segment => ({
+        id: segment.hotel.id,
+        name: segment.hotel.name,
+        address: segment.hotel.address,
+        rating: segment.hotel.rating,
+        starRating: segment.hotel.starRating,
+        image: segment.hotel.images[0],
+        checkIn: segment.startDate,
+        checkOut: segment.endDate,
+        roomType: 'Standard Room', // Default room type
+        boardBasis: 'Room Only', // Default board basis
+        bedType: 'Double', // Default bed type
+        nights: segment.duration,
+        refundable: true,
+        pricePerNight: segment.hotel.minPrice,
+        currency: 'USD',
+        confirmationStatus: 'pending'
+      }))
+      
+      // Update proposal with split stay hotels
+      if (proposal) {
+        const updatedProposal = {
+          ...proposal,
+          hotels: splitStayHotels
+        }
+        updateProposalWithPrices(updatedProposal)
+      }
+    }
+  }
+
+  const handleSplitStayToggle = (enabled: boolean) => {
+    setIsSplitStayEnabled(enabled)
+    
+    if (!enabled) {
+      // Clear split stay segments when disabled
+      setSplitStaySegments([])
+    }
+  }
+
   const handleRoomSelect = (room: any) => {
     if (!proposal || !selectedHotelForDetails) return
 
@@ -817,37 +867,94 @@ export default function CreateProposalPage() {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <div className="bg-white rounded-2xl shadow-xl p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-gray-900">Hotels</h2>
-                  <button
-                    onClick={() => {
-                      setEditingHotelIndex(null)
-                      setIsHotelSelectOpen(true)
-                    }}
-                    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-                  >
-                    + Add Hotel
-                  </button>
+                  <div className="flex items-center space-x-3">
+                    {!isSplitStayEnabled && (
+                      <button
+                        onClick={() => {
+                          setEditingHotelIndex(null)
+                          setIsHotelSelectOpen(true)
+                        }}
+                        className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                      >
+                        + Add Hotel
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="space-y-4">
-                  {proposal?.hotels?.map((hotel, index) => (
-                    <HotelCard
-                      key={hotel.id}
-                      hotel={hotel}
-                      onEdit={() => handleChangeHotel(index)}
-                      onChangeRoom={() => handleChangeRoom(hotel)}
-                      onChangeHotel={() => handleChangeHotel(index)}
-                      onRemove={() => {
-                        if (!proposal) return
-                        const updatedProposal = {
-                          ...proposal,
-                          hotels: proposal.hotels.filter((h: Hotel) => h.id !== hotel.id)
-                        }
-                        updateProposalWithPrices(updatedProposal)
-                      }}
-                    />
-                  ))}
+
+                {/* Split Stay Manager */}
+                <div className="mb-6">
+                  <SplitStayManager
+                    totalNights={proposal?.durationDays || 1}
+                    totalDays={proposal?.durationDays || 1}
+                    startDate={proposal?.fromDate || new Date().toISOString()}
+                    endDate={proposal?.toDate || new Date().toISOString()}
+                    adults={proposal?.adults || 2}
+                    childrenCount={proposal?.children || 0}
+                    cityId={proposal?.destinations?.[0]?.id || '2'}
+                    cityName={proposal?.destinations?.[0]?.name || 'Miami'}
+                    onSplitStayChange={handleSplitStayChange}
+                    isEnabled={isSplitStayEnabled}
+                    onToggle={handleSplitStayToggle}
+                  />
                 </div>
+
+                {/* Regular Hotel Cards (when Split Stay is disabled) */}
+                {!isSplitStayEnabled && (
+                  <div className="space-y-4">
+                    {proposal?.hotels?.map((hotel, index) => (
+                      <HotelCard
+                        key={hotel.id}
+                        hotel={hotel}
+                        onEdit={() => handleChangeHotel(index)}
+                        onChangeRoom={() => handleChangeRoom(hotel)}
+                        onChangeHotel={() => handleChangeHotel(index)}
+                        onRemove={() => {
+                          if (!proposal) return
+                          const updatedProposal = {
+                            ...proposal,
+                            hotels: proposal.hotels.filter((h: Hotel) => h.id !== hotel.id)
+                          }
+                          updateProposalWithPrices(updatedProposal)
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Split Stay Summary (when enabled) */}
+                {isSplitStayEnabled && splitStaySegments.length > 0 && (
+                  <div className="mt-6 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                    <h3 className="font-semibold text-gray-900 mb-3">Split Stay Summary</h3>
+                    <div className="space-y-2">
+                      {splitStaySegments.map((segment, index) => (
+                        <div key={segment.id} className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">
+                              {index + 1}
+                            </div>
+                            <div>
+                              <div className="font-medium text-gray-900">
+                                {segment.hotel?.name || `Segment ${index + 1}`}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                {segment.duration} {segment.duration === 1 ? 'night' : 'nights'}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-semibold text-primary">
+                              ${segment.hotel?.minPrice * segment.duration || 0}
+                            </div>
+                            <div className="text-sm text-gray-600">Total</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
 
