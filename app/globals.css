@@ -80,31 +80,5 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* PDF Print Styles */
-@media print {
-  @page {
-    size: A4;
-    margin: 12mm;
-  }
-  
-  body {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-  
-  .avoid-break {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-}
-
-/* Font families for PDF */
-.font-serif {
-  font-family: 'Playfair Display', serif;
-}
-
-.font-sans {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-}
 
 
