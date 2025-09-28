@@ -1,5 +1,5 @@
 import { GraphQLActivity } from '@/graphql/queries/activities'
-import { Activity, Extra, ScheduleSlot, PickupOption } from '@/types/activity'
+import { Activity, Extra, ScheduleSlot, PickupOption, ActivityOption } from '@/types/activity'
 
 /**
  * Transform GraphQL activity response to the existing Activity type format
@@ -66,6 +66,45 @@ export function transformGraphQLActivityToActivity(graphqlActivity: GraphQLActiv
     ...graphqlActivity.highlights
   ].filter((tag, index, arr) => arr.indexOf(tag) === index) // Remove duplicates
 
+  // Transform activity options
+  const activityOptions: ActivityOption[] = graphqlActivity.activityOptions.map(option => ({
+    id: option.id,
+    name: option.name,
+    priceCents: option.priceCents,
+    priceCentsChild: option.priceCentsChild,
+    durationMinutes: option.durationMinutes,
+    maxParticipants: option.maxParticipants,
+    maxParticipantsChild: option.maxParticipantsChild,
+    isRefundable: option.isRefundable,
+    isRecommended: option.isRecommended,
+    isAvailable: option.isAvailable,
+    refundPolicy: option.refundPolicy,
+    cancellationPolicy: option.cancellationPolicy,
+    notes: option.notes,
+    startTime: option.startTime,
+    endTime: option.endTime,
+    inclusions: option.inclusions,
+    exclusions: option.exclusions,
+    currency: {
+      code: option.currency.code,
+      name: option.currency.name
+    },
+    mealPlan: option.mealPlan ? {
+      id: option.mealPlan.id,
+      name: option.mealPlan.name,
+      mealPlanType: option.mealPlan.mealPlanType,
+      mealValue: option.mealPlan.mealValue ? parseInt(option.mealPlan.mealValue.toString()) : null,
+      vegType: option.mealPlan.vegType,
+      description: option.mealPlan.description
+    } : undefined,
+    season: option.season ? {
+      id: option.season.id,
+      name: option.season.name,
+      startDate: option.season.startDate,
+      endDate: option.season.endDate
+    } : undefined
+  }))
+
   return {
     id: graphqlActivity.id,
     title: graphqlActivity.title,
@@ -84,7 +123,7 @@ export function transformGraphQLActivityToActivity(graphqlActivity: GraphQLActiv
     location: `${graphqlActivity.city.name}, ${graphqlActivity.city.country.name}`,
     pickupOptions,
     cancellationPolicy: graphqlActivity.cancellationPolicy || 'Standard cancellation policy applies',
-    minPax: firstOption?.maxParticipants || 1,
+    minPax: 1, // Always 1 minimum participant
     maxPax: firstOption?.maxParticipants || 20,
     difficulty: 'Moderate' as const, // Default assumption, could be enhanced
     included: firstOption?.inclusions ? firstOption.inclusions.split(',').map(item => item.trim()) : [],
@@ -95,7 +134,10 @@ export function transformGraphQLActivityToActivity(graphqlActivity: GraphQLActiv
     instantConfirmation: graphqlActivity.instantBooking,
     mobileTicket: true, // Default assumption
     freeCancellation: true, // Default assumption
-    cancellationHours: 24 // Default assumption
+    cancellationHours: 24, // Default assumption
+    slot: firstOption ? getTimeSlotType(firstOption.startTime, firstOption.endTime) as 'morning' | 'afternoon' | 'evening' | 'full_day' : 'morning',
+    startTime: firstOption?.startTime || '09:00',
+    activityOptions
   }
 }
 

@@ -28,6 +28,47 @@ export interface Activity {
   mobileTicket: boolean
   freeCancellation: boolean
   cancellationHours: number
+  slot: 'morning' | 'afternoon' | 'evening' | 'full_day'
+  startTime: string
+  activityOptions: ActivityOption[]
+}
+
+export interface ActivityOption {
+  id: string
+  name: string
+  priceCents: number
+  priceCentsChild: number | null
+  durationMinutes: number
+  maxParticipants: number
+  maxParticipantsChild: number | null
+  isRefundable: boolean
+  isRecommended: boolean
+  isAvailable: boolean
+  refundPolicy: string | null
+  cancellationPolicy: string | null
+  notes: string | null
+  startTime: string
+  endTime: string
+  inclusions: string | null
+  exclusions: string | null
+  currency: {
+    code: string
+    name: string
+  }
+  mealPlan?: {
+    id: string
+    name: string
+    mealPlanType: string
+    mealValue: number | null
+    vegType: string
+    description: string
+  }
+  season?: {
+    id: string
+    name: string
+    startDate: string
+    endDate: string
+  }
 }
 
 export interface Extra {
@@ -115,16 +156,21 @@ export interface ActivityDetailsModalProps {
   isOpen: boolean
   onClose: () => void
   activityId: string
-  onAddToPackage: (activity: Activity, selection: ActivitySelection) => void
+  onAddToPackage: (activity: Activity, selection: ActivitySelection, bookingIdToDelete?: string) => void
   dayId: string
   checkIn: string
   checkOut: string
   adults: number
   childrenCount: number
+  // Edit mode props
+  isEditMode?: boolean
+  currentBookingId?: string
+  currentSelection?: Partial<ActivitySelection>
 }
 
 export interface ActivitySelection {
   activity: Activity
+  selectedOption?: ActivityOption
   scheduleSlot: ScheduleSlot
   adults: number
   childrenCount: number

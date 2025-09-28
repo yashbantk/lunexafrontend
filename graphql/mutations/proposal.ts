@@ -1,5 +1,57 @@
 import { gql } from '@apollo/client'
 
+export const CREATE_ACTIVITY_BOOKING = gql`
+  mutation CreateActivityBooking($data: ActivityBookingInput!) {
+    createActivityBooking(data: $data) {
+      ... on ActivityBookingType {
+        id
+        slot
+        paxAdults
+        paxChildren
+        priceBaseCents
+        priceAddonsCents
+        pickupRequired
+        confirmationStatus
+        option {
+          id
+          name
+          priceCents
+          priceCentsChild
+          durationMinutes
+          maxParticipants
+          maxParticipantsChild
+          isRefundable
+          isRecommended
+          isAvailable
+          refundPolicy
+          cancellationPolicy
+          notes
+          startTime
+          endTime
+          inclusions
+          exclusions
+          createdAt
+          updatedAt
+        }
+        pickupHotel {
+          id
+          name
+          address
+          star
+        }
+      }
+      ... on OperationInfo {
+        messages {
+          code
+          field
+          kind
+          message
+        }
+      }
+    }
+  }
+`
+
 export const CREATE_ITINERARY_PROPOSAL = gql`
   mutation CreateItineraryProposal($input: CreateItineraryProposalInput!) {
     createItineraryProposal(input: $input) {
@@ -102,17 +154,13 @@ export const CREATE_ITINERARY_PROPOSAL = gql`
           priceAddonsCents
           pickupRequired
           confirmationStatus
-          activity {
-            id
-            title
-            rating
-            durationMinutes
-          }
           option {
             id
             name
             priceCents
             durationMinutes
+            startTime
+            endTime
           }
           pickupHotel {
             id
@@ -144,6 +192,24 @@ export const CREATE_ITINERARY_PROPOSAL = gql`
             address
             star
           }
+        }
+      }
+    }
+  }
+`
+
+export const DELETE_ACTIVITY_BOOKING = gql`
+  mutation DeleteActivityBooking($data: BookingDeleteInput!) {
+    deleteActivityBooking(data: $data) {
+      ... on ActivityBookingType {
+        id
+      }
+      ... on OperationInfo {
+        messages {
+          kind
+          message
+          field
+          code
         }
       }
     }

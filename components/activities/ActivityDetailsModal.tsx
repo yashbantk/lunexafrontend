@@ -14,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Textarea } from '@/components/ui/textarea'
 import { ActivityDetailsModalProps, ActivitySelection, ScheduleSlot, PickupOption } from '@/types/activity'
 import { useActivityDetails } from '@/hooks/useActivityDetails'
+import { formatDuration, formatTime, formatPrice } from '@/lib/utils/formatUtils'
 import ExtrasList from './ExtrasList'
 
 export default function ActivityDetailsModal({
@@ -25,7 +26,10 @@ export default function ActivityDetailsModal({
   checkIn,
   checkOut,
   adults,
-  childrenCount
+  childrenCount,
+  isEditMode = false,
+  currentBookingId,
+  currentSelection
 }: ActivityDetailsModalProps) {
   const { activity, loading, error, calculatePrice, validateSelection } = useActivityDetails({
     activityId,
@@ -47,28 +51,33 @@ export default function ActivityDetailsModal({
 
   useEffect(() => {
     if (activity) {
-      setSelection(prev => ({
-        ...prev,
-        activity,
-        scheduleSlot: activity.availability.find(slot => slot.available) || activity.availability[0],
-        pickupOption: activity.pickupOptions[0]
-      }))
+      if (isEditMode && currentSelection) {
+        // Pre-populate with current selection data
+        setSelection(prev => ({
+          ...prev,
+          activity,
+          selectedOption: currentSelection.selectedOption || activity.activityOptions.find(option => option.isRecommended) || activity.activityOptions[0],
+          scheduleSlot: currentSelection.scheduleSlot || activity.availability.find(slot => slot.available) || activity.availability[0],
+          pickupOption: currentSelection.pickupOption || activity.pickupOptions[0],
+          adults: currentSelection.adults || adults,
+          childrenCount: currentSelection.childrenCount || childrenCount,
+          extras: currentSelection.extras || [],
+          notes: currentSelection.notes || ''
+        }))
+      } else {
+        // Default behavior for new activities
+        setSelection(prev => ({
+          ...prev,
+          activity,
+          selectedOption: activity.activityOptions.find(option => option.isRecommended) || activity.activityOptions[0],
+          scheduleSlot: activity.availability.find(slot => slot.available) || activity.availability[0],
+          pickupOption: activity.pickupOptions[0]
+        }))
+      }
     }
-  }, [activity])
+  }, [activity, isEditMode, currentSelection, adults, childrenCount])
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0
-    }).format(price)
-  }
 
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60)
-    const mins = minutes % 60
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
-  }
 
   const handleScheduleSlotChange = (slotId: string) => {
     if (!activity) return
@@ -105,10 +114,27 @@ export default function ActivityDetailsModal({
   }
 
   const handleAddToPackage = async () => {
-    if (!activity || !selection.scheduleSlot || !selection.pickupOption) return
+    console.log('handleAddToPackage called', {
+      activity: !!activity,
+      scheduleSlot: !!selection.scheduleSlot,
+      pickupOption: !!selection.pickupOption,
+      isEditMode,
+      currentBookingId,
+      selection
+    })
+
+    if (!activity || !selection.scheduleSlot || !selection.pickupOption) {
+      console.log('Missing required fields:', {
+        activity: !!activity,
+        scheduleSlot: !!selection.scheduleSlot,
+        pickupOption: !!selection.pickupOption
+      })
+      return
+    }
 
     const fullSelection: ActivitySelection = {
       activity,
+      selectedOption: selection.selectedOption || (activity.activityOptions.length === 1 ? activity.activityOptions[0] : null),
       scheduleSlot: selection.scheduleSlot,
       adults: selection.adults || 0,
       childrenCount: selection.childrenCount || 0,
@@ -118,17 +144,34 @@ export default function ActivityDetailsModal({
       totalPrice: calculatePrice(selection)
     }
 
+    console.log('Full selection created:', fullSelection)
+
     const validationErrors = validateSelection(fullSelection)
     if (validationErrors.length > 0) {
+      console.log('Validation errors:', validationErrors)
+      console.log('Full selection:', fullSelection)
+      console.log('Selection state:', selection)
       setErrors(validationErrors)
       return
     }
 
+    console.log('Validation passed, proceeding with API calls')
+
     setIsSubmitting(true)
     try {
-      await onAddToPackage(activity, fullSelection)
+      if (isEditMode && currentBookingId) {
+        console.log('Edit mode: calling onAddToPackage with bookingId:', currentBookingId)
+        // In edit mode, pass the booking ID for deletion
+        await onAddToPackage(activity, fullSelection, currentBookingId)
+      } else {
+        console.log('Add mode: calling onAddToPackage without bookingId')
+        // Normal add mode
+        await onAddToPackage(activity, fullSelection)
+      }
+      console.log('onAddToPackage completed successfully')
       onClose()
     } catch (err) {
+      console.error('Error in handleAddToPackage:', err)
       setErrors(['Failed to add activity to package. Please try again.'])
     } finally {
       setIsSubmitting(false)
@@ -136,7 +179,9 @@ export default function ActivityDetailsModal({
   }
 
   const totalPrice = activity ? calculatePrice(selection) : 0
-  const basePrice = activity ? (activity.pricingType === 'person' ? activity.basePrice * ((selection.adults || 0) + (selection.childrenCount || 0)) : activity.basePrice) : 0
+  const selectedOption = selection.selectedOption || (activity?.activityOptions.length === 1 ? activity.activityOptions[0] : null)
+  const basePrice = activity && selectedOption ? 
+    (selectedOption.priceCents / 100) * ((selection.adults || 0) + (selection.childrenCount || 0)) : 0
   const extrasPrice = selection.extras?.reduce((total, extra) => {
     return total + (extra.priceType === 'per_person' ? extra.price * ((selection.adults || 0) + (selection.childrenCount || 0)) : extra.price)
   }, 0) || 0
@@ -283,6 +328,78 @@ export default function ActivityDetailsModal({
                     <CardTitle>Book This Activity</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
+                    {/* Activity Option Selection */}
+                    {activity.activityOptions.length > 1 ? (
+                      <div className="space-y-3">
+                        <Label className="text-base font-medium">Select Option</Label>
+                        <RadioGroup
+                          value={selection.selectedOption?.id}
+                          onValueChange={(optionId) => {
+                            const option = activity.activityOptions.find(o => o.id === optionId)
+                            if (option) {
+                              setSelection(prev => ({ ...prev, selectedOption: option }))
+                            }
+                          }}
+                        >
+                          {activity.activityOptions.map((option) => (
+                            <div key={option.id} className="flex items-center space-x-2 p-3 border rounded-lg">
+                              <RadioGroupItem value={option.id} id={option.id} />
+                              <Label htmlFor={option.id} className="flex-1 cursor-pointer">
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <div className="font-medium">{option.name}</div>
+                                    <div className="text-sm text-gray-600">
+                                      {formatDuration(option.durationMinutes)} • {formatTime(option.startTime)} - {formatTime(option.endTime)}
+                                    </div>
+                                    {option.notes && (
+                                      <div className="text-xs text-gray-500 mt-1">{option.notes}</div>
+                                    )}
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="font-medium">
+                                      {formatPrice(option.priceCents / 100)}
+                                    </div>
+                                    {option.isRecommended && (
+                                      <Badge className="bg-green-100 text-green-800 text-xs">
+                                        Recommended
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </Label>
+                            </div>
+                          ))}
+                        </RadioGroup>
+                      </div>
+                    ) : activity.activityOptions.length === 1 ? (
+                      <div className="space-y-3">
+                        <Label className="text-base font-medium">Activity Option</Label>
+                        <div className="p-3 border rounded-lg bg-gray-50">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <div className="font-medium">{activity.activityOptions[0].name}</div>
+                              <div className="text-sm text-gray-600">
+                                {formatDuration(activity.activityOptions[0].durationMinutes)} • {formatTime(activity.activityOptions[0].startTime)} - {formatTime(activity.activityOptions[0].endTime)}
+                              </div>
+                              {activity.activityOptions[0].notes && (
+                                <div className="text-xs text-gray-500 mt-1">{activity.activityOptions[0].notes}</div>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <div className="font-medium">
+                                {formatPrice(activity.activityOptions[0].priceCents / 100)}
+                              </div>
+                              {activity.activityOptions[0].isRecommended && (
+                                <Badge className="bg-green-100 text-green-800 text-xs">
+                                  Recommended
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+
                     {/* Schedule Selection */}
                     <div className="space-y-3">
                       <Label className="text-base font-medium">Select Time Slot</Label>
@@ -296,7 +413,7 @@ export default function ActivityDetailsModal({
                             <Label htmlFor={slot.id} className="flex-1 cursor-pointer">
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <span className="font-medium">{slot.startTime}</span>
+                                  <span className="font-medium">{formatTime(slot.startTime)}</span>
                                   <span className="text-gray-500 ml-2">
                                     ({formatDuration(slot.durationMins)})
                                   </span>

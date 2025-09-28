@@ -35,6 +35,7 @@ export const ACTIVITIES_QUERY = gql`
       description
       rating
       durationMinutes
+      startTime
       highlights
       cancellationPolicy
       slot
@@ -43,22 +44,6 @@ export const ACTIVITIES_QUERY = gql`
       commissionRate
       activityImages {
         id
-        activity {
-          id
-          title
-          summary
-          description
-          rating
-          durationMinutes
-          highlights
-          cancellationPolicy
-          slot
-          tags
-          instantBooking
-          commissionRate
-          createdAt
-          updatedAt
-        }
         url
         caption
         priorityOrder

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Activity } from '@/types/activity'
+import { formatDuration, formatPrice } from '@/lib/utils/formatUtils'
 
 interface ActivityCardProps {
   activity: Activity
@@ -25,19 +26,6 @@ export default function ActivityCard({
   viewMode,
   className = ''
 }: ActivityCardProps) {
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0
-    }).format(price)
-  }
-
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60)
-    const mins = minutes % 60
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
-  }
 
   const getTimeOfDayBadge = (type: string) => {
     const badges = {

@@ -4,6 +4,7 @@ import './globals.css'
 import { AuthProvider } from '@/lib/auth/provider'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ApolloProviderWrapper } from '@/components/providers/ApolloProviderWrapper'
+import ScrollPositionProvider from '@/components/ScrollPositionProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -23,7 +24,9 @@ export default function RootLayout({
         <ErrorBoundary>
           <ApolloProviderWrapper>
             <AuthProvider>
-              {children}
+              <ScrollPositionProvider>
+                {children}
+              </ScrollPositionProvider>
             </AuthProvider>
           </ApolloProviderWrapper>
         </ErrorBoundary>

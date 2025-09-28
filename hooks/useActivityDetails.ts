@@ -72,11 +72,17 @@ export function useActivityDetails({
     
     let totalPrice = 0
     
-    // Base price
-    if (activity.pricingType === 'person') {
-      totalPrice = activity.basePrice * (adults + childrenCount)
+    // Base price from selected option
+    const selectedOption = selection.selectedOption || (activity.activityOptions.length === 1 ? activity.activityOptions[0] : null)
+    if (selectedOption) {
+      totalPrice = (selectedOption.priceCents / 100) * (adults + childrenCount)
     } else {
-      totalPrice = activity.basePrice
+      // Fallback to activity base price
+      if (activity.pricingType === 'person') {
+        totalPrice = activity.basePrice * (adults + childrenCount)
+      } else {
+        totalPrice = activity.basePrice
+      }
     }
     
     // Add extras
@@ -106,24 +112,48 @@ export function useActivityDetails({
       return errors
     }
     
+    // Only require option selection if there are multiple options
+    if (activity.activityOptions.length > 1 && !selection.selectedOption) {
+      console.log('Validation: Multiple options but no selectedOption', {
+        activityOptionsLength: activity.activityOptions.length,
+        selectedOption: selection.selectedOption,
+        activityOptions: activity.activityOptions
+      })
+      errors.push('Please select an activity option')
+    }
+    
     if (!selection.scheduleSlot) {
       errors.push('Please select a time slot')
     }
     
-    if (selection.adults !== undefined && selection.adults < activity.minPax) {
-      errors.push(`Minimum ${activity.minPax} participants required`)
+    // Get the selected option (either explicitly selected or the only available option)
+    const selectedOption = selection.selectedOption || (activity.activityOptions.length === 1 ? activity.activityOptions[0] : null)
+    
+    // Validate participants based on selected option
+    if (selectedOption && selection.adults !== undefined) {
+      const totalPax = selection.adults + (selection.childrenCount || 0)
+      
+      // Minimum participants should be 1
+      if (totalPax < 1) {
+        errors.push('At least 1 participant is required')
+      }
+      
+      // Maximum participants based on selected option
+      if (totalPax > selectedOption.maxParticipants) {
+        errors.push(`Maximum ${selectedOption.maxParticipants} participants allowed for this option`)
+      }
     }
     
-    if (selection.adults !== undefined && selection.adults > activity.maxPax) {
-      errors.push(`Maximum ${activity.maxPax} participants allowed`)
-    }
-    
+    // Validate against schedule slot availability
     if (selection.scheduleSlot && selection.adults !== undefined) {
       const totalPax = selection.adults + (selection.childrenCount || 0)
+      
+      // Check slot capacity
       if (totalPax > selection.scheduleSlot.maxPax) {
         errors.push(`This time slot can only accommodate ${selection.scheduleSlot.maxPax} participants`)
       }
       
+      // Check available spots
       const availableSpots = selection.scheduleSlot.maxPax - selection.scheduleSlot.currentBookings
       if (totalPax > availableSpots) {
         errors.push(`Only ${availableSpots} spots available for this time slot`)
