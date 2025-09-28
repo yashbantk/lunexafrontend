@@ -1376,7 +1376,6 @@ export default function CreateProposalPage() {
               <PriceSummary
                 proposal={proposal}
                 onSaveProposal={() => saveProposal(proposal)}
-                onExportPDF={() => window.print()}
                 onPreview={() => console.log('Preview proposal')}
               />
             </motion.div>

@@ -90,7 +90,7 @@ components/proposals/
 ### Price Summary
 - **Real-time calculation**: Updates as items are added/removed
 - **Breakdown**: Per adult, taxes, markup, total
-- **Actions**: Save proposal, send to client, export PDF, preview
+- **Actions**: Save proposal, send to client, preview
 - **Trip summary**: Collapsible list of included items
 
 ## 🔧 Technical Implementation

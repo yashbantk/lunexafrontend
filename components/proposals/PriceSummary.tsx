@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge"
 import { 
   Save, 
   Send, 
-  FileText, 
   Eye, 
   Plus, 
   Plane, 
@@ -20,11 +19,10 @@ import { Proposal } from "@/types/proposal"
 interface PriceSummaryProps {
   proposal: Proposal | null
   onSaveProposal: () => void
-  onExportPDF: () => void
   onPreview: () => void
 }
 
-export function PriceSummary({ proposal, onSaveProposal, onExportPDF, onPreview }: PriceSummaryProps) {
+export function PriceSummary({ proposal, onSaveProposal, onPreview }: PriceSummaryProps) {
   if (!proposal) return null
 
   const formatPrice = (price: number) => {
@@ -100,15 +98,6 @@ export function PriceSummary({ proposal, onSaveProposal, onExportPDF, onPreview 
                 >
                   <Send className="h-3 w-3 mr-1" />
                   Send
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onExportPDF}
-                  className="text-xs"
-                >
-                  <FileText className="h-3 w-3 mr-1" />
-                  PDF
                 </Button>
               </div>
               <Button
