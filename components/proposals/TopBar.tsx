@@ -10,9 +10,10 @@ interface TopBarProps {
   adults?: number
   childrenCount?: number
   onSaveDraft: () => void
+  isSaving?: boolean
 }
 
-export function TopBar({ totalPrice, currency = 'USD', adults = 2, childrenCount = 0, onSaveDraft }: TopBarProps) {
+export function TopBar({ totalPrice, currency = 'USD', adults = 2, childrenCount = 0, onSaveDraft, isSaving = false }: TopBarProps) {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -53,10 +54,20 @@ export function TopBar({ totalPrice, currency = 'USD', adults = 2, childrenCount
             <Button
               variant="outline"
               onClick={onSaveDraft}
+              disabled={isSaving}
               className="flex items-center space-x-2"
             >
-              <Save className="h-4 w-4" />
-              <span>Save Draft</span>
+              {isSaving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  <span>Save as Proposal</span>
+                </>
+              )}
             </Button>
           </div>
         </div>

@@ -215,3 +215,32 @@ export const DELETE_ACTIVITY_BOOKING = gql`
     }
   }
 `
+
+export const CREATE_PROPOSAL = gql`
+  mutation CreateProposal($data: ProposalInput!) {
+    createProposal(data: $data) {
+      ... on ProposalType {
+        id
+        version
+        name
+        status
+        totalPriceCents
+        estimatedDateOfBooking
+        areFlightsBooked
+        flightsMarkup
+        landMarkup
+        landMarkupType
+        createdAt
+        updatedAt
+      }
+      ... on OperationInfo {
+        messages {
+          kind
+          message
+          field
+          code
+        }
+      }
+    }
+  }
+`

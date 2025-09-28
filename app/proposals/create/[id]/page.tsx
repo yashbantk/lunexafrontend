@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { CreateItineraryProposalResponse } from "@/hooks/useCreateItineraryProposal"
 import { useActivityBooking, ActivityBookingInput, ActivityBookingResponse } from "@/hooks/useActivityBooking"
 import { useTrip, TripData } from "@/hooks/useTrip"
+import { useCreateProposal, ProposalInput } from "@/hooks/useCreateProposal"
 import { 
   filterActivitiesBySlot, 
   filterActivitiesByStartTime, 
@@ -68,6 +69,9 @@ export default function CreateProposalPage() {
   
   // Activity booking hook
   const { createActivityBooking, deleteActivityBooking, isLoading: isCreatingActivityBooking } = useActivityBooking()
+  
+  // Proposal creation hook
+  const { createProposalAndRedirect, isLoading: isCreatingProposal } = useCreateProposal()
 
   // Local functions for proposal management
   const updateProposal = (updatedProposal: Proposal) => {
@@ -133,17 +137,45 @@ export default function CreateProposalPage() {
   }
 
   const saveProposal = useCallback(async (proposalToSave: Proposal | null) => {
-    if (!proposalToSave) return
+    console.log('saveProposal called - this should only happen when user clicks "Save as Proposal"')
+    
+    if (!proposalToSave || !trip) {
+      console.error('No proposal or trip data available')
+      return
+    }
     
     try {
-      // Simulate API call
       console.log('Saving proposal:', proposalToSave)
-      // In real implementation, this would be an API call
-      // await api.saveProposal(proposalToSave)
+      
+      // Calculate total price from proposal
+      const totalPriceCents = proposalToSave.priceBreakdown?.total 
+        ? Math.round(proposalToSave.priceBreakdown.total * 100)
+        : 0
+      
+      // Prepare proposal data
+      const proposalData: ProposalInput = {
+        trip: trip.id, // Required - Trip ID
+        name: proposalToSave.tripName || `Proposal for ${trip.fromCity.name}`, // Optional - Proposal name
+        status: 'draft', // Optional - Proposal status
+        currency: trip.currency.code, // Optional - Currency code
+        totalPriceCents, // Optional - Total price in cents
+        estimatedDateOfBooking: new Date().toISOString(), // Optional - Estimated booking date
+        areFlightsBooked: false, // Optional - Whether flights are booked
+        flightsMarkup: Number(trip.markupFlightPercent) || 0, // Optional - Flight markup percentage
+        landMarkup: Number(trip.markupLandPercent) || 0, // Optional - Land markup percentage
+        landMarkupType: 'percentage' // Optional - Land markup type
+        // version will be automatically determined by the hook
+      }
+      
+      console.log('Creating proposal with data:', proposalData)
+      
+      // Create proposal and redirect
+      await createProposalAndRedirect(proposalData)
+      
     } catch (error) {
       console.error('Error saving proposal:', error)
     }
-  }, [])
+  }, [trip, createProposalAndRedirect])
 
   // Convert Trip data to Proposal format
   const convertTripToProposalFormat = (tripData: TripData): Proposal => {
@@ -304,23 +336,16 @@ export default function CreateProposalPage() {
     setBlockedTimeSlots(blockedSlots)
   }
 
-  // Auto-save functionality
-  useEffect(() => {
-    const autoSave = setTimeout(() => {
-      if (proposal) {
-        saveProposal(proposal)
-      }
-    }, 2000)
+  // Auto-save functionality removed - only save when user explicitly clicks "Save as Proposal"
 
-    return () => clearTimeout(autoSave)
-  }, [proposal, saveProposal])
-
-  // Keyboard shortcuts
+  // Keyboard shortcuts - Ctrl+S to save proposal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === 's') {
         e.preventDefault()
-        saveProposal(proposal)
+        if (proposal) {
+          saveProposal(proposal)
+        }
       }
     }
 
@@ -914,6 +939,7 @@ export default function CreateProposalPage() {
         adults={proposal?.adults || 2}
         childrenCount={proposal?.children || 0}
         onSaveDraft={() => saveProposal(proposal)}
+        isSaving={isCreatingProposal}
       />
       
       <div className="w-full px-4 py-6">
