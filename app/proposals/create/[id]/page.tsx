@@ -25,6 +25,8 @@ import { CreateItineraryProposalResponse } from "@/hooks/useCreateItineraryPropo
 import { useActivityBooking, ActivityBookingInput, ActivityBookingResponse } from "@/hooks/useActivityBooking"
 import { useTrip, TripData } from "@/hooks/useTrip"
 import { useCreateProposal, ProposalInput } from "@/hooks/useCreateProposal"
+import { useDeleteTripStay } from "@/hooks/useDeleteTripStay"
+import { useCreateTripStay } from "@/hooks/useCreateTripStay"
 import { 
   filterActivitiesBySlot, 
   filterActivitiesByStartTime, 
@@ -72,6 +74,12 @@ export default function CreateProposalPage() {
   
   // Proposal creation hook
   const { createProposalAndRedirect, isLoading: isCreatingProposal } = useCreateProposal()
+  
+  // Delete trip stay hook
+  const { deleteTripStay, isLoading: isDeletingTripStay } = useDeleteTripStay()
+  
+  // Create trip stay hook
+  const { createTripStay, isLoading: isCreatingTripStay } = useCreateTripStay()
 
   // Local functions for proposal management
   const updateProposal = (updatedProposal: Proposal) => {
@@ -397,44 +405,85 @@ export default function CreateProposalPage() {
     }
   }
 
-  const handleHotelSelect = (hotel: HotelType, room: any) => {
-    if (!proposal) return
+  const handleHotelSelect = async (hotel: HotelType, room: any) => {
+    if (!proposal || !trip) return
 
-    // Convert hotel type to proposal hotel type
-    const proposalHotel: Hotel = {
-      id: hotel.id,
-      name: hotel.name,
-      image: hotel.images[0],
-      rating: hotel.rating,
-      starRating: hotel.starRating,
-      address: hotel.address,
-      checkIn: proposal.hotels[editingHotelIndex || 0]?.checkIn || new Date().toISOString(),
-      checkOut: proposal.hotels[editingHotelIndex || 0]?.checkOut || new Date().toISOString(),
-      roomType: room.name,
-      boardBasis: room.board,
-      bedType: room.bedType,
-      nights: proposal.hotels[editingHotelIndex || 0]?.nights || 1,
-      pricePerNight: room.pricePerNight,
-      refundable: room.refundable,
-      currency: 'INR'
-    }
+    try {
+      if (editingHotelIndex !== null) {
+        // Update existing hotel - delete old trip stay first
+        const existingHotel = proposal.hotels[editingHotelIndex]
+        const tripDay = trip.days.find(day => 
+          day.stay && day.stay.room.hotel.id === existingHotel.id
+        )
+        
+        if (tripDay?.stay?.id) {
+          console.log('Deleting existing trip stay:', tripDay.stay.id)
+          await deleteTripStay(tripDay.stay.id)
+        }
+      }
 
-    if (editingHotelIndex !== null) {
-      // Update existing hotel
-      const updatedHotels = [...proposal.hotels]
-      updatedHotels[editingHotelIndex] = proposalHotel
-      const updatedProposal = {
-        ...proposal,
-        hotels: updatedHotels
+      // Find the trip day for this hotel
+      // If editing existing hotel, use the same day
+      // If adding new hotel, use the first day that doesn't have a stay
+      let targetDay
+      if (editingHotelIndex !== null) {
+        // Use the same day as the existing hotel
+        targetDay = trip.days.find(day => 
+          day.stay && day.stay.room.hotel.id === proposal.hotels[editingHotelIndex].id
+        )
+      } else {
+        // Find the first day without a stay (for new hotel)
+        targetDay = trip.days.find(day => !day.stay)
       }
-      updateProposalWithPrices(updatedProposal)
-    } else {
-      // Add new hotel
-      const updatedProposal = {
-        ...proposal,
-        hotels: [...proposal.hotels, proposalHotel]
+      
+      // Fallback to first day if no suitable day found
+      if (!targetDay) {
+        targetDay = trip.days[0]
       }
-      updateProposalWithPrices(updatedProposal)
+
+      if (!targetDay) {
+        console.error('No trip day found for hotel change')
+        return
+      }
+
+      // Calculate check-in and check-out dates
+      const checkIn = proposal.hotels[editingHotelIndex || 0]?.checkIn || new Date().toISOString().split('T')[0]
+      const checkOut = proposal.hotels[editingHotelIndex || 0]?.checkOut || new Date().toISOString().split('T')[0]
+      const nights = proposal.hotels[editingHotelIndex || 0]?.nights || 1
+
+      // Create new trip stay
+      console.log('Room object received:', room)
+      console.log('Room ID:', room.id)
+      console.log('Room name:', room.name)
+      console.log('Room structure:', JSON.stringify(room, null, 2))
+      
+      // Validate that we have a room ID
+      if (!room.id) {
+        console.error('No room ID found in room object:', room)
+        throw new Error('No room ID found in selected room')
+      }
+      
+      const tripStayData = {
+        tripDay: targetDay.id,
+        room: room.id, // This should be the room ID, not hotel ID
+        checkIn: checkIn,
+        checkOut: checkOut,
+        nights: nights,
+        roomsCount: 1, // Default to 1 room
+        mealPlan: room.board || 'BB', // Default to Bed & Breakfast
+        currency: trip.currency.code,
+        priceTotalCents: room.pricePerNight * nights * 100, // Convert to cents
+        confirmationStatus: 'pending'
+      }
+
+      console.log('Creating new trip stay with data:', tripStayData)
+      await createTripStay(tripStayData)
+
+      // Refresh trip data to get updated information
+      await refetchTrip()
+
+    } catch (error) {
+      console.error('Error handling hotel selection:', error)
     }
 
     setIsHotelSelectOpen(false)
@@ -501,31 +550,63 @@ export default function CreateProposalPage() {
     }
   }
 
-  const handleRoomSelect = (room: any) => {
-    if (!proposal || !selectedHotelForDetails) return
+  const handleRoomSelect = async (hotel: any, room: any) => {
+    if (!proposal || !selectedHotelForDetails || !trip) return
 
-    // Find the hotel index in the proposal
-    const hotelIndex = proposal.hotels.findIndex(h => h.id === selectedHotelForDetails.id)
-    if (hotelIndex === -1) return
+    try {
+      // Find the hotel index in the proposal
+      const hotelIndex = proposal.hotels.findIndex(h => h.id === selectedHotelForDetails.id)
+      if (hotelIndex === -1) return
 
-    // Update the hotel with new room details
-    const updatedHotels = [...proposal.hotels]
-    updatedHotels[hotelIndex] = {
-      ...updatedHotels[hotelIndex],
-      roomType: room.name,
-      boardBasis: room.board,
-      bedType: room.bedType,
-      pricePerNight: room.pricePerNight,
-      currency: room.currency || 'USD',
-      refundable: room.refundable
+      // Find the corresponding trip day and stay
+      const tripDay = trip.days.find(day => 
+        day.stay && day.stay.room.hotel.id === selectedHotelForDetails.id
+      )
+      
+      if (!tripDay?.stay?.id) {
+        console.error('No trip stay found for hotel:', selectedHotelForDetails.id)
+        return
+      }
+
+      // Delete the existing trip stay
+      console.log('Deleting existing trip stay:', tripDay.stay.id)
+      await deleteTripStay(tripDay.stay.id)
+
+      // Create new trip stay with the new room
+      console.log('Hotel object received in handleRoomSelect:', hotel)
+      console.log('Room object received in handleRoomSelect:', room)
+      console.log('Room ID in handleRoomSelect:', room.id)
+      console.log('Room name in handleRoomSelect:', room.name)
+      console.log('Room structure in handleRoomSelect:', JSON.stringify(room, null, 2))
+      
+      // Validate that we have a room ID
+      if (!room.id) {
+        console.error('No room ID found in room object in handleRoomSelect:', room)
+        throw new Error('No room ID found in selected room')
+      }
+      
+      const tripStayData = {
+        tripDay: tripDay.id,
+        room: room.id, // This should now be the correct room ID
+        checkIn: selectedHotelForDetails.checkIn || new Date().toISOString().split('T')[0],
+        checkOut: selectedHotelForDetails.checkOut || new Date().toISOString().split('T')[0],
+        nights: selectedHotelForDetails.nights || 1,
+        roomsCount: 1, // Default to 1 room
+        mealPlan: room.board || 'BB', // Default to Bed & Breakfast
+        currency: trip.currency.code,
+        priceTotalCents: room.pricePerNight * (selectedHotelForDetails.nights || 1) * 100, // Convert to cents
+        confirmationStatus: 'pending'
+      }
+
+      console.log('Creating new trip stay with data:', tripStayData)
+      await createTripStay(tripStayData)
+
+      // Refresh trip data to get updated information
+      await refetchTrip()
+
+    } catch (error) {
+      console.error('Error handling room selection:', error)
     }
-
-    // Update proposal with recalculated prices
-    const updatedProposal = {
-      ...proposal,
-      hotels: updatedHotels
-    }
-    updateProposalWithPrices(updatedProposal)
 
     // Close the modal
     handleCloseHotelDetails()
@@ -1118,13 +1199,28 @@ export default function CreateProposalPage() {
                         onEdit={() => handleChangeHotel(index)}
                         onChangeRoom={() => handleChangeRoom(hotel)}
                         onChangeHotel={() => handleChangeHotel(index)}
-                        onRemove={() => {
-                          if (!proposal) return
-                          const updatedProposal = {
-                            ...proposal,
-                            hotels: proposal.hotels.filter((h: Hotel) => h.id !== hotel.id)
+                        onRemove={async () => {
+                          if (!trip || !proposal) return
+                          
+                          // Find the corresponding trip stay for this hotel
+                          const tripDay = trip.days.find(day => 
+                            day.stay && day.stay.room.hotel.id === hotel.id
+                          )
+                          
+                          if (!tripDay?.stay?.id) {
+                            console.error('No trip stay found for hotel:', hotel.id)
+                            return
                           }
-                          updateProposalWithPrices(updatedProposal)
+                          
+                          try {
+                            // Call the delete API
+                            await deleteTripStay(tripDay.stay.id)
+                            
+                            // Refresh trip data to get updated information
+                            await refetchTrip()
+                          } catch (error) {
+                            console.error('Error deleting trip stay:', error)
+                          }
                         }}
                       />
                     ))}

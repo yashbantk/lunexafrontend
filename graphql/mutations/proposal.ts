@@ -244,3 +244,96 @@ export const CREATE_PROPOSAL = gql`
     }
   }
 `
+
+export const DELETE_TRIP_STAY = gql`
+  mutation DeleteTripStay($data: BookingDeleteInput!) {
+    deleteTripStay(data: $data) {
+      ... on TripStayType {
+        id
+      }
+      ... on OperationInfo {
+        messages {
+          code
+          message
+          kind
+          field
+        }
+      }
+    }
+  }
+`
+
+export const CREATE_TRIP_STAY = gql`
+  mutation CreateTripStay($data: TripStayInput!) {
+    createTripStay(data: $data) {
+      ... on TripStayType {
+        id
+        tripDay {
+          id
+          dayNumber
+          date
+        }
+        room {
+          id
+          hotel {
+            id
+            name
+            address
+            type
+            description
+            locationUrl
+            star
+          }
+          name
+          priceCents
+          bedType
+          baseMealPlan
+          hotelRoomImages {
+            id
+            url
+            caption
+            priorityOrder
+          }
+          roomAmenities {
+            id
+            name
+            description
+            createdAt
+            updatedAt
+          }
+          maxOccupancy
+          size
+          sizeUnit
+          details
+          amenities
+          tags
+          inclusions
+          exclusions
+          createdAt
+          updatedAt
+        }
+        checkIn
+        checkOut
+        nights
+        roomsCount
+        mealPlan
+        currency {
+          code
+          name
+          createdAt
+          updatedAt
+        }
+        priceTotalCents
+        confirmationStatus
+      }
+      ... on OperationInfo {
+        messages {
+          kind
+          message
+          field
+          code
+        }
+      }
+    }
+  }
+`
