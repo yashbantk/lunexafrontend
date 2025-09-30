@@ -983,7 +983,7 @@ export default function CreateProposalPage() {
               The trip with ID <span className="font-mono bg-gray-100 px-2 py-1 rounded">{tripId}</span> could not be found.
             </p>
             <p className="text-sm text-gray-500 mb-6">
-              This could be because the trip doesn't exist, you don't have permission to view it, or it may have been deleted.
+              This could be because the trip doesn&apos;t exist, you don&apos;t have permission to view it, or it may have been deleted.
             </p>
           </div>
           

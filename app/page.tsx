@@ -80,7 +80,7 @@ export default function HomePage() {
                   </Link>
                 </Button>
                 <Button variant="outline" size="lg" className="text-lg px-8 py-6" asChild>
-                  <Link href="/proposals/cover-demo">View Cover Demo</Link>
+                  <Link href="/my-proposals">View My Proposals</Link>
                 </Button>
                 <Button variant="outline" size="lg" className="text-lg px-8 py-6" asChild>
                   <Link href="/signup">Sign Up Free</Link>

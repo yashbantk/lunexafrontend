@@ -139,6 +139,16 @@ export const defaultAuthConfig: AuthConfig = {
       },
     }],
     
+    ['/my-proposals', {
+      path: '/my-proposals',
+      requiresAuth: true,
+      redirectTo: '/signin',
+      metadata: {
+        title: 'My Proposals',
+        description: 'View and manage your proposals',
+      },
+    }],
+    
     ['/profile', {
       path: '/profile',
       requiresAuth: true,

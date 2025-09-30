@@ -147,7 +147,7 @@ function UserDropdown() {
                 Settings
               </Link>
               <Link
-                href="/proposals"
+                href="/my-proposals"
                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                 onClick={() => setIsDropdownOpen(false)}
               >
@@ -322,7 +322,7 @@ export function Navigation() {
                       Settings
                     </Link>
                     <Link
-                      href="/proposals"
+                      href="/my-proposals"
                       className="block px-3 py-2 text-gray-600 hover:text-primary transition-colors"
                       onClick={() => setIsOpen(false)}
                     >
