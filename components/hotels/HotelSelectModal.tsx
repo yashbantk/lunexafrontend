@@ -402,6 +402,7 @@ export default function HotelSelectModal({
         isOpen={!!quickViewHotel}
         onClose={() => setQuickViewHotel(null)}
         onSelectHotel={handleSelectHotel}
+        onViewDetails={handleViewDetails}
         checkIn={checkIn}
         checkOut={checkOut}
         nights={nights}

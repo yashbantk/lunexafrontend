@@ -109,6 +109,7 @@ export default function RoomSelector({
     const selectedRoom = rooms.find(room => room.id === selectedRoomId)
     if (selectedRoom) {
       onSelectRoom(selectedRoom)
+      onClose() // Close the popup after selecting a room
     }
   }
 
@@ -116,22 +117,19 @@ export default function RoomSelector({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle>
             <div>
               <h2 className="text-xl font-bold">Select Room - {hotel?.name}</h2>
               <p className="text-sm text-gray-600 mt-1">
                 {formatDate(checkIn)} - {formatDate(checkOut)} • {nights} nights • {adults} adults, {childrenCount} children
               </p>
             </div>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto scrollbar-hide">
+        <div className="flex-1 overflow-y-auto min-h-0 scrollbar-hide">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="flex flex-col items-center space-y-4">
@@ -250,7 +248,7 @@ export default function RoomSelector({
 
         {/* Footer Actions */}
         {rooms.length > 0 && (
-          <div className="flex items-center justify-between pt-4 border-t">
+          <div className="flex-shrink-0 flex items-center justify-between pt-4 border-t bg-white">
             <div className="text-sm text-gray-600">
               {selectedRoom && (
                 <div>

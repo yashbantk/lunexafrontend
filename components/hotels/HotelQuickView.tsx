@@ -39,6 +39,7 @@ export default function HotelQuickView({
   isOpen,
   onClose,
   onSelectHotel,
+  onViewDetails,
   checkIn,
   checkOut,
   nights,
@@ -115,16 +116,13 @@ export default function HotelQuickView({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
+          <DialogTitle>
             <div>
               <h2 className="text-xl font-bold">Hotel Preview</h2>
               <p className="text-sm text-gray-600 mt-1">
                 {formatDate(checkIn)} - {formatDate(checkOut)} • {nights} nights
               </p>
             </div>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
           </DialogTitle>
         </DialogHeader>
 
@@ -290,7 +288,12 @@ export default function HotelQuickView({
                     
                     <Button 
                       variant="outline" 
-                      onClick={onClose}
+                      onClick={() => {
+                        onClose()
+                        if (onViewDetails) {
+                          onViewDetails(hotel)
+                        }
+                      }}
                       className="w-full"
                     >
                       View All Rooms

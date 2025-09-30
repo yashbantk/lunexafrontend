@@ -322,7 +322,7 @@ export default function HotelCard({
                 onClick={onSelect}
                 className="text-sm px-4 py-2 h-9"
               >
-                Select Hotel
+                Select Room
               </Button>
               <Button
                 variant="outline"

@@ -110,6 +110,7 @@ export interface HotelQuickViewProps {
   isOpen: boolean
   onClose: () => void
   onSelectHotel: (hotel: Hotel, room: Room) => void
+  onViewDetails?: (hotel: Hotel) => void
   checkIn: string
   checkOut: string
   nights: number
