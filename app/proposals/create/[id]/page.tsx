@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useParams } from "next/navigation"
 import { motion } from "framer-motion"
 import { TopBar } from "@/components/proposals/TopBar"
@@ -44,6 +44,7 @@ export default function CreateProposalPage() {
   
   // Use local state instead of useProposal hook to avoid hardcoded data
   const [proposal, setProposal] = useState<Proposal | null>(null)
+  const proposalRef = useRef<Proposal | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalType, setModalType] = useState<'flight' | 'hotel' | 'activity' | 'day'>('flight')
@@ -142,6 +143,7 @@ export default function CreateProposalPage() {
       priceBreakdown: recalculatedPrices
     }
     setProposal(proposalWithUpdatedPrices)
+    proposalRef.current = proposalWithUpdatedPrices
   }
 
   const saveProposal = useCallback(async (proposalToSave: Proposal | null) => {
@@ -351,15 +353,15 @@ export default function CreateProposalPage() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === 's') {
         e.preventDefault()
-        if (proposal) {
-          saveProposal(proposal)
+        if (proposalRef.current) {
+          saveProposal(proposalRef.current)
         }
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [proposal, saveProposal])
+  }, [saveProposal])
 
   const handleAddItem = (type: 'flight' | 'hotel' | 'activity' | 'day') => {
     setModalType(type)
