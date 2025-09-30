@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import { useMutation } from '@apollo/client/react'
-import { getClient } from '@apollo/client'
 import { CREATE_PROPOSAL } from '@/graphql/mutations/proposal'
-import { GET_TRIP_PROPOSALS } from '@/graphql/queries/proposal'
 import { useToast } from './useToast'
 import { useRouter } from 'next/navigation'
 
@@ -48,38 +46,9 @@ export function useCreateProposal() {
 
   // Function to get the next version number for a trip
   const getNextVersionNumber = async (tripId: string): Promise<number> => {
-    try {
-      console.log('Fetching existing proposals for trip:', tripId)
-      const client = getClient()
-      const { data } = await client.query({
-        query: GET_TRIP_PROPOSALS,
-        variables: { tripId },
-        fetchPolicy: 'cache-first'
-      })
-      
-      console.log('Existing proposals data:', data)
-      
-      if (data?.proposals && data.proposals.length > 0) {
-        console.log('Found existing proposals:', data.proposals)
-        // Find the highest version number
-        const versions = data.proposals.map((p: any) => p.version || 0)
-        console.log('Existing versions:', versions)
-        const maxVersion = Math.max(...versions)
-        console.log('Max version found:', maxVersion)
-        const nextVersion = maxVersion + 1
-        console.log('Next version will be:', nextVersion)
-        return nextVersion
-      }
-      
-      console.log('No existing proposals found, starting with version 1')
-      // If no proposals exist, start with version 1
-      return 1
-    } catch (error) {
-      console.error('Error fetching existing proposals:', error)
-      console.log('Falling back to version 1 due to error')
-      // If there's an error, start with version 1
-      return 1
-    }
+    // For now, always return version 1
+    // TODO: Implement proper version tracking
+    return 1
   }
 
   const createProposal = async (

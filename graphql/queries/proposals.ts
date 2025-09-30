@@ -1,7 +1,7 @@
 import { gql } from '@apollo/client'
 
 export const GET_PROPOSALS = gql`
-  query Proposals($filters: ProposalFilter, $order: ProposalOrder) {
+  query MyProposals($filters: ProposalFilter, $order: ProposalOrder) {
     proposals(filters: $filters, order: $order) {
       id
       version

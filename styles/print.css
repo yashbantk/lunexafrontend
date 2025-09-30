@@ -1,0 +1,85 @@
+/* Print styles for proposal pages */
+@media print {
+  /* Hide navigation and action buttons */
+  .no-print {
+    display: none !important;
+  }
+  
+  /* Ensure proper page breaks */
+  .page-break {
+    page-break-before: always;
+  }
+  
+  /* Optimize colors for print */
+  .print-mode {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .print-mode .shadow-xl {
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb !important;
+  }
+  
+  .print-mode .bg-gradient-to-br {
+    background: white !important;
+  }
+  
+  .print-mode .bg-primary {
+    background: #3b82f6 !important;
+    color: white !important;
+  }
+  
+  .print-mode .text-primary {
+    color: #3b82f6 !important;
+  }
+  
+  /* Ensure proper spacing */
+  .print-mode .p-8 {
+    padding: 1rem !important;
+  }
+  
+  .print-mode .p-6 {
+    padding: 0.75rem !important;
+  }
+  
+  /* Hide interactive elements */
+  .print-mode button {
+    display: none !important;
+  }
+  
+  .print-mode .hover\:bg-primary\/90:hover {
+    background: #3b82f6 !important;
+  }
+  
+  /* Optimize text for print */
+  .print-mode h1,
+  .print-mode h2,
+  .print-mode h3 {
+    color: black !important;
+  }
+  
+  .print-mode .text-gray-600 {
+    color: #4b5563 !important;
+  }
+  
+  .print-mode .text-gray-500 {
+    color: #6b7280 !important;
+  }
+  
+  /* Ensure badges are visible */
+  .print-mode .bg-blue-50 {
+    background: #f0f9ff !important;
+    border: 1px solid #bfdbfe !important;
+  }
+  
+  .print-mode .bg-green-50 {
+    background: #f0fdf4 !important;
+    border: 1px solid #bbf7d0 !important;
+  }
+  
+  .print-mode .bg-purple-50 {
+    background: #faf5ff !important;
+    border: 1px solid #d8b4fe !important;
+  }
+}
