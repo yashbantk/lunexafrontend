@@ -158,9 +158,6 @@ export default function MyProposalsPage() {
   const formatCurrency = (amount: number, currency: string) => {
     const symbols: { [key: string]: string } = {
       'INR': '₹',
-      'USD': '$',
-      'EUR': '€',
-      'AED': 'د.إ',
       'THB': '฿'
     }
     return `${symbols[currency] || currency} ${(amount / 100).toLocaleString()}`

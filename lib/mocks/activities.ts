@@ -114,7 +114,10 @@ export const mockActivities: Activity[] = [
     instantConfirmation: true,
     mobileTicket: true,
     freeCancellation: true,
-    cancellationHours: 24
+    cancellationHours: 24,
+    slot: 'morning',
+    startTime: '02:00',
+    activityOptions: []
   },
   {
     id: '2',
@@ -219,7 +222,10 @@ export const mockActivities: Activity[] = [
     instantConfirmation: true,
     mobileTicket: true,
     freeCancellation: true,
-    cancellationHours: 12
+    cancellationHours: 12,
+    slot: 'morning',
+    startTime: '08:00',
+    activityOptions: []
   },
   {
     id: '3',
@@ -326,7 +332,10 @@ export const mockActivities: Activity[] = [
     instantConfirmation: true,
     mobileTicket: true,
     freeCancellation: true,
-    cancellationHours: 48
+    cancellationHours: 48,
+    slot: 'morning',
+    startTime: '08:00',
+    activityOptions: []
   },
   {
     id: '4',
@@ -431,7 +440,10 @@ export const mockActivities: Activity[] = [
     instantConfirmation: true,
     mobileTicket: true,
     freeCancellation: true,
-    cancellationHours: 6
+    cancellationHours: 6,
+    slot: 'morning',
+    startTime: '08:00',
+    activityOptions: []
   },
   {
     id: '5',
@@ -536,7 +548,10 @@ export const mockActivities: Activity[] = [
     instantConfirmation: true,
     mobileTicket: true,
     freeCancellation: true,
-    cancellationHours: 24
+    cancellationHours: 24,
+    slot: 'morning',
+    startTime: '08:00',
+    activityOptions: []
   },
   {
     id: '6',
@@ -643,7 +658,10 @@ export const mockActivities: Activity[] = [
     instantConfirmation: true,
     mobileTicket: true,
     freeCancellation: true,
-    cancellationHours: 12
+    cancellationHours: 12,
+    slot: 'morning',
+    startTime: '08:00',
+    activityOptions: []
   }
 ]
 

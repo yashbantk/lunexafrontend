@@ -38,8 +38,8 @@ const mockProposal = {
   createdAt: '2024-01-01T00:00:00Z',
   updatedAt: '2024-01-01T00:00:00Z',
   currency: {
-    code: 'USD',
-    name: 'US Dollar',
+    code: 'INR',
+    name: 'Indian Rupee',
   },
   trip: {
     id: 'trip-1',
@@ -230,7 +230,7 @@ describe('ProposalDetailPage', () => {
     expect(screen.getByText('Test Proposal')).toBeInTheDocument()
     expect(screen.getByText('DRAFT')).toBeInTheDocument()
     expect(screen.getByText('v1')).toBeInTheDocument()
-    expect(screen.getByText('$1,000.00')).toBeInTheDocument()
+    expect(screen.getByText('₹1,000.00')).toBeInTheDocument()
     expect(screen.getByText('New York • January 1, 2024 - January 5, 2024')).toBeInTheDocument()
     expect(screen.getByText('4 days • 2 travelers')).toBeInTheDocument()
   })

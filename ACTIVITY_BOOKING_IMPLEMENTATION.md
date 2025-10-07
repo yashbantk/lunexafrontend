@@ -78,7 +78,7 @@ await addActivityToDay(
   'activity-123', // activity ID (required)
   'option-456', // option ID (required)
   '09:00', // time slot (required)
-  'USD', // currency (required)
+  'INR', // currency (required)
   'hotel-789', // pickup hotel ID (required)
   'pending' // confirmation status (required)
 )
@@ -93,7 +93,7 @@ const bookingData = {
   activityId: 'activity-123',
   optionId: 'option-456',
   slot: '14:00',
-  currency: 'USD',
+  currency: 'INR',
   pickupHotelId: 'hotel-789',
   confirmationStatus: 'pending',
   // Optional fields

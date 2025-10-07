@@ -17,7 +17,7 @@ interface HotelCardProps {
 }
 
 export function HotelCard({ hotel, onEdit, onRemove, onChangeRoom, onChangeHotel }: HotelCardProps) {
-  const formatPrice = (price: number, currency: string = 'USD') => {
+  const formatPrice = (price: number, currency: string = 'INR') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,

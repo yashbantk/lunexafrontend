@@ -145,7 +145,7 @@ export function CountriesExplorer({ onSelectCountry, className = "" }: Countries
               <Label htmlFor="currency-search">Currency Code</Label>
               <Input
                 id="currency-search"
-                placeholder="e.g., USD, EUR, CAD"
+                placeholder="e.g., INR"
                 value={currencySearch}
                 onChange={(e) => setCurrencySearch(e.target.value.toUpperCase())}
                 maxLength={3}

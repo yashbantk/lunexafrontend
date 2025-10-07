@@ -129,7 +129,10 @@ export default function ActivityDemoPage() {
                   instantConfirmation: true,
                   mobileTicket: true,
                   freeCancellation: true,
-                  cancellationHours: 24
+                  cancellationHours: 24,
+                  slot: 'morning',
+                  startTime: '02:00',
+                  activityOptions: []
                 })}
                 variant="outline"
                 className="w-full"

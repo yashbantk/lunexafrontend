@@ -9,9 +9,11 @@ export function Footer() {
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-white font-bold text-lg">D</span>
-              </div>
+              <img 
+                src="/assets/brandlogo/images.webp" 
+                alt="Deyor Logo" 
+                className="h-8 w-8 rounded-lg object-contain"
+              />
               <span className="text-xl font-bold text-gray-900">Deyor</span>
             </div>
             <p className="text-gray-600 text-sm">

@@ -207,9 +207,11 @@ export function Navigation() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-white font-bold text-lg">D</span>
-            </div>
+            <img 
+              src="/assets/brandlogo/images.webp" 
+              alt="Deyor Logo" 
+              className="h-8 w-8 rounded-lg object-contain"
+            />
             <span className="text-xl font-bold text-gray-900">Deyor</span>
           </Link>
 

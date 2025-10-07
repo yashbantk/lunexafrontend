@@ -54,11 +54,11 @@ export const formatTime = (timeString: string): string => {
 /**
  * Format price in cents to currency format
  * @param priceCents - Price in cents
- * @param currency - Currency code (default: 'IDR')
+ * @param currency - Currency code (default: 'INR')
  * @returns Formatted price string
  */
-export const formatPrice = (priceCents: number, currency: string = 'IDR'): string => {
-  return new Intl.NumberFormat('id-ID', {
+export const formatPrice = (priceCents: number, currency: string = 'INR'): string => {
+  return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: currency,
     minimumFractionDigits: 0

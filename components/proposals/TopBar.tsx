@@ -13,7 +13,7 @@ interface TopBarProps {
   isSaving?: boolean
 }
 
-export function TopBar({ totalPrice, currency = 'USD', adults = 2, childrenCount = 0, onSaveDraft, isSaving = false }: TopBarProps) {
+export function TopBar({ totalPrice, currency = 'INR', adults = 2, childrenCount = 0, onSaveDraft, isSaving = false }: TopBarProps) {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',

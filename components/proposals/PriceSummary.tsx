@@ -26,7 +26,7 @@ export function PriceSummary({ proposal, onSaveProposal, onPreview }: PriceSumma
   if (!proposal) return null
 
   const formatPrice = (price: number) => {
-    const currency = proposal?.currency || 'USD'
+    const currency = proposal?.currency || 'INR'
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,

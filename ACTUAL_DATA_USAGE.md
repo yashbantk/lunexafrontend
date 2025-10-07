@@ -16,7 +16,7 @@ const bookingData = {
   activityId: activity.id,
   optionId: selection.scheduleSlot.id,
   slot: selection.scheduleSlot.startTime,
-  currency: 'USD', // Hardcoded
+  currency: 'INR', // Hardcoded
   pickupHotelId: selection.pickupOption.type === 'hotel' ? selection.pickupOption.id : 'default-hotel-id', // Hardcoded
   confirmationStatus: 'pending',
   // ... other fields
@@ -53,7 +53,7 @@ const addActivityToDay = async (
   activityId: string,
   optionId: string,
   slot: string = '09:00',
-  currency: string = 'USD', // Hardcoded default
+  currency: string = 'INR', // Hardcoded default
   pickupHotelId: string = 'default-hotel-id', // Hardcoded default
   // ... other parameters
 ) => {
@@ -109,7 +109,7 @@ const bookingInput: ActivityBookingInput = {
 
 ### ✅ **Currency**
 - **Source**: `trip.currency.code`
-- **Example**: "USD", "EUR", "GBP"
+- **Example**: "INR"
 - **Fallback**: Can be overridden if needed
 
 ### ✅ **Day ID**
@@ -201,7 +201,7 @@ The mutation now receives properly formatted data:
     "slot": "09:00:00",
     "activity": "1",
     "option": "1",
-    "currency": "USD",
+    "currency": "INR",
     "pickupHotel": "5",  // Actual hotel ID from trip data
     "confirmationStatus": "pending",
     "paxAdults": 10,

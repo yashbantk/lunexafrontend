@@ -167,7 +167,7 @@ export default function CreateProposalPage() {
         trip: trip.id, // Required - Trip ID
         name: proposalToSave.tripName || `Proposal for ${trip.fromCity.name}`, // Optional - Proposal name
         status: 'draft', // Optional - Proposal status
-        currency: trip.currency.code, // Optional - Currency code
+        currency: 'INR', // Optional - Currency code
         totalPriceCents, // Optional - Total price in cents
         estimatedDateOfBooking: new Date().toISOString(), // Optional - Estimated booking date
         areFlightsBooked: false, // Optional - Whether flights are booked
@@ -205,7 +205,7 @@ export default function CreateProposalPage() {
         time: activity.option.startTime || 'TBD',
         duration: `${activity.option.durationMinutes} minutes`,
         price: (activity.priceBaseCents + activity.priceAddonsCents) / 100,
-        currency: trip.currency.code,
+        currency: 'INR',
         type: activity.slot as 'morning' | 'afternoon' | 'evening' | 'full_day',
         included: false
       })),
@@ -236,7 +236,7 @@ export default function CreateProposalPage() {
         nights: day.stay.nights,
       refundable: true,
         pricePerNight: day.stay.priceTotalCents / 100 / day.stay.nights,
-      currency: trip.currency.code,
+      currency: 'INR',
         confirmationStatus: day.stay.confirmationStatus
     }))
     
@@ -261,7 +261,7 @@ export default function CreateProposalPage() {
       salesperson: trip.createdBy?.firstName + ' ' + trip.createdBy?.lastName || '',
       validityDays: 30,
       markupPercent: parseFloat(trip.markupLandPercent),
-      currency: trip.currency.code,
+      currency: 'INR',
       flights: [], // Empty for now
       hotels: convertedHotels,
       days: convertedDays,
@@ -272,7 +272,7 @@ export default function CreateProposalPage() {
         taxes: 0,
         markup: 0,
         total: 0,
-        currency: trip.currency.code
+        currency: 'INR'
       }, // Will be calculated by calculatePriceBreakdown
       createdAt: trip.createdAt,
       updatedAt: trip.updatedAt,
@@ -473,7 +473,7 @@ export default function CreateProposalPage() {
         nights: nights,
         roomsCount: 1, // Default to 1 room
         mealPlan: room.board || 'BB', // Default to Bed & Breakfast
-        currency: trip.currency.code,
+        currency: 'INR',
         priceTotalCents: room.pricePerNight * nights * 100, // Convert to cents
         confirmationStatus: 'pending'
       }
@@ -528,7 +528,7 @@ export default function CreateProposalPage() {
         nights: segment.duration,
         refundable: true,
         pricePerNight: segment.hotel.minPrice,
-        currency: 'USD',
+        currency: 'INR',
         confirmationStatus: 'pending'
       }))
       
@@ -595,7 +595,7 @@ export default function CreateProposalPage() {
         nights: selectedHotelForDetails.nights || 1,
         roomsCount: 1, // Default to 1 room
         mealPlan: room.board || 'BB', // Default to Bed & Breakfast
-        currency: trip.currency.code,
+        currency: 'INR',
         priceTotalCents: room.pricePerNight * (selectedHotelForDetails.nights || 1) * 100, // Convert to cents
         confirmationStatus: 'pending'
       }
@@ -845,7 +845,7 @@ export default function CreateProposalPage() {
         activityId: activity.id,
         optionId: selection.scheduleSlot.id,
         slot: selection.scheduleSlot.type,
-        currency: trip.currency.code,
+        currency: 'INR',
         pickupOption: selection.pickupOption
       })
 
@@ -854,7 +854,7 @@ export default function CreateProposalPage() {
         activityId: activity.id, // Required
         optionId: selection.scheduleSlot.id, // Required - Use schedule slot ID as option
         slot: selection.scheduleSlot.type, // Required - Use slot type (morning/afternoon/evening/full-day)
-        currency: trip.currency.code, // Required - Use trip currency
+        currency: 'INR', // Required - Use trip currency
         pickupHotelId: hotelId, // Required - Always use actual hotel ID from trip data
         confirmationStatus: 'pending', // Required
         // Optional fields
@@ -1020,7 +1020,7 @@ export default function CreateProposalPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <TopBar 
         totalPrice={proposal?.priceBreakdown?.total || 0}
-        currency={proposal?.currency || 'USD'}
+        currency={proposal?.currency || 'INR'}
         adults={proposal?.adults || 2}
         childrenCount={proposal?.children || 0}
         onSaveDraft={() => saveProposal(proposal)}
@@ -1312,7 +1312,7 @@ export default function CreateProposalPage() {
                             time: currentBooking.option.startTime || 'TBD',
                             duration: `${currentBooking.option.durationMinutes} minutes`,
                             price: (currentBooking.priceBaseCents + currentBooking.priceAddonsCents) / 100,
-                            currency: trip?.currency?.code || 'USD',
+                            currency: trip?.currency?.code || 'INR',
                             type: currentBooking.slot as 'morning' | 'afternoon' | 'evening',
                             included: false // Default to false, can be updated based on business logic
                           }
@@ -1624,8 +1624,8 @@ export default function CreateProposalPage() {
                   inclusions: currentBooking.option.inclusions,
                   exclusions: currentBooking.option.exclusions,
                   currency: {
-                    code: 'USD', // Default currency
-                    name: 'US Dollar'
+                    code: 'INR', // Default currency
+                    name: 'Indian Rupee'
                   },
                   mealPlan: currentBooking.option.mealPlan ? {
                     id: currentBooking.option.mealPlan.id,

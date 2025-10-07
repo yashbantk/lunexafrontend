@@ -56,7 +56,7 @@ export function ProposalDetailHeader({
   const { toast } = useToast()
 
   // Format currency
-  const formatCurrency = (cents: number, currencyCode: string = 'USD') => {
+  const formatCurrency = (cents: number, currencyCode: string = 'INR') => {
     const amount = cents / 100
     return new Intl.NumberFormat('en-US', {
       style: 'currency',

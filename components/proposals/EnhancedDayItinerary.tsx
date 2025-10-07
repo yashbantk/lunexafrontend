@@ -215,7 +215,7 @@ export function EnhancedDayItinerary({ days }: EnhancedDayItineraryProps) {
                             {activity.details.inclusions.map((inclusion, idx) => (
                               <span key={idx}>
                                 {inclusion}
-                                {idx < activity.details.inclusions.length - 1 && ', '}
+                                {idx < (activity.details?.inclusions?.length || 0) - 1 && ', '}
                               </span>
                             ))}
                           </div>

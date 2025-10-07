@@ -86,7 +86,7 @@ const addActivityToDay = async (
   activityId: string,        // Required
   optionId: string,         // Required
   slot: string = '09:00',   // Required with default
-  currency: string = 'USD', // Required with default
+  currency: string = 'INR', // Required with default
   pickupHotelId: string = 'default-hotel-id', // Required with default
   confirmationStatus: string = 'pending', // Required with default
   adults?: number,          // Optional
@@ -108,7 +108,7 @@ await addActivityToDay(
   'activity-123',      // activity ID (required)
   'option-456',        // option ID (required)
   '09:00',             // slot (required)
-  'USD',               // currency (required)
+  'INR',               // currency (required)
   'hotel-789',         // pickup hotel (required)
   'pending'            // confirmation status (required)
 )
@@ -123,7 +123,7 @@ await addActivityToDay(
   'activity-123',      // activity ID (required)
   'option-456',        // option ID (required)
   '14:00',             // slot (required)
-  'USD',               // currency (required)
+  'INR',               // currency (required)
   'hotel-789',         // pickup hotel (required)
   'confirmed',         // confirmation status (required)
   2,                   // adults (optional)

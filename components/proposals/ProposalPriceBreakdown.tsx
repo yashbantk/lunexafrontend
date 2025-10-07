@@ -17,7 +17,7 @@ interface ProposalPriceBreakdownProps {
 
 export function ProposalPriceBreakdown({ proposal }: ProposalPriceBreakdownProps) {
   // Format currency
-  const formatCurrency = (cents: number, currencyCode: string = 'USD') => {
+  const formatCurrency = (cents: number, currencyCode: string = 'INR') => {
     const amount = cents / 100
     return new Intl.NumberFormat('en-US', {
       style: 'currency',

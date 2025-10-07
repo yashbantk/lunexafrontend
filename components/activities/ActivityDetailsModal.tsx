@@ -134,7 +134,7 @@ export default function ActivityDetailsModal({
 
     const fullSelection: ActivitySelection = {
       activity,
-      selectedOption: selection.selectedOption || (activity.activityOptions.length === 1 ? activity.activityOptions[0] : null),
+      selectedOption: selection.selectedOption || (activity.activityOptions.length === 1 ? activity.activityOptions[0] : undefined),
       scheduleSlot: selection.scheduleSlot,
       adults: selection.adults || 0,
       childrenCount: selection.childrenCount || 0,

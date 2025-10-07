@@ -31,7 +31,6 @@ import { useToast } from "@/hooks/useToast"
 import { ProposalDetailHeader } from "@/components/proposals/ProposalDetailHeader"
 import { ProposalItinerary } from "@/components/proposals/ProposalItinerary"
 import { ProposalPriceBreakdown } from "@/components/proposals/ProposalPriceBreakdown"
-import { ProposalVideoPlayer } from "@/components/proposals/ProposalVideoPlayer"
 import { ProposalActionButtons } from "@/components/proposals/ProposalActionButtons"
 import { ProposalPriceCard } from "@/components/proposals/ProposalPriceCard"
 import { FlightItineraryCard } from "@/components/proposals/FlightItineraryCard"
@@ -221,20 +220,20 @@ export default function ProposalDetailPage() {
             <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Abigailbury Trip</h1>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{proposal.tripName || "Trip Proposal"}</h1>
                   <div className="flex items-center space-x-6 text-sm text-gray-600">
-                    <span className="font-medium">Proposal No: {proposal.id || "128"}</span>
+                    <span className="font-medium">Proposal No: {proposal.id}</span>
                     <div className="flex items-center space-x-1">
                       <MapPin className="h-4 w-4" />
-                      <span>Kuta, Bali, 3 nights</span>
+                      <span>{proposal.origin} to Destination</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Calendar className="h-4 w-4" />
-                      <span>September 30, 2025 - 3 nights/4 days</span>
+                      <span>{formatDate(proposal.fromDate)} - {formatDate(proposal.toDate)}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Users className="h-4 w-4" />
-                      <span>1 room, 2 adults</span>
+                      <span>{proposal.adults} adults, {proposal.children} children</span>
                     </div>
                   </div>
                 </div>
@@ -545,13 +544,13 @@ export default function ProposalDetailPage() {
                 {proposal && (
                   <EnhancedPriceBreakdown
                   proposal={{
-                    id: proposal.id || "128",
-                    totalPriceCents: 11258600,
-                    estimatedDateOfBooking: "2025-09-24",
+                    id: proposal.id || "unknown",
+                    totalPriceCents: proposal.priceBreakdown?.total * 100 || 0,
+                    estimatedDateOfBooking: proposal.createdAt || new Date().toISOString(),
                     trip: {
-                      totalTravelers: 2,
-                      fromCity: { name: "Gurgaon" },
-                      nationality: { name: "India" }
+                      totalTravelers: proposal.adults + proposal.children,
+                      fromCity: { name: proposal.origin },
+                      nationality: { name: proposal.nationality }
                     }
                   }}
                   onEditProposal={() => console.log('Edit proposal')}
