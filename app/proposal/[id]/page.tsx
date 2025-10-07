@@ -51,6 +51,26 @@ export default function ProposalDetailPage() {
   const [isPrintMode, setIsPrintMode] = useState(false)
   const [activeTab, setActiveTab] = useState<'itinerary' | 'inclusions' | 'terms' | 'help'>('itinerary')
 
+  // Debug proposal data
+  useEffect(() => {
+    if (proposal) {
+      console.log('Proposal data:', proposal)
+      console.log('Flights:', proposal.flights)
+      console.log('Flights length:', proposal.flights?.length)
+      console.log('Flights details:', proposal.flights?.map(flight => ({
+        id: flight.id,
+        airline: flight.airline,
+        flightNumber: flight.flightNumber,
+        from: flight.from,
+        to: flight.to,
+        departureTime: flight.departureTime,
+        arrivalTime: flight.arrivalTime
+      })))
+      console.log('Hotels:', proposal.hotels)
+      console.log('Days:', proposal.days)
+    }
+  }, [proposal])
+
   // Format date
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -286,12 +306,6 @@ export default function ProposalDetailPage() {
                     </Button>
                   </div>
 
-              {/* Video Player Section */}
-              <ProposalVideoPlayer 
-                title="Play Your Itinerary"
-                duration="00:00 / 00:49"
-                onPlay={() => console.log('Play video')}
-              />
 
               {/* Introduction for Customer */}
               <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -307,193 +321,135 @@ export default function ProposalDetailPage() {
                 </div>
               </div>
 
-              {/* Flights Section */}
-              <div className="space-y-8">
-                {/* Outbound Journey */}
-                <FlightItineraryCard
-                  title="Outbound Journey"
-                  date="2025-10-15"
-                  segments={[
-                    {
-                      id: "segment-1",
-                      airline: "AirAsia X Airways",
-                      flightNumber: "D7-183",
-                      aircraft: "Airbus A330",
-                      departure: {
-                        time: "23:20",
-                        date: "2025-10-15",
-                        airport: "Delhi",
-                        code: "DEL",
-                        terminal: "Terminal"
-                      },
-                      arrival: {
-                        time: "07:40",
-                        date: "2025-10-16",
-                        airport: "Kuala Lumpur International Airport",
-                        code: "KUL"
-                      },
-                      duration: "5h 50m",
-                      baggage: "0KG",
-                      meals: "At Extra Cost",
-                      refundable: false,
-                      cabin: "Economy"
-                    },
-                    {
-                      id: "segment-2",
-                      airline: "AirAsia X Airways",
-                      flightNumber: "D7-798",
-                      aircraft: "Airbus A330",
-                      departure: {
-                        time: "09:10",
-                        date: "2025-10-16",
-                        airport: "Kuala Lumpur International Airport",
-                        code: "KUL",
-                        terminal: "Terminal"
-                      },
-                      arrival: {
-                        time: "12:20",
-                        date: "2025-10-16",
-                        airport: "Ngurah Rai Airport",
-                        code: "DPS"
-                      },
-                      duration: "3h 10m",
-                      baggage: "0KG",
-                      meals: "At Extra Cost",
-                      refundable: false,
-                      cabin: "Economy"
-                    }
-                  ]}
-                  layover={{
-                    duration: "1h 30m",
-                    airport: "Kuala Lumpur",
-                    code: "KUL"
-                  }}
-                />
+              {/* Flights Section - Only show if flights exist and have meaningful data */}
+              {(() => {
+                // Debug: Log the flight check
+                const hasFlights = proposal?.flights && 
+                  proposal.flights.length > 0 && 
+                  proposal.flights.some(flight => 
+                    flight.id && 
+                    flight.airline && 
+                    flight.airline !== "Airline" && 
+                    flight.airline !== "" &&
+                    flight.airline !== undefined &&
+                    flight.flightNumber && 
+                    flight.flightNumber !== "FL-123" &&
+                    flight.flightNumber !== "" &&
+                    flight.flightNumber !== undefined &&
+                    flight.from &&
+                    flight.from !== "" &&
+                    flight.from !== undefined &&
+                    flight.to &&
+                    flight.to !== "" &&
+                    flight.to !== undefined &&
+                    flight.departureTime &&
+                    flight.arrivalTime
+                  );
+                console.log('Has flights:', hasFlights);
+                console.log('Flight check details:', proposal?.flights?.map(flight => ({
+                  hasId: !!flight.id,
+                  hasAirline: !!flight.airline,
+                  airline: flight.airline,
+                  hasFlightNumber: !!flight.flightNumber,
+                  flightNumber: flight.flightNumber,
+                  hasFrom: !!flight.from,
+                  from: flight.from,
+                  hasTo: !!flight.to,
+                  to: flight.to,
+                  hasDepartureTime: !!flight.departureTime,
+                  hasArrivalTime: !!flight.arrivalTime
+                })));
+                return hasFlights;
+              })() && (
+                <div className="space-y-8">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Flights</h2>
+                  {proposal.flights.map((flight, index) => (
+                    <FlightItineraryCard
+                      key={flight.id}
+                      title={index === 0 ? "Outbound Journey" : "Inbound Journey"}
+                      date={flight.departureDate || "2025-10-15"}
+                      segments={[
+                        {
+                          id: flight.id,
+                          airline: flight.airline || "Airline",
+                          flightNumber: flight.flightNumber || "FL-123",
+                          aircraft: "Boeing 737", // Default aircraft type
+                          departure: {
+                            time: flight.departureTime || "10:00",
+                            date: flight.departureDate || "2025-10-15",
+                            airport: flight.from || "Origin Airport",
+                            code: "ORG", // Default code
+                            terminal: "Terminal"
+                          },
+                          arrival: {
+                            time: flight.arrivalTime || "12:00",
+                            date: flight.arrivalDate || "2025-10-15",
+                            airport: flight.to || "Destination Airport",
+                            code: "DST" // Default code
+                          },
+                          duration: flight.duration || "2h 00m",
+                          baggage: "20KG", // Default baggage
+                          meals: "Included", // Default meals
+                          refundable: flight.refundable || false,
+                          cabin: "Economy" // Default cabin
+                        }
+                      ]}
+                    />
+                  ))}
+                </div>
+              )}
 
-                {/* Inbound Journey */}
-                <FlightItineraryCard
-                  title="Inbound Journey"
-                  date="2025-10-19"
-                  segments={[
-                    {
-                      id: "segment-3",
-                      airline: "Airindia",
-                      flightNumber: "AI-2146",
-                      aircraft: "Airbus A321",
-                      departure: {
-                        time: "10:00",
-                        date: "2025-10-19",
-                        airport: "Ngurah Rai Airport",
-                        code: "DPS",
-                        terminal: "Terminal I"
-                      },
-                      arrival: {
-                        time: "15:35",
-                        date: "2025-10-19",
-                        airport: "Delhi",
-                        code: "DEL",
-                        terminal: "Terminal 3"
-                      },
-                      duration: "8h 5m",
-                      baggage: "25KG",
-                      meals: "Included",
-                      refundable: true,
-                      cabin: "Economy"
-                    }
-                  ]}
-                />
-              </div>
-
-              {/* Hotel Details */}
-              <HotelDetailsCard 
-                hotel={{
-                  id: "hotel-1",
-                  name: "Risata Bali Resort and Spa",
-                  location: "JL. Wana Segara, South Kuta Beach",
-                  rating: 4.2,
-                  reviewCount: 315,
-                  checkIn: "2025-10-16T15:00:00",
-                  checkOut: "2025-10-19T12:00:00",
-                  roomType: "Superior Room",
-                  mealPlan: "Breakfast",
-                  refundable: false,
-                  image: "/api/placeholder/600/300",
-                  amenities: ["Pool", "Spa", "Fitness Center", "WiFi", "Restaurant"],
-                  description: "A beautiful resort with traditional Balinese architecture"
-                }}
-              />
+              {/* Hotel Details - Only show if hotels exist */}
+              {proposal?.hotels && proposal.hotels.length > 0 && (
+                <div className="space-y-8">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Hotels</h2>
+                  {proposal.hotels.map((hotel) => (
+                    <HotelDetailsCard 
+                      key={hotel.id}
+                      hotel={{
+                        id: hotel.id,
+                        name: hotel.name,
+                        location: hotel.address || "Hotel Location",
+                        rating: hotel.rating || 4.0,
+                        reviewCount: 315,
+                        checkIn: hotel.checkIn || "2025-10-16T15:00:00",
+                        checkOut: hotel.checkOut || "2025-10-19T12:00:00",
+                        roomType: hotel.roomType || "Standard Room",
+                        mealPlan: hotel.boardBasis || "Breakfast",
+                        refundable: hotel.refundable || false,
+                        image: hotel.image || "/api/placeholder/600/300",
+                        amenities: ["Pool", "Spa", "Fitness Center", "WiFi", "Restaurant"],
+                        description: "A beautiful resort with traditional architecture"
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
 
               {/* Important Notes */}
               <ImportantNotes />
 
-              {/* Enhanced Day Itinerary */}
-              {proposal && (
-                <EnhancedDayItinerary days={[
-                  {
-                    id: "day-1",
-                    dayNumber: 1,
-                    date: "2025-10-16",
-                    title: "Day 1 Arrival at Bali",
-                    summary: "Arrival and transfer to hotel",
-                    description: "Upon your arrival at Ngurah Rai Airport in Denpasar, Bali, our representative will meet and welcome you. You will then be taken to the hotel for your refreshment.",
-                    activities: [],
-                    accommodation: "Risata Bali Resort and Spa",
-                    meals: {
+              {/* Enhanced Day Itinerary - Only show if days exist */}
+              {proposal?.days && proposal.days.length > 0 && (
+                <div className="space-y-8">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Itinerary</h2>
+                  <EnhancedDayItinerary days={proposal.days.map((day, index) => ({
+                    id: day.id,
+                    dayNumber: day.dayNumber || index + 1,
+                    date: day.date || "2025-10-16",
+                    title: day.title || `Day ${day.dayNumber || index + 1}`,
+                    summary: day.summary || "Day activities",
+                    description: "Day description", // Default description
+                    activities: day.activities || [],
+                    accommodation: day.accommodation || "Hotel",
+                    meals: day.meals || {
                       breakfast: false,
                       lunch: false,
                       dinner: false
                     },
-                    image: "/api/placeholder/600/300",
-                    flightInfo: {
-                      flightNumber: "D7-798",
-                      arrivalTime: "12:20 PM",
-                      arrivalDate: "16 Oct, 2025",
-                      airport: "Ngurah Rai Airport, Bali"
-                    },
-                    transferInfo: {
-                      time: "12:20",
-                      type: "Private Transfer from Airport to Hotel",
-                      destination: "Kuta, Legian, Tuban Kuta",
-                      details: ["Private Transfers", "3 Bags"]
-                    }
-                  },
-                  {
-                    id: "day-2",
-                    dayNumber: 2,
-                    date: "2025-10-17",
-                    title: "Day 2 Full Day Ubud and Kintamani [Customised]",
-                    summary: "Full day tour of Ubud and Kintamani",
-                    description: "Experience the breathtaking landscapes of Ubud and Kintamani on this private tour. Your vehicle is at your disposal throughout the day, and entrance fees to Kintamani are included. You can customize your experience by selecting up to four additional inclusions.",
-                    activities: [
-                      {
-                        id: "activity-1",
-                        title: "Ubud and Kintamani - Private - Customisable Tour",
-                        description: "Experience the breathtaking landscapes of Ubud and Kintamani on this private tour.",
-                        time: "08:30",
-                        duration: "10 hrs",
-                        price: 0,
-                        currency: "USD",
-                        type: "full_day",
-                        included: true,
-                        notes: "IF MONKEY FOREST IS SELECTED (only 2 other tours possible with this)",
-                        details: {
-                          startTime: "8:00 am",
-                          pickupTime: "08:00 am",
-                          startLocation: "Risata Bali Resort and Spa",
-                          inclusions: ["Kintamani Entrance"],
-                          transfers: "Private Transfers"
-                        }
-                      }
-                    ],
-                    accommodation: "Risata Bali Resort and Spa",
-                    meals: {
-                      breakfast: true,
-                      lunch: false,
-                      dinner: false
-                    },
                     image: "/api/placeholder/600/300"
-                  }
-                ]} />
+                  }))} />
+                </div>
               )}
                 </>
               )}
@@ -501,47 +457,38 @@ export default function ProposalDetailPage() {
               {activeTab === 'inclusions' && (
                 <InclusionsSection 
                   inclusions={{
-                    accommodation: [
-                      {
-                        id: "accommodation-1",
-                        title: "Stay for 3 nights at Risata Bali Resort and Spa",
-                        description: "1 x Superior Room (Breakfast)",
-                        included: true,
-                        details: ["3 nights"]
-                      }
-                    ],
-                    transfers: [
+                    accommodation: proposal?.hotels && proposal.hotels.length > 0 ? proposal.hotels.map((hotel, index) => ({
+                      id: `accommodation-${index + 1}`,
+                      title: `Stay for ${hotel.nights || 1} night${(hotel.nights || 1) > 1 ? 's' : ''} at ${hotel.name}`,
+                      description: `${hotel.roomType || 'Standard Room'} (${hotel.boardBasis || 'Breakfast'})`,
+                      included: true,
+                      details: [`${hotel.nights || 1} night${(hotel.nights || 1) > 1 ? 's' : ''}`]
+                    })) : [],
+                    transfers: proposal?.addTransfers ? [
                       {
                         id: "transfer-1",
-                        title: "Private Transfer from Airport to Hotel - Kuta, Legian, Tuban Kuta",
-                        description: "Airport pickup service",
-                        included: true,
-                        badge: "Private Transfers"
-                      },
-                      {
-                        id: "transfer-2",
-                        title: "Private Transfer from Hotel to Airport - Kuta, Legian, Tuban Kuta",
-                        description: "Airport drop service",
+                        title: "Airport Transfer",
+                        description: "Airport pickup and drop service",
                         included: true,
                         badge: "Private Transfers"
                       }
-                    ],
-                    tours: [
+                    ] : [],
+                    tours: proposal?.days && proposal.days.some(day => day.activities && day.activities.length > 0) ? [
                       {
                         id: "tour-1",
-                        title: "Ubud and Kintamani - Private - Customisable Tour (upto 4 extra inclusions)",
-                        description: "Starts at 8:00 am (Duration: 10 hrs), Pick up time 08:00 am, Start from Risata Bali Resort and Spa, Kintamani Entrance",
+                        title: "Guided Tours",
+                        description: "Various guided tours and activities",
                         included: true,
-                        badge: "Private Transfers"
+                        badge: "Private Tours"
                       }
-                    ],
+                    ] : [],
                     meals: [
                       {
                         id: "breakfast",
                         title: "Breakfast",
                         description: "Morning meal",
-                        included: true,
-                        details: ["3 days"]
+                        included: proposal?.hotels && proposal.hotels.some(hotel => hotel.boardBasis?.toLowerCase().includes('breakfast')),
+                        details: proposal?.hotels && proposal.hotels.some(hotel => hotel.boardBasis?.toLowerCase().includes('breakfast')) ? [`${proposal.hotels.length} days`] : []
                       },
                       {
                         id: "lunch",
@@ -559,15 +506,15 @@ export default function ProposalDetailPage() {
                     visa: [
                       {
                         id: "visa-1",
-                        title: "Indonesia - E-visa - Tourist / Single Entry / E-Visa",
-                        description: "Electronic visa for Indonesia",
+                        title: "Visa Requirements",
+                        description: "Check visa requirements for your destination",
                         included: false
                       }
                     ],
                     travelInsurance: [
                       {
                         id: "insurance-1",
-                        title: "Travel Insurance (covering Medical, Baggage Loss, Flight Cancellations or Delays) - Only for Age Below 60 Yrs",
+                        title: "Travel Insurance",
                         description: "Comprehensive travel insurance coverage",
                         included: false
                       }
@@ -594,8 +541,9 @@ export default function ProposalDetailPage() {
 
             {/* Right Column - Price Summary */}
             <div className="xl:col-span-1">
-              {proposal && (
-                <EnhancedPriceBreakdown
+              <div className="sticky top-24">
+                {proposal && (
+                  <EnhancedPriceBreakdown
                   proposal={{
                     id: proposal.id || "128",
                     totalPriceCents: 11258600,
@@ -615,7 +563,8 @@ export default function ProposalDetailPage() {
                   onMail={() => console.log('Mail')}
                   onWhatsApp={() => console.log('WhatsApp')}
                 />
-              )}
+                )}
+              </div>
             </div>
           </div>
           </motion.div>

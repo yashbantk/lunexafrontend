@@ -647,9 +647,11 @@ export default function CreateProposalPage() {
 
       // Check for time conflicts only if the activity has a startTime
       if (activity.startTime) {
-        const dayBlockedSlots = blockedTimeSlots.filter(slot => 
-          trip.days.find(day => day.id === targetDayId)?.activityBookings.some(booking => booking.id === slot.id)
-        )
+        // Get blocked slots for the specific day
+        const dayBlockedSlots = blockedTimeSlots.filter(slot => {
+          const day = trip.days.find(day => day.id === targetDayId)
+          return day?.activityBookings.some(booking => booking.id === slot.id)
+        })
         
         if (hasTimeConflict(activity, dayBlockedSlots)) {
           throw new Error('This activity conflicts with existing activities in the same time slot. Please choose a different time or remove conflicting activities.')
@@ -1285,6 +1287,7 @@ export default function CreateProposalPage() {
                       key={day.id}
                       day={day}
                       dayIndex={index}
+                      blockedTimeSlots={blockedTimeSlots}
                       onEdit={() => handleEditItem('day', day)}
                       onRemove={() => {
                         if (!proposal) return
@@ -1324,13 +1327,21 @@ export default function CreateProposalPage() {
                         }
                       }}
                       onRemoveActivity={async (activityId, dayIndex) => {
-                        if (!proposal) return
+                        console.log('onRemoveActivity called with:', { activityId, dayIndex, proposal: !!proposal })
+                        
+                        if (!proposal) {
+                          console.error('No proposal available')
+                          return
+                        }
                         
                         try {
+                          console.log('Calling deleteActivityBooking with ID:', activityId)
                           // Call the delete mutation
                           const result = await deleteActivityBooking(activityId)
+                          console.log('Delete result:', result)
                           
                           if (result) {
+                            console.log('Activity deleted successfully, updating local state')
                             // Update local state to remove the activity
                             const updatedDays = [...proposal.days]
                             updatedDays[dayIndex] = {
@@ -1344,8 +1355,11 @@ export default function CreateProposalPage() {
                             
                             // Refresh trip data to get updated activity bookings
                             if (refetchTrip) {
+                              console.log('Refreshing trip data')
                               refetchTrip()
                             }
+                          } else {
+                            console.error('Delete result was null/undefined')
                           }
                         } catch (error) {
                           console.error('Error removing activity:', error)

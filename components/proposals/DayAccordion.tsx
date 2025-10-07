@@ -18,6 +18,7 @@ import {
   X
 } from "lucide-react"
 import { Day, Activity } from "@/types/proposal"
+import { ActivityTimeBlock } from "@/lib/utils/activitySlotFilter"
 
 interface DayAccordionProps {
   day: Day
@@ -27,9 +28,10 @@ interface DayAccordionProps {
   onAddActivity: () => void
   onEditActivity?: (activity: Activity, dayIndex: number) => void
   onRemoveActivity?: (activityId: string, dayIndex: number) => void
+  blockedTimeSlots?: ActivityTimeBlock[]
 }
 
-export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, onEditActivity, onRemoveActivity }: DayAccordionProps) {
+export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, onEditActivity, onRemoveActivity, blockedTimeSlots = [] }: DayAccordionProps) {
   const [isExpanded, setIsExpanded] = useState(day.dayNumber <= 2) // Open first 2 days by default
 
   const formatTime = (time: string) => {
@@ -143,22 +145,95 @@ export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, o
                   </div>
                   
                   <div className="grid grid-cols-3 gap-4">
-                    {['morning', 'afternoon', 'evening'].map((timeSlot) => (
-                      <div key={timeSlot} className="text-center">
-                        <div className={`px-3 py-2 rounded-lg text-xs font-medium mb-2 ${getTimeSlotColor(timeSlot)}`}>
-                          {timeSlot.charAt(0).toUpperCase() + timeSlot.slice(1)}
+                    {['morning', 'afternoon', 'evening'].map((timeSlot) => {
+                      const slotBlockedSlots = blockedTimeSlots.filter(slot => slot.slot === timeSlot)
+                      const isBlocked = slotBlockedSlots.length > 0
+                      
+                      return (
+                        <div key={timeSlot} className="text-center">
+                          <div className={`px-3 py-2 rounded-lg text-xs font-medium mb-2 ${getTimeSlotColor(timeSlot)}`}>
+                            {timeSlot.charAt(0).toUpperCase() + timeSlot.slice(1)}
+                            {isBlocked && (
+                              <span className="ml-2 text-red-600">({slotBlockedSlots.length} blocked)</span>
+                            )}
+                          </div>
+                          
+                          {/* Timeline visualization within each slot */}
+                          {isBlocked && (
+                            <div className="mb-2">
+                              <div className="relative bg-gray-100 rounded-lg h-6 overflow-hidden">
+                                {/* Time markers */}
+                                <div className="absolute inset-0 flex">
+                                  {Array.from({ length: 3 }, (_, i) => {
+                                    const hour = timeSlot === 'morning' ? 6 + i * 2 : 
+                                                timeSlot === 'afternoon' ? 12 + i * 2 : 18 + i * 2
+                                    const position = (i / 2) * 100
+                                    return (
+                                      <div 
+                                        key={i}
+                                        className="absolute top-0 h-full border-l border-gray-300"
+                                        style={{ left: `${position}%` }}
+                                      >
+                                        <div className="absolute -top-4 left-0 transform -translate-x-1/2 text-xs text-gray-500">
+                                          {hour}:00
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+
+                                {/* Blocked time slots */}
+                                {slotBlockedSlots.map((slot, index) => {
+                                  const startHour = parseInt(slot.startTime.split(':')[0])
+                                  const endHour = parseInt(slot.endTime.split(':')[0])
+                                  const slotStart = timeSlot === 'morning' ? 6 : timeSlot === 'afternoon' ? 12 : 18
+                                  const slotEnd = timeSlot === 'morning' ? 12 : timeSlot === 'afternoon' ? 18 : 24
+                                  
+                                  const startPosition = ((startHour - slotStart) / (slotEnd - slotStart)) * 100
+                                  const width = ((endHour - startHour) / (slotEnd - slotStart)) * 100
+                                  
+                                  return (
+                                    <div
+                                      key={slot.id}
+                                      className="absolute top-0 h-full bg-red-500 border border-red-600 rounded-sm flex items-center justify-center"
+                                      style={{
+                                        left: `${Math.max(0, startPosition)}%`,
+                                        width: `${Math.min(100 - startPosition, width)}%`,
+                                        zIndex: 10
+                                      }}
+                                    >
+                                      <div className="text-white text-xs font-medium px-1 truncate">
+                                        {slot.title}
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                              
+                              {/* Blocked slots details */}
+                              <div className="mt-1 space-y-1">
+                                {slotBlockedSlots.map((slot) => (
+                                  <div key={slot.id} className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
+                                    {slot.title} ({slot.startTime} - {slot.endTime})
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={onAddActivity}
+                            className={`w-full text-xs h-8 ${isBlocked ? 'border-red-300 text-red-600 hover:bg-red-50' : ''}`}
+                            disabled={isBlocked}
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            {isBlocked ? 'Slot Blocked' : 'Add Activity'}
+                          </Button>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={onAddActivity}
-                          className="w-full text-xs h-8"
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          Add Activity
-                        </Button>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
 
@@ -199,7 +274,16 @@ export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, o
                               variant="outline"
                               size="sm"
                               className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => onRemoveActivity?.(activity.id, dayIndex)}
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                console.log('Remove activity clicked:', activity.id, dayIndex)
+                                
+                                // Add confirmation dialog
+                                if (window.confirm(`Are you sure you want to remove "${activity.title}"?`)) {
+                                  onRemoveActivity?.(activity.id, dayIndex)
+                                }
+                              }}
                               title="Remove activity"
                             >
                               <X className="h-3 w-3" />
