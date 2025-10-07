@@ -46,7 +46,7 @@ export default function ProposalDetailPage() {
   const { toast } = useToast()
   const proposalId = params.id as string
   
-  const { proposal, isLoading: loading } = useProposal(proposalId)
+  const { proposal, loading } = useProposal(proposalId)
   const [isPrintMode, setIsPrintMode] = useState(false)
   const [activeTab, setActiveTab] = useState<'itinerary' | 'inclusions' | 'terms' | 'help'>('itinerary')
 
@@ -54,19 +54,9 @@ export default function ProposalDetailPage() {
   useEffect(() => {
     if (proposal) {
       console.log('Proposal data:', proposal)
-      console.log('Flights:', proposal.flights)
-      console.log('Flights length:', proposal.flights?.length)
-      console.log('Flights details:', proposal.flights?.map(flight => ({
-        id: flight.id,
-        airline: flight.airline,
-        flightNumber: flight.flightNumber,
-        from: flight.from,
-        to: flight.to,
-        departureTime: flight.departureTime,
-        arrivalTime: flight.arrivalTime
-      })))
-      console.log('Hotels:', proposal.hotels)
-      console.log('Days:', proposal.days)
+      console.log('Trip data:', proposal.trip)
+      console.log('Days:', proposal.trip?.days)
+      console.log('Days length:', proposal.trip?.days?.length)
     }
   }, [proposal])
 
@@ -220,20 +210,20 @@ export default function ProposalDetailPage() {
             <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{proposal.tripName || "Trip Proposal"}</h1>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{proposal.name || "Trip Proposal"}</h1>
                   <div className="flex items-center space-x-6 text-sm text-gray-600">
                     <span className="font-medium">Proposal No: {proposal.id}</span>
                     <div className="flex items-center space-x-1">
                       <MapPin className="h-4 w-4" />
-                      <span>{proposal.origin} to Destination</span>
+                      <span>{proposal.trip?.fromCity?.name || "Unknown"} to {proposal.trip?.days?.[0]?.city?.name || "Destination"}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Calendar className="h-4 w-4" />
-                      <span>{formatDate(proposal.fromDate)} - {formatDate(proposal.toDate)}</span>
+                      <span>{proposal.trip?.startDate ? formatDate(proposal.trip.startDate) : "Start Date"} - {proposal.trip?.durationDays || 0} days</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Users className="h-4 w-4" />
-                      <span>{proposal.adults} adults, {proposal.children} children</span>
+                      <span>{proposal.trip?.totalTravelers || 0} travelers</span>
                     </div>
                   </div>
                 </div>
@@ -320,108 +310,42 @@ export default function ProposalDetailPage() {
                 </div>
               </div>
 
-              {/* Flights Section - Only show if flights exist and have meaningful data */}
-              {(() => {
-                // Debug: Log the flight check
-                const hasFlights = proposal?.flights && 
-                  proposal.flights.length > 0 && 
-                  proposal.flights.some(flight => 
-                    flight.id && 
-                    flight.airline && 
-                    flight.airline !== "Airline" && 
-                    flight.airline !== "" &&
-                    flight.airline !== undefined &&
-                    flight.flightNumber && 
-                    flight.flightNumber !== "FL-123" &&
-                    flight.flightNumber !== "" &&
-                    flight.flightNumber !== undefined &&
-                    flight.from &&
-                    flight.from !== "" &&
-                    flight.from !== undefined &&
-                    flight.to &&
-                    flight.to !== "" &&
-                    flight.to !== undefined &&
-                    flight.departureTime &&
-                    flight.arrivalTime
-                  );
-                console.log('Has flights:', hasFlights);
-                console.log('Flight check details:', proposal?.flights?.map(flight => ({
-                  hasId: !!flight.id,
-                  hasAirline: !!flight.airline,
-                  airline: flight.airline,
-                  hasFlightNumber: !!flight.flightNumber,
-                  flightNumber: flight.flightNumber,
-                  hasFrom: !!flight.from,
-                  from: flight.from,
-                  hasTo: !!flight.to,
-                  to: flight.to,
-                  hasDepartureTime: !!flight.departureTime,
-                  hasArrivalTime: !!flight.arrivalTime
-                })));
-                return hasFlights;
-              })() && (
+              {/* Flights Section - Only show if flights are booked */}
+              {proposal?.areFlightsBooked && (
                 <div className="space-y-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">Flights</h2>
-                  {proposal.flights.map((flight, index) => (
-                    <FlightItineraryCard
-                      key={flight.id}
-                      title={index === 0 ? "Outbound Journey" : "Inbound Journey"}
-                      date={flight.departureDate || "2025-10-15"}
-                      segments={[
-                        {
-                          id: flight.id,
-                          airline: flight.airline || "Airline",
-                          flightNumber: flight.flightNumber || "FL-123",
-                          aircraft: "Boeing 737", // Default aircraft type
-                          departure: {
-                            time: flight.departureTime || "10:00",
-                            date: flight.departureDate || "2025-10-15",
-                            airport: flight.from || "Origin Airport",
-                            code: "ORG", // Default code
-                            terminal: "Terminal"
-                          },
-                          arrival: {
-                            time: flight.arrivalTime || "12:00",
-                            date: flight.arrivalDate || "2025-10-15",
-                            airport: flight.to || "Destination Airport",
-                            code: "DST" // Default code
-                          },
-                          duration: flight.duration || "2h 00m",
-                          baggage: "20KG", // Default baggage
-                          meals: "Included", // Default meals
-                          refundable: flight.refundable || false,
-                          cabin: "Economy" // Default cabin
-                        }
-                      ]}
-                    />
-                  ))}
+                  <div className="bg-white rounded-2xl shadow-xl p-8">
+                    <p className="text-gray-600">Flight details will be displayed here when flights are booked.</p>
+                  </div>
                 </div>
               )}
 
               {/* Hotel Details - Only show if hotels exist */}
-              {proposal?.hotels && proposal.hotels.length > 0 && (
+              {proposal?.trip?.days && proposal.trip.days.some(day => day.stay) && (
                 <div className="space-y-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">Hotels</h2>
-                  {proposal.hotels.map((hotel) => (
-                    <HotelDetailsCard 
-                      key={hotel.id}
-                      hotel={{
-                        id: hotel.id,
-                        name: hotel.name,
-                        location: hotel.address || "Hotel Location",
-                        rating: hotel.rating || 4.0,
-                        reviewCount: 315,
-                        checkIn: hotel.checkIn || "2025-10-16T15:00:00",
-                        checkOut: hotel.checkOut || "2025-10-19T12:00:00",
-                        roomType: hotel.roomType || "Standard Room",
-                        mealPlan: hotel.boardBasis || "Breakfast",
-                        refundable: hotel.refundable || false,
-                        image: hotel.image || "/api/placeholder/600/300",
-                        amenities: ["Pool", "Spa", "Fitness Center", "WiFi", "Restaurant"],
-                        description: "A beautiful resort with traditional architecture"
-                      }}
-                    />
-                  ))}
+                  {proposal.trip.days
+                    .filter(day => day.stay)
+                    .map((day) => (
+                      <HotelDetailsCard 
+                        key={day.stay?.id}
+                        hotel={{
+                          id: day.stay?.id || "unknown",
+                          name: day.stay?.room?.hotel?.name || "Hotel Name",
+                          location: day.stay?.room?.hotel?.address || "Hotel Location",
+                          rating: day.stay?.room?.hotel?.star || 4.0,
+                          reviewCount: day.stay?.room?.hotel?.totalRatings || 315,
+                          checkIn: day.stay?.checkIn || "2025-10-16T15:00:00",
+                          checkOut: day.stay?.checkOut || "2025-10-19T12:00:00",
+                          roomType: day.stay?.room?.name || "Standard Room",
+                          mealPlan: day.stay?.mealPlan || "Breakfast",
+                          refundable: true, // Default
+                          image: day.stay?.room?.hotelRoomImages?.[0]?.url || "/api/placeholder/600/300",
+                          amenities: day.stay?.room?.hotel?.amenities || ["Pool", "Spa", "Fitness Center", "WiFi", "Restaurant"],
+                          description: day.stay?.room?.hotel?.description || "A beautiful resort with traditional architecture"
+                        }}
+                      />
+                    ))}
                 </div>
               )}
 
@@ -429,22 +353,32 @@ export default function ProposalDetailPage() {
               <ImportantNotes />
 
               {/* Enhanced Day Itinerary - Only show if days exist */}
-              {proposal?.days && proposal.days.length > 0 && (
+              {proposal?.trip?.days && proposal.trip.days.length > 0 && (
                 <div className="space-y-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">Itinerary</h2>
-                  <EnhancedDayItinerary days={proposal.days.map((day, index) => ({
+                  <EnhancedDayItinerary days={proposal.trip.days.map((day, index) => ({
                     id: day.id,
                     dayNumber: day.dayNumber || index + 1,
                     date: day.date || "2025-10-16",
-                    title: day.title || `Day ${day.dayNumber || index + 1}`,
-                    summary: day.summary || "Day activities",
+                    title: `Day ${day.dayNumber || index + 1}`,
+                    summary: "Day activities",
                     description: "Day description", // Default description
-                    activities: day.activities || [],
-                    accommodation: day.accommodation || "Hotel",
-                    meals: day.meals || {
-                      breakfast: false,
-                      lunch: false,
-                      dinner: false
+                    activities: day.activityBookings?.map(booking => ({
+                      id: booking.id,
+                      title: booking.option?.activity?.title || "Activity",
+                      description: booking.option?.activity?.description || "Activity description",
+                      time: booking.option?.startTime || "09:00",
+                      duration: `${booking.option?.durationMinutes || 60} minutes`,
+                      price: (booking.priceBaseCents || 0) / 100,
+                      currency: "INR",
+                      type: booking.slot as 'morning' | 'afternoon' | 'evening',
+                      included: true
+                    })) || [],
+                    accommodation: day.stay?.room?.hotel?.name || "Hotel",
+                    meals: {
+                      breakfast: true, // Default
+                      lunch: true, // Default
+                      dinner: true // Default
                     },
                     image: "/api/placeholder/600/300"
                   }))} />
@@ -456,14 +390,16 @@ export default function ProposalDetailPage() {
               {activeTab === 'inclusions' && (
                 <InclusionsSection 
                   inclusions={{
-                    accommodation: proposal?.hotels && proposal.hotels.length > 0 ? proposal.hotels.map((hotel, index) => ({
-                      id: `accommodation-${index + 1}`,
-                      title: `Stay for ${hotel.nights || 1} night${(hotel.nights || 1) > 1 ? 's' : ''} at ${hotel.name}`,
-                      description: `${hotel.roomType || 'Standard Room'} (${hotel.boardBasis || 'Breakfast'})`,
-                      included: true,
-                      details: [`${hotel.nights || 1} night${(hotel.nights || 1) > 1 ? 's' : ''}`]
-                    })) : [],
-                    transfers: proposal?.addTransfers ? [
+                    accommodation: proposal?.trip?.days && proposal.trip.days.some(day => day.stay) ? proposal.trip.days
+                      .filter(day => day.stay)
+                      .map((day, index) => ({
+                        id: `accommodation-${index + 1}`,
+                        title: `Stay for ${day.stay?.nights || 1} night${(day.stay?.nights || 1) > 1 ? 's' : ''} at ${day.stay?.room?.hotel?.name || 'Hotel'}`,
+                        description: `${day.stay?.room?.name || 'Standard Room'} (${day.stay?.mealPlan || 'Breakfast'})`,
+                        included: true,
+                        details: [`${day.stay?.nights || 1} night${(day.stay?.nights || 1) > 1 ? 's' : ''}`]
+                      })) : [],
+                    transfers: proposal?.trip?.transferOnly ? [
                       {
                         id: "transfer-1",
                         title: "Airport Transfer",
@@ -472,7 +408,7 @@ export default function ProposalDetailPage() {
                         badge: "Private Transfers"
                       }
                     ] : [],
-                    tours: proposal?.days && proposal.days.some(day => day.activities && day.activities.length > 0) ? [
+                    tours: proposal?.trip?.days && proposal.trip.days.some(day => day.activityBookings && day.activityBookings.length > 0) ? [
                       {
                         id: "tour-1",
                         title: "Guided Tours",
@@ -486,8 +422,8 @@ export default function ProposalDetailPage() {
                         id: "breakfast",
                         title: "Breakfast",
                         description: "Morning meal",
-                        included: proposal?.hotels && proposal.hotels.some(hotel => hotel.boardBasis?.toLowerCase().includes('breakfast')),
-                        details: proposal?.hotels && proposal.hotels.some(hotel => hotel.boardBasis?.toLowerCase().includes('breakfast')) ? [`${proposal.hotels.length} days`] : []
+                        included: !!(proposal?.trip?.days && proposal.trip.days.some(day => day.stay?.mealPlan?.toLowerCase().includes('breakfast'))),
+                        details: proposal?.trip?.days && proposal.trip.days.some(day => day.stay?.mealPlan?.toLowerCase().includes('breakfast')) ? [`${proposal.trip.days.length} days`] : []
                       },
                       {
                         id: "lunch",
@@ -544,13 +480,13 @@ export default function ProposalDetailPage() {
                 {proposal && (
                   <EnhancedPriceBreakdown
                   proposal={{
-                    id: proposal.id || "unknown",
-                    totalPriceCents: proposal.priceBreakdown?.total * 100 || 0,
-                    estimatedDateOfBooking: proposal.createdAt || new Date().toISOString(),
+                    id: proposal.id,
+                    totalPriceCents: proposal.totalPriceCents,
+                    estimatedDateOfBooking: proposal.estimatedDateOfBooking,
                     trip: {
-                      totalTravelers: proposal.adults + proposal.children,
-                      fromCity: { name: proposal.origin },
-                      nationality: { name: proposal.nationality }
+                      totalTravelers: proposal.trip?.totalTravelers || 0,
+                      fromCity: proposal.trip?.fromCity || { name: "Unknown" },
+                      nationality: proposal.trip?.nationality || { name: "Unknown" }
                     }
                   }}
                   onEditProposal={() => console.log('Edit proposal')}
