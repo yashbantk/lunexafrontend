@@ -238,9 +238,9 @@ export interface ProposalDetails {
 export function useProposal(proposalId: string) {
   const { data, loading, error } = useQuery<
     { proposal: ProposalDetails },
-    { id: string }
+    { proposalId: string }
   >(GET_PROPOSAL_DETAILS, {
-    variables: { id: proposalId },
+    variables: { proposalId: proposalId },
     skip: !proposalId,
   })
 
