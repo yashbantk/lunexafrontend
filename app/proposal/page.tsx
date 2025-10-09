@@ -71,11 +71,11 @@ const getInitialFormData = (): DirectFormData => ({
   fromCity: null,
   startDate: "",
   nationality: null,
-  currency: null,
+  currency: "INR",
   status: "draft",
   tripType: "leisure",
   totalTravelers: 2,
-  starRating: null,
+  starRating: 3,
   transferOnly: false,
   landOnly: false,
   travelerDetails: {
@@ -350,7 +350,7 @@ export default function ProposalPage() {
 
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Destinations Section */}
-            <Card className="form-card shadow-xl">
+            <Card className="form-card">
               <CardHeader>
                 <CardTitle className="flex items-center text-xl">
                   <MapPin className="h-5 w-5 mr-2 text-primary" />
@@ -436,7 +436,7 @@ export default function ProposalPage() {
             </Card>
 
             {/* Required Information Section */}
-            <Card className="form-card shadow-xl">
+            <Card className="form-card">
               <CardHeader>
                 <CardTitle className="flex items-center text-xl">
                   <Calendar className="h-5 w-5 mr-2 text-primary" />
@@ -456,6 +456,7 @@ export default function ProposalPage() {
                       onChange={() => {}} // Handled by onSelectCity
                       onSelectCity={handleFromCitySelect}
                       placeholder="Search departure city"
+                      label=""
                     />
                   </div>
 
@@ -464,9 +465,10 @@ export default function ProposalPage() {
                     <Label htmlFor="startDate">Start Date *</Label>
                     <Input
                       id="startDate"
-                      type="datetime-local"
+                      type="date"
                       value={formData.startDate}
                       onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                      min={new Date().toISOString().split('T')[0]}
                       required
                     />
                   </div>
@@ -479,6 +481,7 @@ export default function ProposalPage() {
                       onChange={() => {}} // Handled by onSelectCountry
                       onSelectCountry={handleCountrySelect}
                       placeholder="Search for nationality"
+                      label=""
                     />
                   </div>
 
