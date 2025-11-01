@@ -59,9 +59,11 @@ interface Day {
 
 interface EnhancedDayItineraryProps {
   days: Day[]
+  onViewActivity?: (activity: Activity) => void
+  onViewTransfer?: () => void
 }
 
-export function EnhancedDayItinerary({ days }: EnhancedDayItineraryProps) {
+export function EnhancedDayItinerary({ days, onViewActivity, onViewTransfer }: EnhancedDayItineraryProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       weekday: 'short',
@@ -96,7 +98,7 @@ export function EnhancedDayItinerary({ days }: EnhancedDayItineraryProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: index * 0.1 }}
-          className="bg-white rounded-2xl shadow-xl overflow-hidden"
+          className="bg-white rounded-2xl overflow-hidden"
         >
           {/* Day Header */}
           <div className="p-6 border-b border-gray-200">
@@ -164,7 +166,7 @@ export function EnhancedDayItinerary({ days }: EnhancedDayItineraryProps) {
                           </div>
                         )}
                       </div>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={onViewTransfer}>
                         VIEW
                       </Button>
                     </div>
@@ -192,7 +194,7 @@ export function EnhancedDayItinerary({ days }: EnhancedDayItineraryProps) {
                           )}
                         </div>
                       </div>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => onViewActivity?.(activity)}>
                         VIEW
                       </Button>
                     </div>

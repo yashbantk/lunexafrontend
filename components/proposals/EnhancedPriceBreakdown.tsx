@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, Mail, MessageCircle, Calendar, CreditCard } from "lucide-react"
+import { Download, Mail, MessageCircle, Calendar, CreditCard } from "lucide-react"
 
 interface EnhancedPriceBreakdownProps {
   proposal: {
@@ -22,9 +22,7 @@ interface EnhancedPriceBreakdownProps {
   onEditProposal?: () => void
   onUpdateMarkup?: () => void
   onBookNow?: () => void
-  onReadyToBook?: () => void
-  onAcceptProposal?: () => void
-  onNeedHelp?: () => void
+  onDownloadPDF?: () => void
   onMail?: () => void
   onWhatsApp?: () => void
 }
@@ -34,9 +32,7 @@ export function EnhancedPriceBreakdown({
   onEditProposal, 
   onUpdateMarkup,
   onBookNow,
-  onReadyToBook,
-  onAcceptProposal,
-  onNeedHelp,
+  onDownloadPDF,
   onMail,
   onWhatsApp
 }: EnhancedPriceBreakdownProps) {
@@ -73,7 +69,7 @@ export function EnhancedPriceBreakdown({
       className="space-y-6"
     >
       {/* Estimated Date */}
-      <div className="bg-white rounded-2xl shadow-xl p-4">
+      <div className="bg-white rounded-2xl p-4">
         <div className="flex items-center space-x-2 mb-2">
           <Calendar className="h-4 w-4 text-gray-600" />
           <div className="text-sm text-gray-600">Estimated Date of Booking</div>
@@ -96,7 +92,7 @@ export function EnhancedPriceBreakdown({
       </Button>
 
       {/* Price Breakdown Card */}
-      <div className="bg-white rounded-2xl shadow-xl p-6">
+      <div className="bg-white rounded-2xl p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">Price Breakdown</h3>
         </div>
@@ -172,35 +168,14 @@ export function EnhancedPriceBreakdown({
         >
           BOOK NOW
         </Button>
-        
-        <div className="grid grid-cols-2 gap-3">
-          <Button 
-            variant="outline" 
-            className="flex items-center justify-center space-x-2 py-2"
-            onClick={onReadyToBook}
-          >
-            <CheckCircle className="w-4 h-4 text-green-600" />
-            <span className="text-sm">READY TO BOOK?</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="flex items-center justify-center space-x-2 py-2"
-            onClick={onAcceptProposal}
-          >
-            <CheckCircle className="w-4 h-4 text-red-600" />
-            <span className="text-sm">ACCEPT PROPOSAL</span>
-          </Button>
-        </div>
 
         <Button 
           variant="outline" 
           className="w-full flex items-center justify-center space-x-2 py-2"
-          onClick={onNeedHelp}
+          onClick={onDownloadPDF}
         >
-          <div className="w-4 h-4 bg-purple-100 rounded-full flex items-center justify-center">
-            <span className="text-purple-600 text-xs">?</span>
-          </div>
-          <span className="text-sm">NEED HELP</span>
+          <Download className="w-4 h-4" />
+          <span className="text-sm">DOWNLOAD PDF</span>
         </Button>
       </div>
 

@@ -39,6 +39,8 @@ import { ImportantNotes } from "@/components/proposals/ImportantNotes"
 import { EnhancedDayItinerary } from "@/components/proposals/EnhancedDayItinerary"
 import { HotelDetailsCard } from "@/components/proposals/HotelDetailsCard"
 import { InclusionsSection } from "@/components/proposals/InclusionsSection"
+import HotelDetailsModal from "@/components/hotels/HotelDetailsModal"
+import ActivityDetailsModal from "@/components/activities/ActivityDetailsModal"
 
 export default function ProposalDetailPage() {
   const params = useParams()
@@ -50,6 +52,60 @@ export default function ProposalDetailPage() {
   const [isPrintMode, setIsPrintMode] = useState(false)
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false)
   const [activeTab, setActiveTab] = useState<'itinerary' | 'inclusions' | 'terms' | 'help'>('itinerary')
+  
+  // Modal state management
+  const [selectedHotelForDetails, setSelectedHotelForDetails] = useState<{
+    id: string
+    checkIn: string
+    checkOut: string
+    nights: number
+  } | null>(null)
+  const [isHotelDetailsOpen, setIsHotelDetailsOpen] = useState(false)
+  
+  const [selectedActivityForDetails, setSelectedActivityForDetails] = useState<{
+    activityId: string
+    bookingId: string
+    dayId: string
+    dayIndex: number
+  } | null>(null)
+  const [isActivityDetailsOpen, setIsActivityDetailsOpen] = useState(false)
+
+  // Calculate nights between check-in and check-out
+  const calculateNights = (checkIn: string, checkOut: string): number => {
+    const checkInDate = new Date(checkIn)
+    const checkOutDate = new Date(checkOut)
+    const diffTime = checkOutDate.getTime() - checkInDate.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays > 0 ? diffDays : 1
+  }
+
+  // Handle hotel view
+  const handleViewHotel = (hotelId: string, checkIn: string, checkOut: string) => {
+    const nights = calculateNights(checkIn, checkOut)
+    setSelectedHotelForDetails({ id: hotelId, checkIn, checkOut, nights })
+    setIsHotelDetailsOpen(true)
+  }
+
+  const handleCloseHotelDetails = () => {
+    setIsHotelDetailsOpen(false)
+    setSelectedHotelForDetails(null)
+  }
+
+  // Handle activity view
+  const handleViewActivity = (activityId: string, bookingId: string, dayId: string, dayIndex: number) => {
+    setSelectedActivityForDetails({ activityId, bookingId, dayId, dayIndex })
+    setIsActivityDetailsOpen(true)
+  }
+
+  const handleCloseActivityDetails = () => {
+    setIsActivityDetailsOpen(false)
+    setSelectedActivityForDetails(null)
+  }
+
+  // Handle transfer view (could show transfer details modal in future)
+  const handleViewTransfer = () => {
+    toast({ description: "Transfer details will be available soon", type: "info" })
+  }
 
   // Debug proposal data
   useEffect(() => {
@@ -58,6 +114,22 @@ export default function ProposalDetailPage() {
       console.log('Trip data:', proposal.trip)
       console.log('Days:', proposal.trip?.days)
       console.log('Days length:', proposal.trip?.days?.length)
+      
+      // Debug activities for each day
+      proposal.trip?.days?.forEach((day: any, index: number) => {
+        console.log(`Day ${index + 1} (${day.dayNumber}):`, {
+          date: day.date,
+          activityBookings: day.activityBookings,
+          activityBookingsLength: day.activityBookings?.length || 0,
+          activityBookingsData: day.activityBookings?.map((booking: any) => ({
+            id: booking.id,
+            slot: booking.slot,
+            activityTitle: booking.option?.activity?.title,
+            startTime: booking.option?.startTime,
+            optionName: booking.option?.name
+          }))
+        })
+      })
     }
   }, [proposal])
 
@@ -218,53 +290,6 @@ export default function ProposalDetailPage() {
 
   return (
     <div className={`min-h-screen bg-gray-50 ${isPrintMode ? 'print-mode' : ''}`}>
-      {/* Breadcrumbs and Actions Header */}
-      {!isPrintMode && (
-        <div className="bg-gray-100 border-b">
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <span>Lead Details</span>
-                <span>&gt;</span>
-                <span>View All Suggested Options</span>
-                <span>&gt;</span>
-                <span className="font-medium text-gray-900">Option 1 - Trip to Bali</span>
-              </div>
-              
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    console.log('Button clicked, proposalId:', proposalId)
-                    handleDownloadPDF()
-                  }}
-                  disabled={!proposalId || isDownloadingPDF}
-                  className="flex items-center space-x-2"
-                >
-                  <Download className="h-4 w-4" />
-                  <span>{isDownloadingPDF ? 'Opening...' : 'Download PDF'}</span>
-                </Button>
-                {/* Debug: Direct link for testing */}
-                {proposalId && (
-                  <a 
-                    href={`/api/proposals/generate-pdf?id=${proposalId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:underline"
-                  >
-                    (Direct Link)
-                  </a>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="min-h-screen bg-gray-50">
         <div className="w-full px-6 py-8">
           <motion.div
@@ -275,7 +300,7 @@ export default function ProposalDetailPage() {
           >
           {/* Proposal Header */}
           {proposal && (
-            <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
+            <div className="bg-white rounded-2xl p-8 mb-8">
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 mb-2">{proposal.name || "Trip Proposal"}</h1>
@@ -350,7 +375,7 @@ export default function ProposalDetailPage() {
               {activeTab === 'itinerary' && (
                 <>
                   {/* Please Note Disclaimer */}
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-2xl shadow-xl p-8 mb-8 flex items-start space-x-4">
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-8 mb-8 flex items-start space-x-4">
                     <AlertTriangle className="h-6 w-6 text-yellow-700 flex-shrink-0" />
                     <div className="flex-1">
                       <p className="text-sm text-yellow-800 font-semibold mb-2">Please Note:</p>
@@ -365,7 +390,7 @@ export default function ProposalDetailPage() {
 
 
               {/* Introduction for Customer */}
-              <div className="bg-white rounded-2xl shadow-xl p-8">
+              <div className="bg-white rounded-2xl p-8">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">Introduction for Customer</h3>
                   <Button variant="outline" size="sm" className="flex items-center space-x-2">
@@ -382,7 +407,7 @@ export default function ProposalDetailPage() {
               {proposal?.areFlightsBooked && (
                 <div className="space-y-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">Flights</h2>
-                  <div className="bg-white rounded-2xl shadow-xl p-8">
+                  <div className="bg-white rounded-2xl p-8">
                     <p className="text-gray-600">Flight details will be displayed here when flights are booked.</p>
                   </div>
                 </div>
@@ -394,26 +419,39 @@ export default function ProposalDetailPage() {
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">Hotels</h2>
                   {proposal.trip.days
                     .filter(day => day.stay)
-                    .map((day) => (
-                      <HotelDetailsCard 
-                        key={day.stay?.id}
-                        hotel={{
-                          id: day.stay?.id || "unknown",
-                          name: day.stay?.room?.hotel?.name || "Hotel Name",
-                          location: day.stay?.room?.hotel?.address || "Hotel Location",
-                          rating: day.stay?.room?.hotel?.star || 4.0,
-                          reviewCount: day.stay?.room?.hotel?.totalRatings || 315,
-                          checkIn: day.stay?.checkIn || "2025-10-16T15:00:00",
-                          checkOut: day.stay?.checkOut || "2025-10-19T12:00:00",
-                          roomType: day.stay?.room?.name || "Standard Room",
-                          mealPlan: day.stay?.mealPlan || "Breakfast",
-                          refundable: true, // Default
-                          image: day.stay?.room?.hotelRoomImages?.[0]?.url || "/api/placeholder/600/300",
-                          amenities: day.stay?.room?.hotel?.amenities || ["Pool", "Spa", "Fitness Center", "WiFi", "Restaurant"],
-                          description: day.stay?.room?.hotel?.description || "A beautiful resort with traditional architecture"
-                        }}
-                      />
-                    ))}
+                    .map((day) => {
+                      const hotelId = day.stay?.room?.hotel?.id
+                      const checkIn = day.stay?.checkIn || "2025-10-16T15:00:00"
+                      const checkOut = day.stay?.checkOut || "2025-10-19T12:00:00"
+                      
+                      return (
+                        <HotelDetailsCard 
+                          key={day.stay?.id}
+                          hotel={{
+                            id: day.stay?.id || "unknown",
+                            name: day.stay?.room?.hotel?.name || "Hotel Name",
+                            location: day.stay?.room?.hotel?.address || "Hotel Location",
+                            rating: day.stay?.room?.hotel?.star || 4.0,
+                            reviewCount: day.stay?.room?.hotel?.totalRatings || 315,
+                            checkIn: checkIn,
+                            checkOut: checkOut,
+                            roomType: day.stay?.room?.name || "Standard Room",
+                            mealPlan: day.stay?.mealPlan || "Breakfast",
+                            refundable: true, // Default
+                            image: day.stay?.room?.hotelRoomImages?.[0]?.url || "/api/placeholder/600/300",
+                            amenities: day.stay?.room?.hotel?.amenities || ["Pool", "Spa", "Fitness Center", "WiFi", "Restaurant"],
+                            description: day.stay?.room?.hotel?.description || "A beautiful resort with traditional architecture"
+                          }}
+                          onView={() => {
+                            if (hotelId) {
+                              handleViewHotel(hotelId, checkIn, checkOut)
+                            } else {
+                              toast({ description: "Hotel ID not available", type: "error" })
+                            }
+                          }}
+                        />
+                      )
+                    })}
                 </div>
               )}
 
@@ -424,32 +462,70 @@ export default function ProposalDetailPage() {
               {proposal?.trip?.days && proposal.trip.days.length > 0 && (
                 <div className="space-y-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">Itinerary</h2>
-                  <EnhancedDayItinerary days={proposal.trip.days.map((day, index) => ({
-                    id: day.id,
-                    dayNumber: day.dayNumber || index + 1,
-                    date: day.date || "2025-10-16",
-                    title: `Day ${day.dayNumber || index + 1}`,
-                    summary: "Day activities",
-                    description: "Day description", // Default description
-                    activities: day.activityBookings?.map(booking => ({
-                      id: booking.id,
-                      title: booking.option?.activity?.title || "Activity",
-                      description: booking.option?.activity?.description || "Activity description",
-                      time: booking.option?.startTime || "09:00",
-                      duration: `${booking.option?.durationMinutes || 60} minutes`,
-                      price: (booking.priceBaseCents || 0) / 100,
-                      currency: "INR",
-                      type: booking.slot as 'morning' | 'afternoon' | 'evening',
-                      included: true
-                    })) || [],
-                    accommodation: day.stay?.room?.hotel?.name || "Hotel",
-                    meals: {
-                      breakfast: true, // Default
-                      lunch: true, // Default
-                      dinner: true // Default
-                    },
-                    image: "/api/placeholder/600/300"
-                  }))} />
+                  <EnhancedDayItinerary 
+                    days={proposal.trip.days.map((day, index) => {
+                    // Safely map activityBookings
+                    const activities = (day.activityBookings || [])
+                      .map((booking: any) => {
+                        try {
+                          return {
+                            id: booking.option?.activity?.id || booking.id, // Use activity ID, fallback to booking ID
+                            title: booking.option?.activity?.title || booking.option?.name || "Activity",
+                            description: booking.option?.activity?.description || booking.option?.activity?.summary || booking.option?.name || "Activity description",
+                            time: booking.option?.startTime || booking.option?.activity?.startTime || "09:00",
+                            duration: `${booking.option?.durationMinutes || booking.option?.activity?.durationMinutes || 60} minutes`,
+                            price: (booking.priceBaseCents || 0) / 100,
+                            currency: proposal.currency?.code || "INR",
+                            type: (booking.slot || booking.option?.slot || 'morning') as 'morning' | 'afternoon' | 'evening',
+                            included: true,
+                            notes: booking.option?.notes || booking.option?.activity?.highlights?.join(', '),
+                            details: {
+                              startTime: booking.option?.startTime || booking.option?.activity?.startTime,
+                              pickupTime: booking.pickupRequired ? booking.option?.startTime : undefined,
+                              startLocation: booking.pickupHotel?.name || booking.pickupHotel?.address,
+                              inclusions: (Array.isArray(booking.option?.inclusions) ? booking.option.inclusions : []) || (Array.isArray(booking.option?.activity?.highlights) ? booking.option.activity.highlights : []) || [],
+                              transfers: booking.pickupRequired ? 'Pickup from hotel' : undefined
+                            },
+                            // Store original booking data for the view handler
+                            _bookingId: booking.id,
+                            _dayId: day.id,
+                            _dayIndex: index
+                          }
+                        } catch (error) {
+                          console.error('Error mapping activity booking:', error, booking)
+                          return null
+                        }
+                      })
+                      .filter((activity): activity is NonNullable<typeof activity> => activity !== null)
+                    
+                    console.log(`Mapped Day ${day.dayNumber} activities:`, activities.length, activities)
+                    
+                    return {
+                      id: day.id,
+                      dayNumber: day.dayNumber || index + 1,
+                      date: day.date || "2025-10-16",
+                      title: `Day ${day.dayNumber || index + 1}`,
+                      summary: activities.length > 0 ? `${activities.length} activit${activities.length > 1 ? 'ies' : 'y'}` : "Day activities",
+                      description: day.city?.name ? `Exploring ${day.city.name}` : "Day description",
+                      activities: activities,
+                      accommodation: day.stay?.room?.hotel?.name || undefined,
+                      meals: {
+                        breakfast: day.stay?.mealPlan?.toLowerCase().includes('breakfast') || false,
+                        lunch: day.stay?.mealPlan?.toLowerCase().includes('lunch') || false,
+                        dinner: day.stay?.mealPlan?.toLowerCase().includes('dinner') || false
+                      },
+                      image: day.stay?.room?.hotelRoomImages?.[0]?.url || "/api/placeholder/600/300"
+                    }
+                  })}
+                    onViewActivity={(activity: any) => {
+                      if (activity.id && activity._bookingId && activity._dayId !== undefined && activity._dayIndex !== undefined) {
+                        handleViewActivity(activity.id, activity._bookingId, activity._dayId, activity._dayIndex)
+                      } else {
+                        toast({ description: "Activity details not available", type: "error" })
+                      }
+                    }}
+                    onViewTransfer={handleViewTransfer}
+                  />
                 </div>
               )}
                 </>
@@ -457,6 +533,22 @@ export default function ProposalDetailPage() {
 
               {activeTab === 'inclusions' && (
                 <InclusionsSection 
+                  onViewItem={(item, type) => {
+                    // Handle view based on type
+                    if (type === 'accommodation') {
+                      // Find the hotel and open hotel details
+                      const accommodationDay = proposal?.trip?.days?.find(day => day.stay)
+                      if (accommodationDay?.stay?.room?.hotel?.id) {
+                        const checkIn = accommodationDay.stay.checkIn || "2025-10-16T15:00:00"
+                        const checkOut = accommodationDay.stay.checkOut || "2025-10-19T12:00:00"
+                        handleViewHotel(accommodationDay.stay.room.hotel.id, checkIn, checkOut)
+                      } else {
+                        toast({ description: item.title, type: "info" })
+                      }
+                    } else {
+                      toast({ description: `${item.title} details`, type: "info" })
+                    }
+                  }}
                   inclusions={{
                     accommodation: proposal?.trip?.days && proposal.trip.days.some(day => day.stay) ? proposal.trip.days
                       .filter(day => day.stay)
@@ -527,14 +619,14 @@ export default function ProposalDetailPage() {
               )}
 
               {activeTab === 'terms' && (
-                <div className="bg-white rounded-2xl shadow-xl p-8">
+                <div className="bg-white rounded-2xl p-8">
                   <h3 className="text-xl font-semibold text-gray-900 mb-6">Terms and Policies</h3>
                   <p className="text-gray-600">Terms and policies content will be displayed here.</p>
                 </div>
               )}
 
               {activeTab === 'help' && (
-                <div className="bg-white rounded-2xl shadow-xl p-8">
+                <div className="bg-white rounded-2xl p-8">
                   <h3 className="text-xl font-semibold text-gray-900 mb-6">Need Help</h3>
                   <p className="text-gray-600">Help and support content will be displayed here.</p>
                 </div>
@@ -560,9 +652,7 @@ export default function ProposalDetailPage() {
                   onEditProposal={() => console.log('Edit proposal')}
                   onUpdateMarkup={() => console.log('Update markup')}
                   onBookNow={() => console.log('Book now')}
-                  onReadyToBook={() => console.log('Ready to book')}
-                  onAcceptProposal={() => console.log('Accept proposal')}
-                  onNeedHelp={() => console.log('Need help')}
+                  onDownloadPDF={handleDownloadPDF}
                   onMail={() => console.log('Mail')}
                   onWhatsApp={() => console.log('WhatsApp')}
                 />
@@ -573,6 +663,45 @@ export default function ProposalDetailPage() {
           </motion.div>
         </div>
       </div>
+
+      {/* Hotel Details Modal */}
+      {selectedHotelForDetails && (
+        <HotelDetailsModal
+          isOpen={isHotelDetailsOpen}
+          onClose={handleCloseHotelDetails}
+          hotelId={selectedHotelForDetails.id}
+          onSelectRoom={() => {
+            // This is view-only mode, so we don't need room selection
+            handleCloseHotelDetails()
+          }}
+          checkIn={selectedHotelForDetails.checkIn}
+          checkOut={selectedHotelForDetails.checkOut}
+          nights={selectedHotelForDetails.nights}
+          adults={proposal?.trip?.travelerDetails?.adults || 2}
+          childrenCount={proposal?.trip?.travelerDetails?.children || 0}
+          mode="modal"
+        />
+      )}
+
+      {/* Activity Details Modal */}
+      {selectedActivityForDetails && (
+        <ActivityDetailsModal
+          isOpen={isActivityDetailsOpen}
+          onClose={handleCloseActivityDetails}
+          activityId={selectedActivityForDetails.activityId}
+          onAddToPackage={() => {
+            // This is view-only mode, so we don't need to add to package
+            toast({ description: "This is view-only mode", type: "info" })
+          }}
+          dayId={selectedActivityForDetails.dayId}
+          checkIn={proposal?.trip?.days?.[selectedActivityForDetails.dayIndex]?.stay?.checkIn || new Date().toISOString()}
+          checkOut={proposal?.trip?.days?.[selectedActivityForDetails.dayIndex]?.stay?.checkOut || new Date().toISOString()}
+          adults={proposal?.trip?.travelerDetails?.adults || 2}
+          childrenCount={proposal?.trip?.travelerDetails?.children || 0}
+          isEditMode={false}
+          currentBookingId={selectedActivityForDetails.bookingId}
+        />
+      )}
 
       {/* Print Styles */}
       <style jsx global>{`

@@ -21,9 +21,10 @@ interface HotelDetailsCardProps {
     amenities: string[]
     description?: string
   }
+  onView?: () => void
 }
 
-export function HotelDetailsCard({ hotel }: HotelDetailsCardProps) {
+export function HotelDetailsCard({ hotel, onView }: HotelDetailsCardProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       weekday: 'short',
@@ -48,7 +49,7 @@ export function HotelDetailsCard({ hotel }: HotelDetailsCardProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="bg-white rounded-2xl shadow-xl overflow-hidden"
+      className="bg-white rounded-2xl overflow-hidden"
     >
       {/* Hotel Header */}
       <div className="p-6 border-b border-gray-200">
@@ -60,7 +61,7 @@ export function HotelDetailsCard({ hotel }: HotelDetailsCardProps) {
               <span className="text-sm text-gray-600">({hotel.reviewCount} ratings)</span>
             </div>
           </div>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={onView}>
             VIEW
           </Button>
         </div>

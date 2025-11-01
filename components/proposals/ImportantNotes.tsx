@@ -80,7 +80,7 @@ export function ImportantNotes({ notes }: ImportantNotesProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: 0.4 }}
-      className="bg-white rounded-2xl shadow-xl p-8 space-y-6"
+      className="bg-white rounded-2xl p-8 space-y-6"
     >
       <h3 className="text-lg font-semibold text-gray-900">Important Notes</h3>
       

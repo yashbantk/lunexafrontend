@@ -379,13 +379,13 @@ function generateDayWiseDetailsPage(day: any, proposal: any): string {
     <div class="page-break"></div>
 
     <!-- Day-Wise Details Page -->
-    <div class="max-w-4xl mx-auto p-4 print:p-0">
+        <div class="max-w-4xl mx-auto p-4 print:p-0">
         <!-- Header -->
         <header class="mb-4 print:mb-3">
             <div class="flex items-start justify-between mb-3">
                 <p class="text-blue-600 text-sm font-medium">Day Wise Details</p>
                 <div class="text-sm text-gray-600 font-medium">${formattedDate}</div>
-            </div>
+                </div>
             <div class="flex items-start justify-between">
                 <h1 class="text-3xl font-bold text-gray-800" style="font-family: 'Playfair Display', serif;">
                     Day ${day.dayNumber}
@@ -396,8 +396,8 @@ function generateDayWiseDetailsPage(day: any, proposal: any): string {
         <!-- Subsection Title -->
         <div class="mb-3">
             <h2 class="text-lg font-semibold text-gray-800">Hotel at ${destinationName}</h2>
-        </div>
-
+                </div>
+                
         <!-- Hotel Card Section -->
         <section class="bg-white rounded-xl shadow-md overflow-hidden mb-4 avoid-break print:shadow-none print:rounded-none">
             <div class="flex flex-col md:flex-row">
@@ -410,10 +410,10 @@ function generateDayWiseDetailsPage(day: any, proposal: any): string {
                           <div class="absolute inset-0 flex items-center justify-center">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="text-blue-400">
                               <path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z" fill="currentColor"/>
-                            </svg>
+                    </svg>
                           </div>`
                         }
-                    </div>
+                </div>
                 </figure>
 
                 <!-- Hotel Details -->
@@ -425,7 +425,7 @@ function generateDayWiseDetailsPage(day: any, proposal: any): string {
                         <h3 class="text-lg font-bold text-gray-800 mt-2">
                             ${escapeHtml(hotel?.name || 'Hotel Name')}
                         </h3>
-                    </div>
+            </div>
 
                     <!-- Location -->
                     ${hotel?.address ? `
@@ -434,7 +434,7 @@ function generateDayWiseDetailsPage(day: any, proposal: any): string {
                             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor"/>
                         </svg>
                         <span>${escapeHtml(hotel.address)}</span>
-                    </div>
+                                </div>
                     ` : ''}
 
                     <!-- Check-in/Check-out Times -->
@@ -448,22 +448,22 @@ function generateDayWiseDetailsPage(day: any, proposal: any): string {
                             <div>
                                 <div class="text-gray-500 text-xs mb-1">Check-in</div>
                                 <div class="text-gray-800 font-medium">${checkInFormatted}</div>
+                                </div>
                             </div>
-                        </div>
                         <div class="flex items-start space-x-2">
                             <div class="flex-shrink-0 mt-0.5">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="text-gray-500">
                                     <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" fill="currentColor"/>
                                 </svg>
-                            </div>
+                                </div>
                             <div>
                                 <div class="text-gray-500 text-xs mb-1">Check-out</div>
                                 <div class="text-gray-800 font-medium">${checkOutFormatted}</div>
                             </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
         </section>
 
         <!-- Room Details Section -->
@@ -483,8 +483,8 @@ function generateDayWiseDetailsPage(day: any, proposal: any): string {
                         ${sizeText}
                     </span>
                     ` : ''}
+                    </div>
                 </div>
-            </div>
 
             <!-- Room Inclusions -->
             ${roomInclusions.length > 0 ? `
@@ -497,11 +497,11 @@ function generateDayWiseDetailsPage(day: any, proposal: any): string {
                             <svg width="6" height="6" viewBox="0 0 6 6" fill="none" class="text-gray-700">
                                 <circle cx="3" cy="3" r="3" fill="currentColor"/>
                             </svg>
-                        </div>
+                            </div>
                         <p class="text-sm text-gray-700 leading-relaxed">${escapeHtml(inclusion)}</p>
-                    </div>
+                        </div>
                     `).join('')}
-                </div>
+                    </div>
             </div>
             ` : ''}
         </section>
@@ -516,14 +516,14 @@ function generateDayWiseDetailsPage(day: any, proposal: any): string {
                     <span class="text-gray-800 font-medium text-sm">${destinationName} - ${totalNights} Night${totalNights > 1 ? 's' : ''} Stay</span>
                 </div>
             </div>
-            
+
             <div class="border-t border-gray-200 pt-3 mt-3">
                 <p class="text-sm text-gray-700">
                     Stay at <span class="font-semibold">${escapeHtml(hotel?.name || 'Hotel')}${hotel?.address ? `, ${escapeHtml(hotel.address)}` : ''}</span>
                 </p>
-            </div>
+                </div>
         </footer>
-    </div>
+                </div>
   `
 }
 
@@ -554,7 +554,7 @@ function generateDynamicItineraryPage(proposal: any): string {
     <div class="page-break"></div>
 
     <!-- Page 2 - Itinerary Page -->
-    <div class="max-w-4xl mx-auto p-4 print:p-0">
+        <div class="max-w-4xl mx-auto p-4 print:p-0">
         <!-- Header -->
         <header class="mb-4 print:mb-3">
             <div class="text-center">
@@ -592,11 +592,11 @@ function generateDynamicItineraryPage(proposal: any): string {
                       const isLast = dayIndex === days.length - 1
                       return `
                         <div class="avoid-break border-b border-gray-200 ${isLast ? '' : ''}">
-                            <div class="p-2 text-center h-16 flex flex-col justify-center">
+                        <div class="p-2 text-center h-16 flex flex-col justify-center">
                                 <div class="text-sm font-semibold text-gray-800">${formattedDayDate}</div>
                                 <div class="text-xs text-gray-600 mt-1">Day ${day.dayNumber}</div>
-                            </div>
                         </div>
+                    </div>
                       `
                     }).join('')}
                 </div>
@@ -632,57 +632,57 @@ function generateDynamicItineraryPage(proposal: any): string {
                       return `
                         <!-- Day ${day.dayNumber} -->
                         <div class="avoid-break ${isLastDay ? '' : 'border-b border-gray-200'}">
-                            <div class="p-2 min-h-16">
-                                <div class="space-y-1">
+                        <div class="p-2 min-h-16">
+                            <div class="space-y-1">
                                     ${stay && stay.checkIn ? `
-                                    <div class="flex items-start space-x-3">
-                                        <div class="flex-shrink-0 mt-0.5">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-gray-600">
-                                                <path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z" fill="currentColor"/>
-                                            </svg>
-                                        </div>
-                                        <div class="flex-1">
-                                            <div class="text-xs text-gray-800">
-                                                <span class="font-semibold">Check in to:</span> ${escapeHtml(stay.room?.hotel?.name || 'Hotel')}
-                                            </div>
-                                            <div class="text-xs text-gray-500 mt-0.5">${formatTime(stay.checkIn)}</div>
-                                        </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0 mt-0.5">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-gray-600">
+                                            <path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z" fill="currentColor"/>
+                                        </svg>
                                     </div>
+                                    <div class="flex-1">
+                                        <div class="text-xs text-gray-800">
+                                                <span class="font-semibold">Check in to:</span> ${escapeHtml(stay.room?.hotel?.name || 'Hotel')}
+                                        </div>
+                                            <div class="text-xs text-gray-500 mt-0.5">${formatTime(stay.checkIn)}</div>
+                                    </div>
+                                </div>
                                     ` : ''}
 
                                     ${meals.map((meal: any) => {
                                       const time = meal.option?.startTime || meal.option?.activity?.startTime || ''
                                       const title = meal.option?.activity?.title || meal.option?.name || 'Meal'
                                       return `
-                                        <div class="flex items-start space-x-3">
-                                            <div class="flex-shrink-0 mt-0.5">
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-gray-600">
-                                                    <path d="M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z" fill="currentColor"/>
-                                                </svg>
-                                            </div>
-                                            <div class="flex-1">
-                                                <div class="text-xs text-gray-800">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0 mt-0.5">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-gray-600">
+                                            <path d="M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z" fill="currentColor"/>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="text-xs text-gray-800">
                                                     <span class="font-semibold">${escapeHtml(title)}</span>
-                                                </div>
-                                                ${time ? `<div class="text-xs text-gray-500 mt-0.5">${time}</div>` : ''}
-                                            </div>
                                         </div>
+                                                ${time ? `<div class="text-xs text-gray-500 mt-0.5">${time}</div>` : ''}
+                                    </div>
+                                </div>
                                       `
                                     }).join('')}
 
                                     ${showStayMeals ? `
-                                    <div class="flex items-start space-x-3">
-                                        <div class="flex-shrink-0 mt-0.5">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-gray-600">
-                                                <path d="M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z" fill="currentColor"/>
-                                            </svg>
-                                        </div>
-                                        <div class="flex-1">
-                                            <div class="text-xs text-gray-800">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0 mt-0.5">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-gray-600">
+                                            <path d="M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z" fill="currentColor"/>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="text-xs text-gray-800">
                                                 <span class="font-semibold">Meals:</span> ${escapeHtml(stayMealPlan)} Included
-                                            </div>
                                         </div>
                                     </div>
+                                </div>
                                     ` : ''}
 
                                     ${otherActivities.map((activity: any) => {
@@ -690,42 +690,42 @@ function generateDynamicItineraryPage(proposal: any): string {
                                       const title = activity.option?.activity?.title || activity.option?.name || 'Activity'
                                       const slot = activity.slot || activity.option?.slot || 'morning'
                                       return `
-                                        <div class="flex items-start space-x-3">
-                                            <div class="flex-shrink-0 mt-0.5">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0 mt-0.5">
                                                 ${getActivityIcon(slot)}
-                                            </div>
-                                            <div class="flex-1">
-                                                <div class="text-xs text-gray-800">
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="text-xs text-gray-800">
                                                     <span class="font-semibold">${escapeHtml(title)}</span>
-                                                </div>
-                                                ${time ? `<div class="text-xs text-gray-500 mt-0.5">${time}</div>` : ''}
-                                            </div>
                                         </div>
+                                                ${time ? `<div class="text-xs text-gray-500 mt-0.5">${time}</div>` : ''}
+                                    </div>
+                                </div>
                                       `
                                     }).join('')}
 
                                     ${day.stay?.checkOut && index === days.length - 1 ? `
-                                    <div class="flex items-start space-x-3">
-                                        <div class="flex-shrink-0 mt-0.5">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-gray-600">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0 mt-0.5">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-gray-600">
                                                 <path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z" fill="currentColor"/>
-                                            </svg>
-                                        </div>
-                                        <div class="flex-1">
-                                            <div class="text-xs text-gray-800">
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="text-xs text-gray-800">
                                                 <span class="font-semibold">Checkout</span>
-                                            </div>
+                                        </div>
                                             <div class="text-xs text-gray-500 mt-0.5">${formatTime(day.stay.checkOut)}</div>
+                                    </div>
+                                </div>
+                                    ` : ''}
+                                    </div>
                                         </div>
                                     </div>
-                                    ` : ''}
-                                </div>
-                            </div>
-                        </div>
                       `
                     }).join('')}
-                </div>
-            </div>
+                                </div>
+                                    </div>
         </main>
 
         <!-- Footer Artwork -->
@@ -734,11 +734,11 @@ function generateDynamicItineraryPage(proposal: any): string {
                 <div class="w-16 h-16 bg-gradient-to-br from-blue-200 to-blue-300 rounded-full flex items-center justify-center">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="text-blue-600">
                         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/>
-                    </svg>
-                </div>
-            </div>
+                                        </svg>
+                                    </div>
+                                        </div>
         </footer>
-    </div>
+                                    </div>
   `
 }
 
@@ -796,13 +796,13 @@ function generateDynamicCoverPage(proposal: any): string {
                 <div>
                     <p class="text-gray-500 text-sm mb-2">${escapeHtml(customerName)}'s trip to</p>
                     <h1 class="text-3xl font-bold text-blue-600 mb-2" style="font-family: 'Playfair Display', serif;">${escapeHtml(destination)}</h1>
-                </div>
+                                </div>
                 <div class="flex items-center space-x-2">
                     <div class="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center">
                         <span class="text-white font-bold text-sm">D</span>
-                    </div>
-                </div>
-            </div>
+                                    </div>
+                                        </div>
+                                    </div>
         </header>
 
         <!-- Main Card -->
@@ -813,17 +813,17 @@ function generateDynamicCoverPage(proposal: any): string {
                     <span class="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">${nights}N/${duration}D</span>
                     ${fromCity ? `<span class="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">${escapeHtml(fromCity)}</span>` : ''}
                     ${firstHotel ? `<span class="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">${escapeHtml(firstHotel)}</span>` : ''}
-                </div>
+                                </div>
                 
                 <div class="flex items-start space-x-3 mb-4">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="text-gray-400">
                         <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h4v10h-10z" fill="currentColor"/>
-                    </svg>
+                                        </svg>
                     <p class="text-gray-700 italic text-sm leading-relaxed">
                         ${escapeHtml(trip?.days?.[0]?.city?.name || destination)} offers an incredible travel experience with beautiful destinations, amazing hotels, and unforgettable activities.
                     </p>
-                </div>
-            </div>
+                                    </div>
+                                        </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <!-- Left Column - Contents -->
@@ -834,30 +834,30 @@ function generateDynamicCoverPage(proposal: any): string {
                             <div class="flex items-center space-x-3">
                                 <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
                                     <span class="text-white text-sm font-medium">1</span>
-                                </div>
+                                    </div>
                                 <span class="text-gray-700">Your Itinerary</span>
-                            </div>
+                                </div>
                             <div class="flex items-center space-x-3">
                                 <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
                                     <span class="text-white text-sm font-medium">2</span>
-                                </div>
+                                    </div>
                                 <span class="text-gray-700">Day Wise Details</span>
-                            </div>
+                                        </div>
                             <div class="flex items-center space-x-3">
                                 <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
                                     <span class="text-white text-sm font-medium">3</span>
-                                </div>
+                                    </div>
                                 <span class="text-gray-700">How To Book</span>
-                            </div>
+                                </div>
                             <div class="flex items-center space-x-3">
                                 <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
                                     <span class="text-white text-sm font-medium">4</span>
-                                </div>
+                                    </div>
                                 <span class="text-gray-700">Cancellation & Date Change Policies</span>
                             </div>
                         </div>
                     </div>
-
+                    
                     <!-- Highlights -->
                     <div class="mb-4">
                         <h2 class="text-lg font-semibold text-gray-800 mb-2">Highlights</h2>
@@ -870,10 +870,10 @@ function generateDynamicCoverPage(proposal: any): string {
                             </div>` : ''}
                             <div class="flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-full">
                                 <span class="text-gray-700 text-sm">Meals Included</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                                    </div>
+                                        </div>
+                                    </div>
+                                </div>
 
                 <!-- Right Column - Curator Card -->
                 <aside class="lg:col-span-1">
@@ -888,11 +888,11 @@ function generateDynamicCoverPage(proposal: any): string {
                                 <p>Email: ${escapeHtml(curatorEmail)}</p>
                                 <p class="text-gray-500">Quotation Created on ${quotationDate}</p>
                                 <p class="text-gray-500">${quotationTime}</p>
-                            </div>
-                        </div>
-                    </div>
+                                    </div>
+                                        </div>
+                                    </div>
                 </aside>
-            </div>
+                                </div>
 
             <!-- Promo Banner -->
             <div class="mt-4 bg-gradient-to-r from-teal-400 to-green-500 rounded-2xl p-3 avoid-break">
@@ -906,40 +906,40 @@ function generateDynamicCoverPage(proposal: any): string {
                                 <span>A Customize your service</span>
                                 <span class="text-gray-400">|</span>
                                 <span>A Customize to suit you</span>
-                            </div>
-                        </div>
-                    </div>
+                                    </div>
+                                        </div>
+                                    </div>
                     <button class="bg-white text-teal-600 px-6 py-2 rounded-full font-medium">
                         VIEW YOUR QUOTES
                     </button>
-                </div>
-            </div>
+                                </div>
+                            </div>
 
             <!-- Total Cost Box -->
             <div class="mt-4 bg-blue-50 rounded-2xl p-3 avoid-break">
                 <div class="bg-red-500 text-white px-4 py-2 rounded-t-2xl -mt-6 -mx-6 mb-4">
                     <p class="text-sm font-medium">Total cost Excluding TCS</p>
-                </div>
+                        </div>
                 <div class="text-center">
                     <div class="text-3xl font-bold text-red-500 mb-1">${totalPrice}</div>
                     <p class="text-gray-600 mb-3">for ${totalTravelers} ${totalTravelers > 1 ? 'adults' : 'adult'}</p>
                     <button class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2 rounded-full font-semibold text-base">
                         Pay Now
                     </button>
-                </div>
-                
+                    </div>
+                    
                 <!-- Footer inside main card -->
                 <div class="mt-2 text-center">
                     <div class="flex items-center justify-center space-x-1 text-xs text-gray-500 italic">
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" class="text-green-500">
                             <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.91.66.95-2.3c.48.17.98.3 1.5.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75S7 14 17 8z" fill="currentColor"/>
-                        </svg>
+                                        </svg>
                         <span>Please think twice before printing this mail. Save paper, it's good for the environment.</span>
-                    </div>
+                                    </div>
                 </div>
             </div>
         </main>
-    </div>
+                </div>
   `
 }
 
@@ -1077,13 +1077,13 @@ async function generateDynamicProposalPDF(proposalId: string, request: NextReque
 </body>
 </html>
     `
-  
-  return new NextResponse(html, {
-    headers: {
-      'Content-Type': 'text/html',
+
+    return new NextResponse(html, {
+      headers: {
+        'Content-Type': 'text/html',
       'Content-Disposition': `inline; filename="deyor-proposal-${proposalId}.html"`
-    }
-  })
+      }
+    })
 }
 
 export async function GET(request: NextRequest) {

@@ -35,9 +35,10 @@ interface InclusionsData {
 
 interface InclusionsSectionProps {
   inclusions: InclusionsData
+  onViewItem?: (item: InclusionItem, type: string) => void
 }
 
-export function InclusionsSection({ inclusions }: InclusionsSectionProps) {
+export function InclusionsSection({ inclusions, onViewItem }: InclusionsSectionProps) {
   const getIcon = (type: string) => {
     switch (type) {
       case 'accommodation':
@@ -63,7 +64,7 @@ export function InclusionsSection({ inclusions }: InclusionsSectionProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="bg-white rounded-2xl shadow-xl p-6 mb-6"
+      className="bg-white rounded-2xl p-6 mb-6"
     >
       <div className="flex items-start justify-between">
         <div className="flex items-start space-x-4 flex-1">
@@ -104,7 +105,12 @@ export function InclusionsSection({ inclusions }: InclusionsSectionProps) {
               </div>
             )}
           </div>
-          <Button variant="outline" size="sm" className="flex items-center space-x-1">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center space-x-1"
+            onClick={() => onViewItem?.(item, type)}
+          >
             <Eye className="h-4 w-4" />
             <span>VIEW</span>
           </Button>
@@ -156,7 +162,7 @@ export function InclusionsSection({ inclusions }: InclusionsSectionProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="bg-white rounded-2xl shadow-xl p-6"
+                className="bg-white rounded-2xl p-6"
               >
                 <div className="flex items-center space-x-3 mb-4">
                   {getIcon('meals')}
