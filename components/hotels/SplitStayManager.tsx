@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -62,6 +62,11 @@ export function SplitStayManager({
   onToggle: externalOnToggle,
   className = ''
 }: SplitStayManagerProps) {
+  // Don't render split stay manager for trips with 1 day or less
+  if (totalNights <= 1) {
+    return null
+  }
+
   const [internalIsEnabled, setInternalIsEnabled] = useState(false)
   const isEnabled = externalIsEnabled !== undefined ? externalIsEnabled : internalIsEnabled
   const [currentStep, setCurrentStep] = useState<SplitStayStep>('toggle')
@@ -69,9 +74,12 @@ export function SplitStayManager({
   const [segments, setSegments] = useState<SplitStaySegment[]>([])
   const [editingSegmentIndex, setEditingSegmentIndex] = useState<number | null>(null)
   const [showHotelSelector, setShowHotelSelector] = useState(false)
+  const previousSegmentsRef = useRef<SplitStaySegment[]>([])
 
   // Initialize segments when durations change
   useEffect(() => {
+    console.log('SplitStayManager: Creating segments', { durations, startDate })
+    
     if (durations.length > 0) {
       const newSegments: SplitStaySegment[] = []
       let currentDate = new Date(startDate)
@@ -81,17 +89,26 @@ export function SplitStayManager({
         const segmentEndDate = new Date(currentDate)
         segmentEndDate.setDate(segmentEndDate.getDate() + duration)
         
-        newSegments.push({
+        const segment = {
           id: `segment-${index}`,
+          duration,
+          startDate: segmentStartDate.toISOString(),
+          endDate: segmentEndDate.toISOString(),
+          segmentIndex: index
+        }
+        
+        console.log(`SplitStayManager: Created segment ${index}`, {
           duration,
           startDate: segmentStartDate.toISOString(),
           endDate: segmentEndDate.toISOString(),
           segmentIndex: index
         })
         
+        newSegments.push(segment)
         currentDate = segmentEndDate
       })
       
+      console.log('SplitStayManager: All segments created', newSegments)
       setSegments(newSegments)
     }
   }, [durations, startDate])
@@ -99,9 +116,16 @@ export function SplitStayManager({
   // Notify parent of changes
   useEffect(() => {
     if (segments.length > 0) {
-      onSplitStayChange(segments)
+      // Check if segments have actually changed to prevent infinite loops
+      const segmentsChanged = JSON.stringify(segments) !== JSON.stringify(previousSegmentsRef.current)
+      
+      if (segmentsChanged) {
+        console.log('SplitStayManager: Notifying parent of segment changes', segments)
+        previousSegmentsRef.current = segments
+        onSplitStayChange(segments)
+      }
     }
-  }, [segments, onSplitStayChange])
+  }, [segments]) // Remove onSplitStayChange from dependencies to prevent infinite loop
 
   const handleToggle = (enabled: boolean) => {
     if (externalOnToggle) {
@@ -127,39 +151,71 @@ export function SplitStayManager({
   }
 
   const handleHotelSelect = (hotel: any, room: any) => {
-    if (editingSegmentIndex === null) return
+    console.log('SplitStayManager: handleHotelSelect called', {
+      editingSegmentIndex,
+      hotel: hotel?.id,
+      room: room?.id,
+      segmentsLength: segments.length
+    })
     
-    // Convert the selected hotel to HotelType format
-    const hotelType: HotelType = {
-      id: hotel.id,
-      name: hotel.name,
-      location: hotel.location || hotel.address,
-      address: hotel.address,
-      rating: hotel.rating,
-      ratingsCount: hotel.ratingsCount || 0,
-      starRating: hotel.starRating,
-      images: hotel.images || [hotel.image],
-      badges: hotel.badges || [],
-      rooms: hotel.rooms || [],
-      amenities: hotel.amenities || [],
-      minPrice: hotel.minPrice || room?.pricePerNight || 0,
-      maxPrice: hotel.maxPrice || room?.pricePerNight || 0,
-      refundable: hotel.refundable || true,
-      preferred: hotel.preferred || false,
-      coordinates: hotel.coordinates || { lat: 0, lng: 0 }
+    if (editingSegmentIndex === null) {
+      console.error('SplitStayManager: No editing segment index set')
+      return
     }
     
-    const updatedSegments = segments.map(segment => 
-      segment.segmentIndex === editingSegmentIndex 
-        ? { ...segment, hotel: hotelType }
-        : segment
-    )
-    setSegments(updatedSegments)
-    setShowHotelSelector(false)
-    setEditingSegmentIndex(null)
+    if (!hotel || !room) {
+      console.error('SplitStayManager: Missing hotel or room data', { hotel, room })
+      return
+    }
+    
+    try {
+      // Convert the selected hotel to HotelType format
+      const hotelType: HotelType = {
+        id: hotel.id,
+        name: hotel.name,
+        location: hotel.location || hotel.address,
+        address: hotel.address,
+        rating: hotel.rating,
+        ratingsCount: hotel.ratingsCount || 0,
+        starRating: hotel.starRating,
+        images: hotel.images || [hotel.image],
+        badges: hotel.badges || [],
+        rooms: hotel.rooms || [],
+        amenities: hotel.amenities || [],
+        minPrice: hotel.minPrice || room?.pricePerNight || 0,
+        maxPrice: hotel.maxPrice || room?.pricePerNight || 0,
+        refundable: hotel.refundable || true,
+        preferred: hotel.preferred || false,
+        coordinates: hotel.coordinates || { lat: 0, lng: 0 }
+      }
+      
+      const updatedSegments = segments.map(segment => 
+        segment.segmentIndex === editingSegmentIndex 
+          ? { ...segment, hotel: hotelType }
+          : segment
+      )
+      
+      console.log('SplitStayManager: Updated segments', updatedSegments)
+      setSegments(updatedSegments)
+      setShowHotelSelector(false)
+      setEditingSegmentIndex(null)
+    } catch (error) {
+      console.error('SplitStayManager: Error in handleHotelSelect', error)
+    }
   }
 
   const handleEditSegment = (segmentIndex: number) => {
+    console.log('SplitStayManager: handleEditSegment called', {
+      segmentIndex,
+      segmentsLength: segments.length,
+      segment: segments[segmentIndex]
+    })
+    
+    if (segmentIndex >= segments.length) {
+      console.error('SplitStayManager: Invalid segment index', { segmentIndex, segmentsLength: segments.length })
+      return
+    }
+    
     setEditingSegmentIndex(segmentIndex)
     setShowHotelSelector(true)
   }
@@ -283,6 +339,7 @@ export function SplitStayManager({
       <HotelSelectModal
         isOpen={showHotelSelector}
         onClose={() => {
+          console.log('SplitStayManager: Closing hotel selector')
           setShowHotelSelector(false)
           setEditingSegmentIndex(null)
         }}

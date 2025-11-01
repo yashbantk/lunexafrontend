@@ -82,6 +82,19 @@ export default function CreateProposalPage() {
   // Create trip stay hook
   const { createTripStay, isLoading: isCreatingTripStay } = useCreateTripStay()
 
+  // Utility function to get currency symbol
+  const getCurrencySymbol = (currencyCode: string) => {
+    const symbols: Record<string, string> = {
+      'INR': '₹',
+      'USD': '$',
+      'EUR': '€',
+      'GBP': '£',
+      'AED': 'د.إ',
+      'SAR': 'ر.س'
+    }
+    return symbols[currencyCode] || currencyCode
+  }
+
   // Local functions for proposal management
   const updateProposal = (updatedProposal: Proposal) => {
     setProposal(updatedProposal)
@@ -191,6 +204,12 @@ export default function CreateProposalPage() {
   const convertTripToProposalFormat = (tripData: TripData): Proposal => {
     const trip = tripData
     
+    console.log('=== CONVERSION DEBUG ===')
+    console.log('Input trip data:', trip)
+    console.log('trip.fromCity:', trip.fromCity)
+    console.log('trip.nationality:', trip.nationality)
+    console.log('trip.starRating:', trip.starRating)
+    
     // Convert days to the existing Day format
     const convertedDays: Day[] = trip.days.map((day: any) => ({
       id: day.id,
@@ -241,13 +260,18 @@ export default function CreateProposalPage() {
     }))
     
     // Create initial proposal without price breakdown (will be calculated later)
+    console.log('=== PROPOSAL CREATION DEBUG ===')
+    console.log('trip.fromCity?.name:', trip.fromCity?.name)
+    console.log('trip.nationality?.name:', trip.nationality?.name)
+    console.log('trip.starRating?.toString():', trip.starRating?.toString())
+    
     const initialProposal: Proposal = {
       id: trip.id,
-      tripName: `${trip.fromCity.name} Trip`,
-      fromDate: trip.startDate.split('T')[0],
-      toDate: trip.endDate.split('T')[0],
-      origin: trip.fromCity.name,
-      nationality: trip.nationality.name,
+      tripName: `${trip.fromCity?.name || 'Trip'} Trip`,
+      fromDate: trip.startDate?.split('T')[0] || new Date().toISOString().split('T')[0],
+      toDate: trip.endDate?.split('T')[0] || new Date().toISOString().split('T')[0],
+      origin: trip.fromCity?.name || 'Unknown',
+      nationality: trip.nationality?.name || 'India',
       starRating: trip.starRating?.toString() || '3',
       landOnly: trip.landOnly,
       addTransfers: !trip.transferOnly,
@@ -302,10 +326,19 @@ export default function CreateProposalPage() {
   useEffect(() => {
     if (trip && !tripLoading) {
       try {
-        console.log('Trip data loaded:', trip)
+        console.log('=== TRIP DATA DEBUG ===')
+        console.log('Full trip object:', JSON.stringify(trip, null, 2))
+        console.log('Trip nationality:', trip.nationality)
+        console.log('Trip starRating:', trip.starRating)
+        console.log('Trip fromCity:', trip.fromCity)
+        console.log('Trip fromCity name:', trip.fromCity?.name)
+        console.log('Trip nationality name:', trip.nationality?.name)
+        console.log('Trip starRating type:', typeof trip.starRating)
+        console.log('Trip starRating value:', trip.starRating)
         
         // Convert the trip data to proposal format
         const convertedProposal = convertTripToProposalFormat(trip)
+        console.log('Converted proposal:', convertedProposal)
         updateProposalWithPrices(convertedProposal)
         setIsLoading(false)
         
@@ -508,7 +541,17 @@ export default function CreateProposalPage() {
   }
 
   // Split Stay handlers
-  const handleSplitStayChange = (segments: any[]) => {
+  const handleSplitStayChange = useCallback((segments: any[]) => {
+    console.log('CreateProposalPage: handleSplitStayChange called', segments)
+    
+    // Check if segments have actually changed to prevent infinite loops
+    const segmentsChanged = JSON.stringify(segments) !== JSON.stringify(splitStaySegments)
+    
+    if (!segmentsChanged) {
+      console.log('CreateProposalPage: Segments unchanged, skipping update')
+      return
+    }
+    
     setSplitStaySegments(segments)
     
     if (segments.length > 0 && segments.every(segment => segment.hotel)) {
@@ -522,13 +565,13 @@ export default function CreateProposalPage() {
         image: segment.hotel.images[0],
         checkIn: segment.startDate,
         checkOut: segment.endDate,
-        roomType: 'Standard Room', // Default room type
-        boardBasis: 'Room Only', // Default board basis
-        bedType: 'Double', // Default bed type
+        roomType: segment.hotel.rooms?.[0]?.name || 'Standard Room',
+        boardBasis: segment.hotel.rooms?.[0]?.baseMealPlan || 'Room Only',
+        bedType: segment.hotel.rooms?.[0]?.bedType || 'Double',
         nights: segment.duration,
-        refundable: true,
+        refundable: segment.hotel.refundable ?? true,
         pricePerNight: segment.hotel.minPrice,
-        currency: 'INR',
+        currency: trip?.currency?.code || proposal?.currency || 'INR',
         confirmationStatus: 'pending'
       }))
       
@@ -541,7 +584,7 @@ export default function CreateProposalPage() {
         updateProposalWithPrices(updatedProposal)
       }
     }
-  }
+  }, [proposal, updateProposalWithPrices, splitStaySegments])
 
   const handleSplitStayToggle = (enabled: boolean) => {
     setIsSplitStayEnabled(enabled)
@@ -1042,31 +1085,6 @@ export default function CreateProposalPage() {
               />
              </motion.div>
 
-             {/* Destination Details */}
-             {proposal?.destinations && proposal.destinations.length > 0 && (
-               <motion.div
-                 initial={{ opacity: 0, y: 20 }}
-                 animate={{ opacity: 1, y: 0 }}
-                 transition={{ duration: 0.6, delay: 0.05 }}
-               >
-                 <div className="bg-white rounded-2xl shadow-xl p-6">
-                   <h2 className="text-xl font-semibold text-gray-900 mb-4">Destination Details</h2>
-                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                     {proposal.destinations.map((destination, index) => (
-                       <div key={destination.id} className="p-4 border border-gray-200 rounded-lg">
-                         <div className="flex items-center justify-between mb-2">
-                           <h3 className="font-medium text-gray-900">{destination.name}</h3>
-                           <span className="text-sm text-gray-500">#{destination.order}</span>
-                         </div>
-                         <div className="text-sm text-gray-600">
-                           {destination.numberOfDays} {destination.numberOfDays === 1 ? 'day' : 'days'}
-                         </div>
-                       </div>
-                     ))}
-                   </div>
-                 </div>
-               </motion.div>
-             )}
 
              {/* Date Availability Calendar
              <motion.div
@@ -1074,7 +1092,7 @@ export default function CreateProposalPage() {
                animate={{ opacity: 1, y: 0 }}
                transition={{ duration: 0.6, delay: 0.05 }}
              >
-               <div className="bg-white rounded-2xl shadow-xl p-6">
+               <div className="bg-white rounded-2xl p-6">
                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Near by travel dates with special price</h2>
                  <div className="grid grid-cols-7 gap-2">
                    {Array.from({ length: 14 }, (_, i) => {
@@ -1123,7 +1141,7 @@ export default function CreateProposalPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
             >
-              <div className="bg-white rounded-2xl shadow-xl p-6">
+              <div className="bg-white rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-semibold text-gray-900">Flights</h2>
                   <button
@@ -1158,7 +1176,7 @@ export default function CreateProposalPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <div className="bg-white rounded-2xl shadow-xl p-6">
+              <div className="bg-white rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-gray-900">Hotels</h2>
                   <div className="flex items-center space-x-3">
@@ -1179,14 +1197,14 @@ export default function CreateProposalPage() {
                 {/* Split Stay Manager */}
                 <div className="mb-6">
                   <SplitStayManager
-                    totalNights={proposal?.durationDays || 1}
-                    totalDays={proposal?.durationDays || 1}
-                    startDate={proposal?.fromDate || new Date().toISOString()}
-                    endDate={proposal?.toDate || new Date().toISOString()}
-                    adults={proposal?.adults || 2}
-                    childrenCount={proposal?.children || 0}
-                    cityId={proposal?.destinations?.[0]?.id || '2'}
-                    cityName={proposal?.destinations?.[0]?.name || 'Miami'}
+                    totalNights={trip?.durationDays || proposal?.durationDays || 1}
+                    totalDays={trip?.durationDays || proposal?.durationDays || 1}
+                    startDate={trip?.startDate || proposal?.fromDate || new Date().toISOString()}
+                    endDate={trip?.endDate || proposal?.toDate || new Date().toISOString()}
+                    adults={trip?.travelerDetails?.adults || proposal?.adults || 2}
+                    childrenCount={trip?.travelerDetails?.children || proposal?.children || 0}
+                    cityId={trip?.days?.[0]?.city?.id || proposal?.destinations?.[0]?.id || '2'}
+                    cityName={trip?.days?.[0]?.city?.name || proposal?.destinations?.[0]?.name || 'Miami'}
                     onSplitStayChange={handleSplitStayChange}
                     isEnabled={isSplitStayEnabled}
                     onToggle={handleSplitStayToggle}
@@ -1253,7 +1271,7 @@ export default function CreateProposalPage() {
                           </div>
                           <div className="text-right">
                             <div className="font-semibold text-primary">
-                              ${segment.hotel?.minPrice * segment.duration || 0}
+                              {getCurrencySymbol(trip?.currency?.code || proposal?.currency || 'INR')}{segment.hotel?.minPrice * segment.duration || 0}
                             </div>
                             <div className="text-sm text-gray-600">Total</div>
                           </div>
@@ -1271,7 +1289,7 @@ export default function CreateProposalPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              <div className="bg-white rounded-2xl shadow-xl p-6">
+              <div className="bg-white rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-semibold text-gray-900">Itinerary</h2>
                   <button
@@ -1378,7 +1396,7 @@ export default function CreateProposalPage() {
                animate={{ opacity: 1, y: 0 }}
                transition={{ duration: 0.6, delay: 0.4 }}
              >
-               <div className="bg-white rounded-2xl shadow-xl p-6">
+               <div className="bg-white rounded-2xl p-6">
                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Additional Services</h2>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                    {/* Visa Section */}
@@ -1428,7 +1446,7 @@ export default function CreateProposalPage() {
                animate={{ opacity: 1, y: 0 }}
                transition={{ duration: 0.6, delay: 0.5 }}
              >
-               <div className="bg-white rounded-2xl shadow-xl p-6">
+               <div className="bg-white rounded-2xl p-6">
                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Proposal Details</h2>
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                    <div className="space-y-2">
@@ -1541,13 +1559,13 @@ export default function CreateProposalPage() {
         onSelectHotel={handleHotelSelect}
         currentHotel={editingHotelIndex !== null && proposal?.hotels[editingHotelIndex] ? convertProposalHotelToHotelType(proposal.hotels[editingHotelIndex]) : undefined}
         stayId="stay-1"
-        checkIn={proposal?.hotels[editingHotelIndex || 0]?.checkIn || new Date().toISOString()}
-        checkOut={proposal?.hotels[editingHotelIndex || 0]?.checkOut || new Date().toISOString()}
-        nights={proposal?.hotels[editingHotelIndex || 0]?.nights || 1}
-        adults={proposal?.adults || 2}
-        childrenCount={proposal?.children || 0}
-        cityId={proposal?.destinations?.[0]?.id || '2'}
-        cityName={proposal?.destinations?.[0]?.name || 'Miami'}
+        checkIn={proposal?.hotels[editingHotelIndex || 0]?.checkIn || trip?.startDate || new Date().toISOString()}
+        checkOut={proposal?.hotels[editingHotelIndex || 0]?.checkOut || trip?.endDate || new Date().toISOString()}
+        nights={proposal?.hotels[editingHotelIndex || 0]?.nights || trip?.durationDays || 1}
+        adults={trip?.travelerDetails?.adults || proposal?.adults || 2}
+        childrenCount={trip?.travelerDetails?.children || proposal?.children || 0}
+        cityId={trip?.days?.[0]?.city?.id || proposal?.destinations?.[0]?.id || '2'}
+        cityName={trip?.days?.[0]?.city?.name || proposal?.destinations?.[0]?.name || 'Miami'}
       />
 
       {/* Hotel Details Modal for Room Selection */}

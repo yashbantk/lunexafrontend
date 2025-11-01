@@ -54,7 +54,7 @@ export interface TripData {
   status: string
   tripType: string
   totalTravelers: number
-  starRating: string
+  starRating: number | null
   transferOnly: boolean
   landOnly: boolean
   travelerDetails: any

@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -14,206 +13,118 @@ interface ProposalHeaderProps {
 }
 
 export function ProposalHeader({ proposal, onUpdate }: ProposalHeaderProps) {
-  const [isEditing, setIsEditing] = useState(false)
-
   if (!proposal) return null
 
-  const handleFieldChange = (field: string, value: any) => {
-    onUpdate({
-      ...proposal,
-      [field]: value
-    })
-  }
-
-  const handleTravelerChange = (field: string, value: string) => {
-    onUpdate({
-      ...proposal,
-      [field]: parseInt(value)
-    })
-  }
+  console.log('=== PROPOSAL HEADER DEBUG ===')
+  console.log('Proposal received:', proposal)
+  console.log('Proposal origin:', proposal.origin)
+  console.log('Proposal nationality:', proposal.nationality)
+  console.log('Proposal starRating:', proposal.starRating)
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Trip Details</h2>
-          <div className="flex items-center space-x-4 mt-2">
-            <span className="text-sm text-gray-600">Trip ID: {proposal.id}</span>
-            <span className="text-sm text-gray-600">Status: <span className="capitalize font-medium">{proposal.tripStatus || 'Draft'}</span></span>
-            <span className="text-sm text-gray-600">Type: <span className="capitalize font-medium">{proposal.tripType || 'Leisure'}</span></span>
-            <span className="text-sm text-gray-600">Duration: {proposal.durationDays || 1} day{(proposal.durationDays || 1) !== 1 ? 's' : ''}</span>
-          </div>
+    <div className="bg-white rounded-2xl p-6">
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Trip Details</h2>
+        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+          <span className="bg-gray-100 px-3 py-1 rounded-full">Trip ID: {proposal.id}</span>
+          <span className="bg-gray-100 px-3 py-1 rounded-full">Status: <span className="capitalize font-medium">{proposal.tripStatus || 'Draft'}</span></span>
+          <span className="bg-gray-100 px-3 py-1 rounded-full">Type: <span className="capitalize font-medium">{proposal.tripType || 'Leisure'}</span></span>
+          <span className="bg-gray-100 px-3 py-1 rounded-full">Duration: {proposal.durationDays || 1} day{(proposal.durationDays || 1) !== 1 ? 's' : ''}</span>
         </div>
-        <button
-          onClick={() => setIsEditing(!isEditing)}
-          className="text-primary hover:text-primary/80 text-sm font-medium"
-        >
-          {isEditing ? 'Done' : 'Edit'}
-        </button>
       </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Trip Name */}
         <div className="space-y-2">
-          <Label htmlFor="tripName">Trip Name</Label>
-          <Input
-            id="tripName"
-            value={proposal.tripName}
-            onChange={(e) => handleFieldChange('tripName', e.target.value)}
-            disabled={!isEditing}
-            className="text-sm"
-          />
+          <Label htmlFor="tripName" className="text-sm font-medium text-gray-700">Trip Name</Label>
+          <div className="text-sm font-medium text-gray-900 p-3 bg-gray-50 rounded-lg border">
+            {proposal.tripName || 'Not specified'}
+          </div>
         </div>
 
         {/* From Date */}
         <div className="space-y-2">
-          <Label htmlFor="fromDate" className="flex items-center">
+          <Label htmlFor="fromDate" className="text-sm font-medium text-gray-700 flex items-center">
             <Calendar className="h-4 w-4 mr-1" />
             From Date
           </Label>
-          <Input
-            id="fromDate"
-            type="date"
-            value={proposal.fromDate}
-            onChange={(e) => handleFieldChange('fromDate', e.target.value)}
-            disabled={!isEditing}
-            className="text-sm"
-          />
+          <div className="text-sm font-medium text-gray-900 p-3 bg-gray-50 rounded-lg border">
+            {proposal.fromDate || 'Not specified'}
+          </div>
         </div>
 
         {/* To Date */}
         <div className="space-y-2">
-          <Label htmlFor="toDate" className="flex items-center">
+          <Label htmlFor="toDate" className="text-sm font-medium text-gray-700 flex items-center">
             <Calendar className="h-4 w-4 mr-1" />
             To Date
           </Label>
-          <Input
-            id="toDate"
-            type="date"
-            value={proposal.toDate}
-            onChange={(e) => handleFieldChange('toDate', e.target.value)}
-            disabled={!isEditing}
-            className="text-sm"
-          />
+          <div className="text-sm font-medium text-gray-900 p-3 bg-gray-50 rounded-lg border">
+            {proposal.toDate || 'Not specified'}
+          </div>
         </div>
 
         {/* Origin */}
         <div className="space-y-2">
-          <Label htmlFor="origin" className="flex items-center">
+          <Label htmlFor="origin" className="text-sm font-medium text-gray-700 flex items-center">
             <MapPin className="h-4 w-4 mr-1" />
             Origin
           </Label>
-          <Select
-            value={proposal.origin}
-            onValueChange={(value) => handleFieldChange('origin', value)}
-            disabled={!isEditing}
-          >
-            <SelectTrigger className="text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Delhi">Delhi</SelectItem>
-              <SelectItem value="Mumbai">Mumbai</SelectItem>
-              <SelectItem value="Bangalore">Bangalore</SelectItem>
-              <SelectItem value="Chennai">Chennai</SelectItem>
-              <SelectItem value="Kolkata">Kolkata</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="text-sm font-medium text-gray-900 p-3 bg-gray-50 rounded-lg border">
+            {proposal.origin || 'Not specified'}
+          </div>
         </div>
 
         {/* Nationality */}
         <div className="space-y-2">
-          <Label htmlFor="nationality">Nationality</Label>
-          <Select
-            value={proposal.nationality}
-            onValueChange={(value) => handleFieldChange('nationality', value)}
-            disabled={!isEditing}
-          >
-            <SelectTrigger className="text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="India">India</SelectItem>
-              <SelectItem value="USA">USA</SelectItem>
-              <SelectItem value="UK">UK</SelectItem>
-              <SelectItem value="Australia">Australia</SelectItem>
-              <SelectItem value="Canada">Canada</SelectItem>
-            </SelectContent>
-          </Select>
+          <Label htmlFor="nationality" className="text-sm font-medium text-gray-700">Nationality</Label>
+          <div className="text-sm font-medium text-gray-900 p-3 bg-gray-50 rounded-lg border">
+            {proposal.nationality || 'Not specified'}
+          </div>
         </div>
 
         {/* Star Rating */}
         <div className="space-y-2">
-          <Label htmlFor="starRating" className="flex items-center">
+          <Label htmlFor="starRating" className="text-sm font-medium text-gray-700 flex items-center">
             <Star className="h-4 w-4 mr-1" />
             Star Rating
           </Label>
-          <Select
-            value={proposal.starRating}
-            onValueChange={(value) => handleFieldChange('starRating', value)}
-            disabled={!isEditing}
-          >
-            <SelectTrigger className="text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="3">3 Star</SelectItem>
-              <SelectItem value="4">4 Star</SelectItem>
-              <SelectItem value="5">5 Star</SelectItem>
-              <SelectItem value="luxury">Luxury</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="text-sm font-medium text-gray-900 p-3 bg-gray-50 rounded-lg border">
+            {proposal.starRating ? `${proposal.starRating} Star${proposal.starRating === 'luxury' ? '' : 's'}` : 'Not specified'}
+          </div>
         </div>
 
         {/* Rooms */}
         <div className="space-y-2">
-          <Label htmlFor="rooms" className="flex items-center">
+          <Label htmlFor="rooms" className="text-sm font-medium text-gray-700 flex items-center">
             <Users className="h-4 w-4 mr-1" />
             Rooms
           </Label>
-          <Select
-            value={proposal.rooms.toString()}
-            onValueChange={(value) => handleTravelerChange('rooms', value)}
-            disabled={!isEditing}
-          >
-            <SelectTrigger className="text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Array.from({ length: 5 }, (_, i) => i + 1).map(rooms => (
-                <SelectItem key={rooms} value={rooms.toString()}>
-                  {rooms} {rooms === 1 ? 'room' : 'rooms'}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="text-sm font-medium text-gray-900 p-3 bg-gray-50 rounded-lg border">
+            {proposal.rooms} {proposal.rooms === 1 ? 'room' : 'rooms'}
+          </div>
         </div>
 
         {/* Adults */}
         <div className="space-y-2">
-          <Label htmlFor="adults">Adults</Label>
-          <Select
-            value={proposal.adults.toString()}
-            onValueChange={(value) => handleTravelerChange('adults', value)}
-            disabled={!isEditing}
-          >
-            <SelectTrigger className="text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Array.from({ length: 10 }, (_, i) => i + 1).map(adults => (
-                <SelectItem key={adults} value={adults.toString()}>
-                  {adults} {adults === 1 ? 'adult' : 'adults'}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor="adults" className="text-sm font-medium text-gray-700">Adults</Label>
+          <div className="text-sm font-medium text-gray-900 p-3 bg-gray-50 rounded-lg border">
+            {proposal.adults} {proposal.adults === 1 ? 'adult' : 'adults'}
+          </div>
+        </div>
+
+        {/* Children */}
+        <div className="space-y-2">
+          <Label htmlFor="children" className="text-sm font-medium text-gray-700">Children</Label>
+          <div className="text-sm font-medium text-gray-900 p-3 bg-gray-50 rounded-lg border">
+            {proposal.children} {proposal.children === 1 ? 'child' : 'children'}
+          </div>
         </div>
 
         {/* Total Travelers */}
         <div className="space-y-2">
-          <Label htmlFor="totalTravelers">Total Travelers</Label>
-          <div className="text-sm font-medium text-gray-900 p-2 bg-gray-50 rounded-md">
+          <Label htmlFor="totalTravelers" className="text-sm font-medium text-gray-700">Total Travelers</Label>
+          <div className="text-sm font-medium text-gray-900 p-3 bg-gray-50 rounded-lg border">
             {proposal.totalTravelers || (proposal.adults + proposal.children)} travelers
           </div>
         </div>
@@ -221,27 +132,33 @@ export function ProposalHeader({ proposal, onUpdate }: ProposalHeaderProps) {
 
       {/* Additional Options */}
       <div className="mt-6 pt-6 border-t border-gray-200">
-        <div className="flex items-center space-x-6">
+        <div className="flex flex-wrap items-center gap-6">
           <div className="flex items-center space-x-2">
-            <Checkbox
-              id="landOnly"
-              checked={proposal.landOnly}
-              onCheckedChange={(checked) => handleFieldChange('landOnly', checked)}
-              disabled={!isEditing}
-            />
-            <Label htmlFor="landOnly" className="flex items-center text-sm">
+            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+              proposal.landOnly ? 'bg-primary border-primary' : 'bg-white border-gray-300'
+            }`}>
+              {proposal.landOnly && (
+                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              )}
+            </div>
+            <Label htmlFor="landOnly" className="flex items-center text-sm font-medium text-gray-700">
               <Plane className="h-4 w-4 mr-1" />
               Land Only
             </Label>
           </div>
           <div className="flex items-center space-x-2">
-            <Checkbox
-              id="addTransfers"
-              checked={proposal.addTransfers}
-              onCheckedChange={(checked) => handleFieldChange('addTransfers', checked)}
-              disabled={!isEditing}
-            />
-            <Label htmlFor="addTransfers" className="flex items-center text-sm">
+            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+              proposal.addTransfers ? 'bg-primary border-primary' : 'bg-white border-gray-300'
+            }`}>
+              {proposal.addTransfers && (
+                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              )}
+            </div>
+            <Label htmlFor="addTransfers" className="flex items-center text-sm font-medium text-gray-700">
               <Car className="h-4 w-4 mr-1" />
               Add Transfers
             </Label>

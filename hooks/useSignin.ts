@@ -87,6 +87,12 @@ export const useSignin = (options?: UseSigninOptions): UseSigninReturn => {
     
     const success = await newSignin(credentials);
     
+    // Check for errors after signin attempt
+    if (errors.length > 0 && options?.onError) {
+      console.log('useSignin: Triggering onError callback', { errors });
+      options.onError(legacyErrors);
+    }
+    
     if (success && currentUser && tokens) {
       // Return user data for immediate use
       return {

@@ -48,6 +48,7 @@ export default function ProposalDetailPage() {
   
   const { proposal, loading } = useProposal(proposalId)
   const [isPrintMode, setIsPrintMode] = useState(false)
+  const [isDownloadingPDF, setIsDownloadingPDF] = useState(false)
   const [activeTab, setActiveTab] = useState<'itinerary' | 'inclusions' | 'terms' | 'help'>('itinerary')
 
   // Debug proposal data
@@ -80,8 +81,57 @@ export default function ProposalDetailPage() {
   }
 
   // Handle download PDF
-  const handleDownloadPDF = () => {
-    toast({ description: "PDF download feature coming soon!", type: "info" })
+  const handleDownloadPDF = async () => {
+    console.log('Download PDF clicked, proposalId:', proposalId)
+    
+    if (!proposalId) {
+      toast({ description: "Proposal ID not found", type: "error" })
+      return
+    }
+    
+    setIsDownloadingPDF(true)
+    
+    try {
+      const pdfUrl = `/api/proposals/generate-pdf?id=${proposalId}`
+      console.log('Opening PDF URL:', pdfUrl)
+      
+      // First, verify the endpoint is accessible
+      try {
+        const response = await fetch(pdfUrl, { method: 'HEAD' })
+        console.log('PDF endpoint response status:', response.status)
+      } catch (fetchError) {
+        console.error('Error checking PDF endpoint:', fetchError)
+      }
+      
+      // Open PDF generation endpoint in new tab
+      const newWindow = window.open(pdfUrl, '_blank', 'noopener,noreferrer')
+      
+      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+        // Popup blocked or failed to open
+        console.warn('Popup blocked, trying fallback')
+        toast({ 
+          description: "Popup blocked. Opening in same window...", 
+          type: "info" 
+        })
+        // Fallback: navigate in same window after short delay
+        setTimeout(() => {
+          window.location.href = pdfUrl
+        }, 500)
+      } else {
+        toast({ 
+          description: "Opening PDF...", 
+          type: "success" 
+        })
+      }
+    } catch (error) {
+      console.error('Error opening PDF:', error)
+      toast({ 
+        description: "Failed to open PDF. Please try again.", 
+        type: "error" 
+      })
+    } finally {
+      setTimeout(() => setIsDownloadingPDF(false), 2000)
+    }
   }
 
   // Handle share
@@ -185,12 +235,30 @@ export default function ProposalDetailPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleDownloadPDF}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    console.log('Button clicked, proposalId:', proposalId)
+                    handleDownloadPDF()
+                  }}
+                  disabled={!proposalId || isDownloadingPDF}
                   className="flex items-center space-x-2"
                 >
                   <Download className="h-4 w-4" />
-                  <span>Download PDF</span>
+                  <span>{isDownloadingPDF ? 'Opening...' : 'Download PDF'}</span>
                 </Button>
+                {/* Debug: Direct link for testing */}
+                {proposalId && (
+                  <a 
+                    href={`/api/proposals/generate-pdf?id=${proposalId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-600 hover:underline"
+                  >
+                    (Direct Link)
+                  </a>
+                )}
               </div>
             </div>
           </div>

@@ -54,8 +54,8 @@ export default function MyProposalsPage() {
     const searchLower = searchTerm.toLowerCase()
     return (
       proposal.name.toLowerCase().includes(searchLower) ||
-      proposal.trip.customer.name.toLowerCase().includes(searchLower) ||
-      proposal.trip.customer.email.toLowerCase().includes(searchLower) ||
+      proposal.trip.customer?.name?.toLowerCase().includes(searchLower) ||
+      proposal.trip.customer?.email?.toLowerCase().includes(searchLower) ||
       proposal.trip.fromCity.name.toLowerCase().includes(searchLower) ||
       proposal.trip.days.some(day => 
         day.city.name.toLowerCase().includes(searchLower)
@@ -104,7 +104,7 @@ export default function MyProposalsPage() {
   const handleSendProposal = (proposal: Proposal) => {
     toast({
       title: 'Proposal Sent',
-      description: `Proposal "${proposal.name}" has been sent to ${proposal.trip.customer.name}`,
+      description: `Proposal "${proposal.name}" has been sent to ${proposal.trip.customer?.name || 'the client'}`,
       type: 'success'
     })
   }
@@ -392,8 +392,8 @@ export default function MyProposalsPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
-                            <div className="text-sm font-medium text-gray-900">{proposal.trip.customer.name}</div>
-                            <div className="text-sm text-gray-500">{proposal.trip.customer.email}</div>
+                            <div className="text-sm font-medium text-gray-900">{proposal.trip.customer?.name || 'N/A'}</div>
+                            <div className="text-sm text-gray-500">{proposal.trip.customer?.email || 'N/A'}</div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -501,24 +501,28 @@ export default function MyProposalsPage() {
               {/* Client Information */}
               <div className="bg-gray-50 rounded-xl p-4">
                 <h3 className="font-semibold text-gray-900 mb-3">Client Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <span className="text-sm text-gray-600">Name:</span>
-                    <p className="font-medium">{selectedProposal.trip.customer.name}</p>
+                {selectedProposal.trip.customer ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-sm text-gray-600">Name:</span>
+                      <p className="font-medium">{selectedProposal.trip.customer.name || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-600">Email:</span>
+                      <p className="font-medium">{selectedProposal.trip.customer.email || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-600">Phone:</span>
+                      <p className="font-medium">{selectedProposal.trip.customer.phone || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-600">Nationality:</span>
+                      <p className="font-medium">{selectedProposal.trip.customer.nationality || 'N/A'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-sm text-gray-600">Email:</span>
-                    <p className="font-medium">{selectedProposal.trip.customer.email}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm text-gray-600">Phone:</span>
-                    <p className="font-medium">{selectedProposal.trip.customer.phone}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm text-gray-600">Nationality:</span>
-                    <p className="font-medium">{selectedProposal.trip.customer.nationality}</p>
-                  </div>
-                </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No customer information available</p>
+                )}
               </div>
 
               {/* Trip Details */}

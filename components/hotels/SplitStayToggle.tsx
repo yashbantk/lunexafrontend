@@ -34,6 +34,11 @@ export function SplitStayToggle({
 }: SplitStayToggleProps) {
   const [showDetails, setShowDetails] = useState(false)
 
+  // Hide split stay option for trips with 1 day or less
+  if (totalNights <= 1) {
+    return null
+  }
+
   return (
     <Card className={`border-2 transition-all duration-300 ${
       isEnabled 

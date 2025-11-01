@@ -28,6 +28,7 @@ import { City, Country, Destination } from "@/types/graphql"
 import { Textarea } from "@/components/ui/textarea"
 import { useCreateItineraryProposal } from "@/hooks/useCreateItineraryProposal"
 import { useRouter } from "next/navigation"
+import { useToast, ToastContainer } from "@/hooks/useToast"
 
 // Direct form data structure matching CreateItineraryProposalInput
 interface DirectFormData {
@@ -90,6 +91,7 @@ const getInitialFormData = (): DirectFormData => ({
 export default function ProposalPage() {
   const router = useRouter()
   const { createItineraryProposal, isLoading: isCreating, error: createError } = useCreateItineraryProposal()
+  const { toast, toasts, dismiss } = useToast()
   
   const [destinations, setDestinations] = useState<TripDestination[]>([
     { id: "1", city: "", nights: "1" }
@@ -262,7 +264,12 @@ export default function ProposalPage() {
     
     if (!validation.isValid) {
       console.error('Validation errors:', validation.errors)
-      alert(`Please fix the following errors:\n${validation.errors.join('\n')}`)
+      toast({
+        type: 'error',
+        title: 'Validation Error',
+        description: `Please fix the following errors:\n${validation.errors.join('\n')}`,
+        duration: 8000
+      })
       return
     }
 
@@ -303,7 +310,12 @@ export default function ProposalPage() {
       
     } catch (error) {
       console.error('Error creating proposal:', error)
-      alert(`Failed to create proposal: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      toast({
+        type: 'error',
+        title: 'Failed to Create Proposal',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        duration: 6000
+      })
     }
   }
 
@@ -662,6 +674,9 @@ export default function ProposalPage() {
           </form>
         </motion.div>
       </div>
+      
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} dismiss={dismiss} />
     </div>
   )
 }

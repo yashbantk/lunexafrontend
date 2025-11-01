@@ -76,6 +76,12 @@ export const useSignup = (options?: UseSignupOptions): UseSignupReturn => {
     
     const success = await newSignup(credentials);
     
+    // Check for errors after signup attempt
+    if (errors.length > 0 && options?.onError) {
+      console.log('useSignup: Triggering onError callback', { errors });
+      options.onError(legacyErrors);
+    }
+    
     if (success) {
       // Return the current user if authenticated, otherwise null
       // The useEffect above will handle the success callback

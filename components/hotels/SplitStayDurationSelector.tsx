@@ -25,14 +25,58 @@ interface SplitStayDurationSelectorProps {
   className?: string
 }
 
-const PRESET_COMBINATIONS = [
-  { label: '2+2', value: [2, 2], description: 'Equal split' },
-  { label: '1+3', value: [1, 3], description: 'Short + Long' },
-  { label: '3+1', value: [3, 1], description: 'Long + Short' },
-  { label: '1+2+1', value: [1, 2, 1], description: 'Three segments' },
-  { label: '2+1+1', value: [2, 1, 1], description: 'Three segments' },
-  { label: '1+1+2', value: [1, 1, 2], description: 'Three segments' },
-]
+// Generate valid combinations based on total nights
+const generateValidCombinations = (totalNights: number) => {
+  const combinations = []
+  
+  // Generate 2-segment combinations
+  for (let i = 1; i < totalNights; i++) {
+    const second = totalNights - i
+    if (second >= 1) {
+      combinations.push({
+        label: `${i}+${second}`,
+        value: [i, second],
+        description: i === second ? 'Equal split' : i < second ? 'Short + Long' : 'Long + Short'
+      })
+    }
+  }
+  
+  // Generate 3-segment combinations (only for 4+ nights)
+  if (totalNights >= 4) {
+    for (let i = 1; i < totalNights - 1; i++) {
+      for (let j = 1; j < totalNights - i; j++) {
+        const third = totalNights - i - j
+        if (third >= 1) {
+          combinations.push({
+            label: `${i}+${j}+${third}`,
+            value: [i, j, third],
+            description: 'Three segments'
+          })
+        }
+      }
+    }
+  }
+  
+  // Generate 4-segment combinations (only for 5+ nights)
+  if (totalNights >= 5) {
+    for (let i = 1; i < totalNights - 2; i++) {
+      for (let j = 1; j < totalNights - i - 1; j++) {
+        for (let k = 1; k < totalNights - i - j; k++) {
+          const fourth = totalNights - i - j - k
+          if (fourth >= 1) {
+            combinations.push({
+              label: `${i}+${j}+${k}+${fourth}`,
+              value: [i, j, k, fourth],
+              description: 'Four segments'
+            })
+          }
+        }
+      }
+    }
+  }
+  
+  return combinations
+}
 
 export function SplitStayDurationSelector({
   totalNights,
@@ -44,6 +88,9 @@ export function SplitStayDurationSelector({
   const [durations, setDurations] = useState<number[]>(initialDurations.length > 0 ? initialDurations : [totalNights])
   const [customMode, setCustomMode] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
+
+  // Generate valid combinations for current total nights
+  const validCombinations = generateValidCombinations(totalNights)
 
   // Initialize with default single segment if no initial durations
   useEffect(() => {
@@ -147,7 +194,7 @@ export function SplitStayDurationSelector({
             <div className="space-y-3">
               <Label className="text-sm font-medium text-gray-700">Quick Presets</Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {PRESET_COMBINATIONS.map((preset) => (
+                {validCombinations.map((preset) => (
                   <Button
                     key={preset.label}
                     variant="outline"
