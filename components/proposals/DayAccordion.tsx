@@ -29,9 +29,10 @@ interface DayAccordionProps {
   onEditActivity?: (activity: Activity, dayIndex: number) => void
   onRemoveActivity?: (activityId: string, dayIndex: number) => void
   blockedTimeSlots?: ActivityTimeBlock[]
+  hideTimeline?: boolean
 }
 
-export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, onEditActivity, onRemoveActivity, blockedTimeSlots = [] }: DayAccordionProps) {
+export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, onEditActivity, onRemoveActivity, blockedTimeSlots = [], hideTimeline = false }: DayAccordionProps) {
   const [isExpanded, setIsExpanded] = useState(day.dayNumber <= 2) // Open first 2 days by default
 
   const formatTime = (time: string) => {
@@ -129,7 +130,8 @@ export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, o
                   </div>
                 )}
 
-                {/* Timeline */}
+                {/* Timeline - Hide when split stay is enabled */}
+                {!hideTimeline && (
                 <div className="mb-4">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-medium text-gray-900">Timeline</h4>
@@ -236,6 +238,7 @@ export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, o
                     })}
                   </div>
                 </div>
+                )}
 
                 {/* Activities */}
                 {day.activities.length > 0 && (
@@ -300,14 +303,20 @@ export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, o
                   <div className="mb-4">
                     <h4 className="font-medium text-gray-900 mb-3">Accommodation Details</h4>
                     <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-3">
                         <div>
-                          <div className="text-sm text-gray-600 mb-1">Rooms</div>
+                          <div className="text-sm text-gray-600 mb-1">Hotel & Room</div>
                           <div className="font-medium text-gray-900">{day.accommodation}</div>
                         </div>
-                        <div>
-                          <div className="text-sm text-gray-600 mb-1">Nights</div>
-                          <div className="font-medium text-gray-900">{day.summary?.match(/(\d+) nights/)?.[1] || '1'} night{(day.summary?.match(/(\d+) nights/)?.[1] || '1') !== '1' ? 's' : ''}</div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <div className="text-sm text-gray-600 mb-1">Nights</div>
+                            <div className="font-medium text-gray-900">{day.summary?.match(/(\d+) nights/)?.[1] || '1'} night{(day.summary?.match(/(\d+) nights/)?.[1] || '1') !== '1' ? 's' : ''}</div>
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-600 mb-1">Rooms</div>
+                            <div className="font-medium text-gray-900">{day.accommodation?.match(/(\d+) room/)?.[1] || '1'} room{(day.accommodation?.match(/(\d+) room/)?.[1] || '1') !== '1' ? 's' : ''}</div>
+                          </div>
                         </div>
                       </div>
                     </div>

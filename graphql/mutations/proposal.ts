@@ -337,3 +337,68 @@ export const CREATE_TRIP_STAY = gql`
     }
   }
 `
+
+export const UPDATE_TRIP_STAYS = gql`
+  mutation UpdateTripStays($data: [TripStayPartialInput!]!) {
+    updateTripStays(data: $data) {
+      id
+      tripDay {
+        id
+        dayNumber
+        date
+      }
+      room {
+        id
+        hotel {
+          id
+          name
+          address
+          type
+          description
+          locationUrl
+          star
+        }
+        name
+        priceCents
+        bedType
+        baseMealPlan
+        hotelRoomImages {
+          id
+          url
+          caption
+          priorityOrder
+        }
+        roomAmenities {
+          id
+          name
+          description
+          createdAt
+          updatedAt
+        }
+        maxOccupancy
+        size
+        sizeUnit
+        details
+        amenities
+        tags
+        inclusions
+        exclusions
+        createdAt
+        updatedAt
+      }
+      checkIn
+      checkOut
+      nights
+      roomsCount
+      mealPlan
+      currency {
+        code
+        name
+        createdAt
+        updatedAt
+      }
+      priceTotalCents
+      confirmationStatus
+    }
+  }
+`

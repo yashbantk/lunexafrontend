@@ -28,6 +28,7 @@ import { useLazyQuery } from "@apollo/client/react"
 import { GET_TRIP_PROPOSALS } from "@/graphql/queries/proposal"
 import { useDeleteTripStay } from "@/hooks/useDeleteTripStay"
 import { useCreateTripStay } from "@/hooks/useCreateTripStay"
+import { useUpdateTripStays, TripStayPartialInput } from "@/hooks/useUpdateTripStays"
 import { 
   filterActivitiesBySlot, 
   filterActivitiesByStartTime, 
@@ -60,9 +61,27 @@ export default function CreateProposalPage() {
   const [editingDayIndex, setEditingDayIndex] = useState<number | null>(null)
   const [editingActivityBookingId, setEditingActivityBookingId] = useState<string | null>(null)
   
-  // Split Stay state
-  const [isSplitStayEnabled, setIsSplitStayEnabled] = useState(false)
-  const [splitStaySegments, setSplitStaySegments] = useState<any[]>([])
+  // Split Stay state - with persistence
+  const [isSplitStayEnabled, setIsSplitStayEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(`splitStayEnabled_${tripId}`)
+      return saved === 'true'
+    }
+    return false
+  })
+  const [splitStaySegments, setSplitStaySegments] = useState<any[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(`splitStaySegments_${tripId}`)
+      if (saved) {
+        try {
+          return JSON.parse(saved)
+        } catch (e) {
+          return []
+        }
+      }
+    }
+    return []
+  })
   
   // Activity slot filtering state
   const [selectedSlot, setSelectedSlot] = useState<DaySlot | null>(null)
@@ -88,6 +107,9 @@ export default function CreateProposalPage() {
   
   // Create trip stay hook
   const { createTripStay, isLoading: isCreatingTripStay } = useCreateTripStay()
+  
+  // Update trip stays hook
+  const { updateTripStays, isLoading: isUpdatingTripStays } = useUpdateTripStays()
 
   // Utility function to get currency symbol
   const getCurrencySymbol = (currencyCode: string) => {
@@ -335,6 +357,79 @@ export default function CreateProposalPage() {
     }
   }, [trip, router, fetchTripProposals, createProposalAndRedirect])
 
+  // Restore split stay state from localStorage when trip loads
+  // Also sync with actual trip stay data if available
+  useEffect(() => {
+    if (trip && typeof window !== 'undefined') {
+      const savedEnabled = localStorage.getItem(`splitStayEnabled_${tripId}`)
+      if (savedEnabled === 'true') {
+        setIsSplitStayEnabled(true)
+      }
+      
+      const savedSegments = localStorage.getItem(`splitStaySegments_${tripId}`)
+      if (savedSegments) {
+        try {
+          const parsed = JSON.parse(savedSegments)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            // Sync segments with actual trip stay data if available
+            const syncedSegments = parsed.map((segment: any) => {
+              if (segment.hotel && trip.days && trip.days.length > 0) {
+                // Try to find matching day and update hotel info from trip data
+                const segmentStartDate = new Date(segment.startDate)
+                segmentStartDate.setHours(0, 0, 0, 0)
+                const segmentEndDate = new Date(segment.endDate)
+                segmentEndDate.setHours(0, 0, 0, 0)
+                
+                const sortedDays = [...trip.days].sort((a, b) => {
+                  if (a.dayNumber !== undefined && b.dayNumber !== undefined) {
+                    return a.dayNumber - b.dayNumber
+                  }
+                  return new Date(a.date).getTime() - new Date(b.date).getTime()
+                })
+                
+                const matchingDay = sortedDays.find((day) => {
+                  const dayDate = new Date(day.date)
+                  dayDate.setHours(0, 0, 0, 0)
+                  return dayDate >= segmentStartDate && dayDate < segmentEndDate
+                })
+                
+                if (matchingDay?.stay?.room?.hotel && segment.hotel.id === matchingDay.stay.room.hotel.id) {
+                  // Update segment with actual hotel data from trip
+                  return {
+                    ...segment,
+                    hotel: {
+                      ...segment.hotel,
+                      id: matchingDay.stay.room.hotel.id,
+                      name: matchingDay.stay.room.hotel.name,
+                      address: matchingDay.stay.room.hotel.address,
+                      starRating: matchingDay.stay.room.hotel.star || segment.hotel.starRating || 0,
+                      images: segment.hotel.images || [],
+                      rooms: segment.hotel.rooms || [],
+                      minPrice: segment.hotel.minPrice || (matchingDay.stay.room.priceCents || 0) / 100
+                    },
+                    selectedRoom: segment.selectedRoom || {
+                      id: matchingDay.stay.room.id,
+                      name: matchingDay.stay.room.name,
+                      priceCents: matchingDay.stay.room.priceCents,
+                      baseMealPlan: matchingDay.stay.room.baseMealPlan
+                    }
+                  }
+                }
+              }
+              return segment
+            })
+            
+            setSplitStaySegments(syncedSegments)
+            // Update localStorage with synced data
+            localStorage.setItem(`splitStaySegments_${tripId}`, JSON.stringify(syncedSegments))
+          }
+        } catch (e) {
+          console.error('Error parsing saved segments:', e)
+        }
+      }
+    }
+  }, [trip, tripId])
+
   // Convert Trip data to Proposal format
   const convertTripToProposalFormat = (tripData: TripData): Proposal => {
     const trip = tripData
@@ -363,7 +458,7 @@ export default function CreateProposalPage() {
         type: activity.slot as 'morning' | 'afternoon' | 'evening' | 'full_day',
         included: false
       })),
-      accommodation: day.stay ? `${day.stay.roomsCount} room(s)` : undefined,
+      accommodation: day.stay && day.stay.room && day.stay.room.hotel ? `${day.stay.roomsCount} room(s) at ${day.stay.room.hotel.name} (${day.stay.room.name}, ${day.stay.mealPlan})` : undefined,
       transfers: [],
       meals: {
         breakfast: day.stay?.mealPlan?.toLowerCase().includes('breakfast') || false,
@@ -682,7 +777,7 @@ export default function CreateProposalPage() {
   }
 
   // Split Stay handlers
-  const handleSplitStayChange = useCallback((segments: any[]) => {
+  const handleSplitStayChange = useCallback(async (segments: any[]) => {
     console.log('CreateProposalPage: handleSplitStayChange called', segments)
     
     // Check if segments have actually changed to prevent infinite loops
@@ -693,46 +788,519 @@ export default function CreateProposalPage() {
       return
     }
     
+    // Detect which segments have hotels that weren't there before
+    const previousSegments = splitStaySegments || []
+    const segmentsWithNewHotels = segments.filter((segment, index) => {
+      const prevSegment = previousSegments[index]
+      return segment.hotel && (!prevSegment || !prevSegment.hotel)
+    })
+    
     setSplitStaySegments(segments)
     
-    if (segments.length > 0 && segments.every(segment => segment.hotel)) {
-      // Convert split stay segments to regular hotels
-      const splitStayHotels: Hotel[] = segments.map(segment => ({
-        id: segment.hotel.id,
-        name: segment.hotel.name,
-        address: segment.hotel.address,
-        rating: segment.hotel.rating,
-        starRating: segment.hotel.starRating,
-        image: segment.hotel.images[0],
-        checkIn: segment.startDate,
-        checkOut: segment.endDate,
-        roomType: segment.hotel.rooms?.[0]?.name || 'Standard Room',
-        boardBasis: segment.hotel.rooms?.[0]?.baseMealPlan || 'Room Only',
-        bedType: segment.hotel.rooms?.[0]?.bedType || 'Double',
-        nights: segment.duration,
-        refundable: segment.hotel.refundable ?? true,
-        pricePerNight: segment.hotel.minPrice,
-        currency: trip?.currency?.code || proposal?.currency || 'INR',
-        confirmationStatus: 'pending'
-      }))
-      
-      // Update proposal with split stay hotels
-      if (proposal) {
-        const updatedProposal = {
-          ...proposal,
-          hotels: splitStayHotels
+    // Persist segments to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`splitStaySegments_${tripId}`, JSON.stringify(segments))
+    }
+    
+    // Update trip stays for segments that have hotels selected (call mutation whenever any segment gets a hotel)
+    if (segments.length > 0 && segments.some(segment => segment.hotel) && trip && trip.days) {
+      try {
+        // Build array of TripStayPartialInput objects for the mutation
+        // Only process segments that have hotels
+        const tripStayInputs: TripStayPartialInput[] = []
+        
+        // Sort trip days by dayNumber to ensure correct order
+        const sortedTripDays = [...trip.days].sort((a, b) => {
+          if (a.dayNumber !== undefined && b.dayNumber !== undefined) {
+            return a.dayNumber - b.dayNumber
+          }
+          // Fallback to date comparison if dayNumber is not available
+          return new Date(a.date).getTime() - new Date(b.date).getTime()
+        })
+        
+        console.log('Sorted trip days:', sortedTripDays.map(d => ({
+          dayNumber: d.dayNumber,
+          date: d.date,
+          tripStayId: d.stay?.id,
+          stayCheckIn: d.stay?.checkIn,
+          stayCheckOut: d.stay?.checkOut
+        })))
+        
+        // Sort segments by segmentIndex to ensure correct order
+        const sortedSegments = [...segments].sort((a, b) => a.segmentIndex - b.segmentIndex)
+        
+        console.log('Sorted segments:', sortedSegments.map(s => ({
+          segmentIndex: s.segmentIndex,
+          startDate: s.startDate,
+          endDate: s.endDate,
+          duration: s.duration,
+          hotel: s.hotel?.name
+        })))
+        
+        // Track which days have already been assigned to prevent duplicates
+        const assignedDayIds = new Set<string>()
+        
+        // Calculate cumulative day offsets for each segment
+        // Segment 0 starts at day 1, Segment 1 starts after Segment 0's duration, etc.
+        // Only include segments with hotels in the offset calculation
+        const segmentDayOffsets: number[] = []
+        let cumulativeOffset = 0
+        sortedSegments.forEach((segment, index) => {
+          segmentDayOffsets.push(cumulativeOffset)
+          // Only add to cumulative offset if this segment has a hotel
+          // This ensures correct day matching even if some segments don't have hotels yet
+          if (segment.hotel) {
+            cumulativeOffset += segment.duration
+          }
+        })
+        
+        console.log('Segment day offsets:', segmentDayOffsets.map((offset, idx) => ({
+          segmentIndex: sortedSegments[idx].segmentIndex,
+          offset,
+          duration: sortedSegments[idx].duration,
+          hasHotel: !!sortedSegments[idx].hotel
+        })))
+        
+        sortedSegments.forEach((segment, segmentArrayIndex) => {
+          // Skip segments without hotels
+          if (!segment.hotel) {
+            return
+          }
+          
+          // Get the selected room - prefer segment.selectedRoom, then hotel.rooms
+          let selectedRoom = segment.selectedRoom
+          
+          // If no selectedRoom in segment, try to get it from hotel.rooms
+          if (!selectedRoom || !selectedRoom.id) {
+            if (segment.hotel.rooms && segment.hotel.rooms.length > 0) {
+              const roomFromHotel = segment.hotel.rooms.find((r: any) => r.selected) || segment.hotel.rooms[0]
+              if (roomFromHotel && roomFromHotel.id) {
+                selectedRoom = {
+                  id: roomFromHotel.id,
+                  name: roomFromHotel.name || 'Standard Room',
+                  priceCents: roomFromHotel.priceCents,
+                  pricePerNight: roomFromHotel.pricePerNight,
+                  baseMealPlan: roomFromHotel.baseMealPlan,
+                  boardBasis: roomFromHotel.boardBasis
+                }
+              }
+            }
+          }
+          
+          if (!selectedRoom || !selectedRoom.id) {
+            console.warn('Segment missing room ID:', segment)
+            return
+          }
+          
+          // Calculate check-in and check-out dates for this segment
+          const segmentStartDate = new Date(segment.startDate)
+          segmentStartDate.setHours(0, 0, 0, 0) // Normalize to start of day
+          const segmentEndDate = new Date(segment.endDate)
+          segmentEndDate.setHours(0, 0, 0, 0) // Normalize to start of day
+          
+          // Format dates as YYYY-MM-DD for GraphQL Date type
+          const checkIn = segmentStartDate.toISOString().split('T')[0]
+          const checkOut = segmentEndDate.toISOString().split('T')[0]
+          
+          // Find all trip days within this segment's date range
+          // Prioritize dayNumber-based matching for accuracy, then fallback to date-based matching
+          let segmentDays: any[] = []
+          
+          // First, try dayNumber-based matching if available (more reliable)
+          // Calculate the correct day range based on cumulative offsets from previous segments
+          if (segment.segmentIndex !== undefined) {
+            // Calculate cumulative offset: how many days have been used by previous segments
+            const dayOffset = segmentDayOffsets[segmentArrayIndex] || 0
+            const expectedDayStart = dayOffset + 1
+            const expectedDayEnd = expectedDayStart + segment.duration
+            
+            console.log(`Segment ${segment.segmentIndex} matching:`, {
+              dayOffset,
+              expectedDayStart,
+              expectedDayEnd,
+              duration: segment.duration,
+              shouldMatchDays: `${expectedDayStart} to ${expectedDayEnd - 1}`
+            })
+            
+            const dayNumberBasedDays = sortedTripDays.filter((day) => {
+              if (day.dayNumber === undefined) return false
+              // Match days based on cumulative offset
+              const dayMatches = day.dayNumber >= expectedDayStart && day.dayNumber < expectedDayEnd
+              
+              // Also check if this day has already been assigned to another segment
+              if (dayMatches && day.stay?.id) {
+                if (assignedDayIds.has(day.stay.id)) {
+                  console.warn(`Day ${day.dayNumber} with tripStay ID ${day.stay.id} already assigned to another segment, skipping for segment ${segment.segmentIndex}`)
+                  return false
+                }
+              }
+              
+              return dayMatches
+            }).sort((a, b) => {
+              if (a.dayNumber !== undefined && b.dayNumber !== undefined) {
+                return a.dayNumber - b.dayNumber
+              }
+              return new Date(a.date).getTime() - new Date(b.date).getTime()
+            })
+            
+            if (dayNumberBasedDays.length > 0) {
+              console.log(`Using dayNumber-based matching for segment ${segment.segmentIndex}:`, dayNumberBasedDays.map(d => ({
+                dayNumber: d.dayNumber,
+                tripStayId: d.stay?.id,
+                date: d.date
+              })))
+              segmentDays = dayNumberBasedDays
+            }
+          }
+          
+          // If dayNumber matching didn't work, fallback to date-based matching
+          if (segmentDays.length === 0) {
+            console.log(`DayNumber matching failed for segment ${segment.segmentIndex}, trying date-based matching`)
+            segmentDays = sortedTripDays.filter((day) => {
+              const dayDate = new Date(day.date)
+              dayDate.setHours(0, 0, 0, 0)
+              // Day should be >= segment start and < segment end
+              const dateMatches = dayDate >= segmentStartDate && dayDate < segmentEndDate
+              
+              // Also check if this day has already been assigned to another segment
+              if (dateMatches && day.stay?.id) {
+                if (assignedDayIds.has(day.stay.id)) {
+                  console.warn(`Day ${day.dayNumber} with tripStay ID ${day.stay.id} already assigned to another segment, skipping for segment ${segment.segmentIndex}`)
+                  return false
+                }
+              }
+              
+              return dateMatches
+            }).sort((a, b) => {
+              // Ensure days are sorted by dayNumber
+              if (a.dayNumber !== undefined && b.dayNumber !== undefined) {
+                return a.dayNumber - b.dayNumber
+              }
+              return new Date(a.date).getTime() - new Date(b.date).getTime()
+            })
+            
+            if (segmentDays.length > 0) {
+              console.log(`Using date-based matching for segment ${segment.segmentIndex}:`, segmentDays.map(d => ({
+                dayNumber: d.dayNumber,
+                tripStayId: d.stay?.id,
+                date: d.date
+              })))
+            }
+          }
+          
+          if (segmentDays.length === 0) {
+            console.warn('No trip days found for segment date range:', {
+              segmentIndex: segment.segmentIndex,
+              segmentStartDate: segmentStartDate.toISOString(),
+              segmentEndDate: segmentEndDate.toISOString(),
+              segmentDuration: segment.duration,
+              allDays: sortedTripDays.map(d => ({
+                dayNumber: d.dayNumber,
+                date: d.date,
+                normalizedDate: new Date(d.date).toISOString().split('T')[0]
+              }))
+            })
+            return
+          }
+          
+          console.log(`Segment ${segment.segmentIndex} (${segment.duration} nights):`, {
+            startDate: segmentStartDate.toISOString().split('T')[0],
+            endDate: segmentEndDate.toISOString().split('T')[0],
+            matchedDays: segmentDays.map(d => ({ 
+              dayNumber: d.dayNumber, 
+              date: d.date,
+              tripStayId: d.stay?.id
+            })),
+            expectedDayCount: segment.duration,
+            actualDayCount: segmentDays.length
+          })
+          
+          // Verify we matched the correct number of days
+          if (segmentDays.length !== segment.duration) {
+            console.warn(`Segment ${segment.segmentIndex} expected ${segment.duration} days but matched ${segmentDays.length} days`)
+          }
+          
+          // Get currency code
+          const currencyCode = trip.currency?.code || 'INR'
+          
+          // Calculate price (use room price or hotel min price)
+          const pricePerNight = selectedRoom.priceCents || (selectedRoom.pricePerNight ? selectedRoom.pricePerNight * 100 : 0) || segment.hotel.minPrice * 100 || 0
+          const priceTotalCents = pricePerNight * segment.duration
+          
+          // For each day in this segment, create a TripStayPartialInput
+          // Only process days that haven't been assigned to another segment
+          segmentDays.forEach((day) => {
+            if (!day.stay || !day.stay.id) {
+              console.warn('Day missing stay ID:', day)
+              return
+            }
+            
+            // Skip if this day has already been assigned to another segment
+            if (assignedDayIds.has(day.stay.id)) {
+              console.warn(`Skipping duplicate tripStay ID ${day.stay.id} for segment ${segment.segmentIndex}, day ${day.dayNumber} - already assigned`)
+              return
+            }
+            
+            console.log(`Creating tripStay input for segment ${segment.segmentIndex}, day ${day.dayNumber}:`, {
+              tripStayId: day.stay.id,
+              dayNumber: day.dayNumber,
+              date: day.date,
+              segmentIndex: segment.segmentIndex,
+              segmentStartDate: segmentStartDate.toISOString().split('T')[0],
+              segmentEndDate: segmentEndDate.toISOString().split('T')[0]
+            })
+            
+            const tripStayInput: TripStayPartialInput = {
+              id: day.stay.id,
+              room: { set: selectedRoom.id },
+              checkIn,
+              checkOut,
+              nights: segment.duration,
+              roomsCount: 1, // Default to 1 room, could be configurable
+              mealPlan: selectedRoom.baseMealPlan || selectedRoom.boardBasis || 'BB',
+              currency: { set: currencyCode },
+              priceTotalCents,
+              confirmationStatus: 'pending'
+            }
+            
+            tripStayInputs.push(tripStayInput)
+            
+            // Mark this day as assigned immediately after adding to inputs
+            assignedDayIds.add(day.stay.id)
+          })
+        })
+        
+        // Only call mutation if we have inputs (only for segments with hotels)
+        if (tripStayInputs.length > 0) {
+          console.log(`Updating trip stays for ${tripStayInputs.length} day(s) with inputs:`, tripStayInputs.map(input => ({
+            tripStayId: input.id,
+            roomId: input.room?.set,
+            checkIn: input.checkIn,
+            checkOut: input.checkOut,
+            nights: input.nights
+          })))
+          
+          const result = await updateTripStays(tripStayInputs, async (response) => {
+            console.log('Trip stays updated successfully:', response)
+            
+            // Update segments with the hotel data that was just saved
+            // This ensures the UI reflects the selection immediately
+            const updatedSegments = segments.map(segment => {
+              // Keep the segment as-is with its hotel selection
+              return segment
+            })
+            
+            // Persist the updated segments (they already have hotel data)
+            setSplitStaySegments(updatedSegments)
+            if (typeof window !== 'undefined') {
+              localStorage.setItem(`splitStaySegments_${tripId}`, JSON.stringify(updatedSegments))
+            }
+            
+            // Immediately update the proposal with the response data to show updated hotels in itinerary
+            if (response.updateTripStays && response.updateTripStays.length > 0 && trip) {
+              console.log('Updating proposal with response data:', response.updateTripStays)
+              
+              // Create a temporary trip object with updated stays for immediate UI update
+              // Map each stay in response to its corresponding day
+              const updatedTripDays = trip.days.map((day: any) => {
+                // Find matching updated stay from response - check both tripDay.id and tripDay.dayNumber
+                const updatedStay = response.updateTripStays.find((stay: any) => {
+                  return stay.tripDay.id === day.id || stay.tripDay.dayNumber === day.dayNumber
+                })
+                
+                if (updatedStay && updatedStay.room && updatedStay.room.hotel) {
+                  console.log(`Updating day ${day.dayNumber} with stay:`, {
+                    hotelName: updatedStay.room.hotel.name,
+                    roomName: updatedStay.room.name,
+                    mealPlan: updatedStay.mealPlan,
+                    tripDayId: updatedStay.tripDay.id,
+                    dayId: day.id
+                  })
+                  
+                  // Completely replace the stay with the updated one from response
+                  return {
+                    ...day,
+                    stay: {
+                      id: updatedStay.id,
+                      tripDay: updatedStay.tripDay,
+                      room: updatedStay.room,
+                      checkIn: updatedStay.checkIn,
+                      checkOut: updatedStay.checkOut,
+                      nights: updatedStay.nights,
+                      roomsCount: updatedStay.roomsCount,
+                      mealPlan: updatedStay.mealPlan,
+                      currency: updatedStay.currency,
+                      priceTotalCents: updatedStay.priceTotalCents,
+                      confirmationStatus: updatedStay.confirmationStatus
+                    }
+                  }
+                }
+                return day
+              })
+              
+              // Create updated trip object with new days
+              const updatedTripData = {
+                ...trip,
+                days: updatedTripDays
+              } as TripData
+              
+              console.log('Converting updated trip data to proposal format...')
+              // Convert to proposal format and update immediately
+              const updatedProposal = convertTripToProposalFormat(updatedTripData)
+              console.log('Updated proposal accommodation data:', updatedProposal.days.map(d => ({
+                dayNumber: d.dayNumber,
+                accommodation: d.accommodation
+              })))
+              
+              updateProposalWithPrices(updatedProposal)
+            } else {
+              // Fallback: Update proposal with split stay hotels if response format is different
+              const splitStayHotels: Hotel[] = updatedSegments
+                .filter(segment => segment.hotel)
+                .map(segment => ({
+                  id: segment.hotel!.id,
+                  name: segment.hotel!.name,
+                  address: segment.hotel!.address,
+                  rating: segment.hotel!.rating,
+                  starRating: segment.hotel!.starRating,
+                  image: segment.hotel!.images?.[0],
+                  checkIn: segment.startDate,
+                  checkOut: segment.endDate,
+                  roomType: segment.selectedRoom?.name || segment.hotel!.rooms?.[0]?.name || 'Standard Room',
+                  boardBasis: segment.selectedRoom?.baseMealPlan || segment.selectedRoom?.boardBasis || segment.hotel!.rooms?.[0]?.baseMealPlan || 'Room Only',
+                  bedType: segment.hotel!.rooms?.[0]?.bedType || 'Double',
+                  nights: segment.duration,
+                  refundable: segment.hotel!.refundable ?? true,
+                  pricePerNight: segment.selectedRoom?.pricePerNight || segment.hotel!.minPrice,
+                  currency: trip?.currency?.code || proposal?.currency || 'INR',
+                  confirmationStatus: 'pending'
+                }))
+              
+              if (proposal) {
+                const updatedProposal = {
+                  ...proposal,
+                  hotels: splitStayHotels
+                }
+                updateProposalWithPrices(updatedProposal)
+              }
+            }
+            
+            // Refresh trip data in background without blocking UI
+            // Use a small delay to ensure mutation completes first
+            setTimeout(async () => {
+              if (refetchTrip) {
+                try {
+                  const refreshedTrip = await refetchTrip()
+                  
+                  // After refetch, update the proposal with new trip data
+                  if (refreshedTrip?.data?.trip) {
+                    const updatedTripData = refreshedTrip.data.trip as TripData
+                    console.log('Refreshed trip data after mutation:', updatedTripData)
+                    console.log('Trip days with stays:', updatedTripData.days.map((d: any) => ({
+                      dayNumber: d.dayNumber,
+                      hotelName: d.stay?.room?.hotel?.name,
+                      roomName: d.stay?.room?.name,
+                      mealPlan: d.stay?.mealPlan
+                    })))
+                    
+                    // Convert updated trip data to proposal format to refresh itinerary
+                    const updatedProposal = convertTripToProposalFormat(updatedTripData)
+                    console.log('Updated proposal after refetch - accommodation:', updatedProposal.days.map(d => ({
+                      dayNumber: d.dayNumber,
+                      accommodation: d.accommodation
+                    })))
+                    updateProposalWithPrices(updatedProposal)
+                    
+                    // Update blocked time slots
+                    updateBlockedTimeSlots(updatedTripData)
+                    
+                    // Also sync segments with actual trip stay data
+                    const tripDays = updatedTripData.days.sort((a: any, b: any) => {
+                      if (a.dayNumber !== undefined && b.dayNumber !== undefined) {
+                        return a.dayNumber - b.dayNumber
+                      }
+                      return new Date(a.date).getTime() - new Date(b.date).getTime()
+                    })
+                    
+                    // Update segments to reflect the actual hotel data from trip
+                    const syncedSegments = updatedSegments.map((segment, index) => {
+                      const segmentStartDate = new Date(segment.startDate)
+                      segmentStartDate.setHours(0, 0, 0, 0)
+                      const segmentEndDate = new Date(segment.endDate)
+                      segmentEndDate.setHours(0, 0, 0, 0)
+                      
+                      // Find matching days
+                      const matchingDays = tripDays.filter((day: any) => {
+                        const dayDate = new Date(day.date)
+                        dayDate.setHours(0, 0, 0, 0)
+                        return dayDate >= segmentStartDate && dayDate < segmentEndDate
+                      })
+                      
+                      // If we have matching days with hotel data, update segment
+                      if (matchingDays.length > 0 && matchingDays[0].stay?.room?.hotel) {
+                        const hotelData = matchingDays[0].stay.room.hotel
+                        const roomData = matchingDays[0].stay.room
+                        
+                        // Only update if hotel matches (preserve user selection)
+                        if (!segment.hotel || segment.hotel.id === hotelData.id) {
+                          return {
+                            ...segment,
+                            hotel: {
+                              ...segment.hotel,
+                              id: hotelData.id,
+                              name: hotelData.name,
+                              address: hotelData.address,
+                              starRating: hotelData.star || segment.hotel?.starRating || 0,
+                              images: segment.hotel?.images || [],
+                              rooms: segment.hotel?.rooms || [],
+                              minPrice: (roomData.priceCents || 0) / 100
+                            },
+                            selectedRoom: segment.selectedRoom || {
+                              id: roomData.id,
+                              name: roomData.name,
+                              priceCents: roomData.priceCents,
+                              baseMealPlan: roomData.baseMealPlan
+                            }
+                          }
+                        }
+                      }
+                      
+                      return segment
+                    })
+                    
+                    setSplitStaySegments(syncedSegments)
+                    if (typeof window !== 'undefined') {
+                      localStorage.setItem(`splitStaySegments_${tripId}`, JSON.stringify(syncedSegments))
+                    }
+                  }
+                } catch (error) {
+                  console.error('Error refreshing trip data:', error)
+                }
+              }
+            }, 500) // Small delay to ensure mutation completes
+          }, (error) => {
+            console.error('Error updating trip stays:', error)
+          })
+        } else {
+          console.warn('No trip stay inputs generated from segments')
         }
-        updateProposalWithPrices(updatedProposal)
+      } catch (error) {
+        console.error('Error in handleSplitStayChange:', error)
       }
     }
-  }, [proposal, updateProposalWithPrices, splitStaySegments])
+  }, [proposal, updateProposalWithPrices, splitStaySegments, trip, updateTripStays, refetchTrip])
 
   const handleSplitStayToggle = (enabled: boolean) => {
     setIsSplitStayEnabled(enabled)
     
-    if (!enabled) {
-      // Clear split stay segments when disabled
-      setSplitStaySegments([])
+    // Persist split stay state
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`splitStayEnabled_${tripId}`, enabled.toString())
+      if (!enabled) {
+        // Clear split stay segments when disabled
+        setSplitStaySegments([])
+        localStorage.removeItem(`splitStaySegments_${tripId}`)
+      }
     }
   }
 
@@ -1342,6 +1910,7 @@ export default function CreateProposalPage() {
                     onSplitStayChange={handleSplitStayChange}
                     isEnabled={isSplitStayEnabled}
                     onToggle={handleSplitStayToggle}
+                    initialSegments={splitStaySegments}
                   />
                 </div>
 
@@ -1440,6 +2009,7 @@ export default function CreateProposalPage() {
                       day={day}
                       dayIndex={index}
                       blockedTimeSlots={blockedTimeSlots}
+                      hideTimeline={isSplitStayEnabled}
                       onEdit={() => handleEditItem('day', day)}
                       onRemove={() => {
                         if (!proposal) return

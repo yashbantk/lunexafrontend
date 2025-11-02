@@ -28,6 +28,14 @@ interface SplitStaySegment {
   startDate: string
   endDate: string
   hotel?: HotelType
+  selectedRoom?: {
+    id: string
+    name: string
+    priceCents?: number
+    pricePerNight?: number
+    baseMealPlan?: string
+    boardBasis?: string
+  }
   segmentIndex: number
 }
 
@@ -43,6 +51,7 @@ interface SplitStayManagerProps {
   onSplitStayChange: (segments: SplitStaySegment[]) => void
   isEnabled?: boolean
   onToggle?: (enabled: boolean) => void
+  initialSegments?: SplitStaySegment[]
   className?: string
 }
 
@@ -60,6 +69,7 @@ export function SplitStayManager({
   onSplitStayChange,
   isEnabled: externalIsEnabled,
   onToggle: externalOnToggle,
+  initialSegments = [],
   className = ''
 }: SplitStayManagerProps) {
   // Don't render split stay manager for trips with 1 day or less
@@ -69,9 +79,35 @@ export function SplitStayManager({
 
   const [internalIsEnabled, setInternalIsEnabled] = useState(false)
   const isEnabled = externalIsEnabled !== undefined ? externalIsEnabled : internalIsEnabled
-  const [currentStep, setCurrentStep] = useState<SplitStayStep>('toggle')
-  const [durations, setDurations] = useState<number[]>([])
-  const [segments, setSegments] = useState<SplitStaySegment[]>([])
+  const [currentStep, setCurrentStep] = useState<SplitStayStep>(initialSegments.length > 0 ? 'hotels' : 'toggle')
+  const [durations, setDurations] = useState<number[]>(initialSegments.map(s => s.duration))
+  const [segments, setSegments] = useState<SplitStaySegment[]>(initialSegments)
+  
+  // Restore segments from initialSegments prop when they change externally (from parent)
+  useEffect(() => {
+    if (initialSegments && initialSegments.length > 0) {
+      // Only update if initialSegments actually changed (to avoid overwriting user selections)
+      const currentSegmentsStr = JSON.stringify(segments)
+      const initialSegmentsStr = JSON.stringify(initialSegments)
+      
+      if (currentSegmentsStr !== initialSegmentsStr) {
+        console.log('SplitStayManager: Restoring segments from initialSegments', initialSegments)
+        setSegments(initialSegments)
+        
+        // Extract durations and set step if needed
+        const initialDurations = initialSegments.map(s => s.duration)
+        if (initialDurations.length > 0 && initialDurations.reduce((a, b) => a + b, 0) === totalNights) {
+          setDurations(initialDurations)
+          // Always show hotels step if we have segments
+          setCurrentStep('hotels')
+        }
+      }
+    } else if (initialSegments.length === 0 && segments.length === 0) {
+      // Reset if initialSegments is empty and we have no segments
+      setSegments([])
+      setDurations([])
+    }
+  }, [initialSegments, totalNights]) // Removed segments from deps to avoid circular updates
   const [editingSegmentIndex, setEditingSegmentIndex] = useState<number | null>(null)
   const [showHotelSelector, setShowHotelSelector] = useState(false)
   const previousSegmentsRef = useRef<SplitStaySegment[]>([])
@@ -84,12 +120,20 @@ export function SplitStayManager({
       const newSegments: SplitStaySegment[] = []
       let currentDate = new Date(startDate)
       
+      // Preserve existing hotel selections when recreating segments
+      const existingSegmentsMap = new Map(
+        segments.map(s => [s.segmentIndex, { hotel: s.hotel, selectedRoom: s.selectedRoom }])
+      )
+      
       durations.forEach((duration, index) => {
         const segmentStartDate = new Date(currentDate)
         const segmentEndDate = new Date(currentDate)
         segmentEndDate.setDate(segmentEndDate.getDate() + duration)
         
-        const segment = {
+        // Check if we have existing hotel data for this segment index
+        const existingSegment = existingSegmentsMap.get(index)
+        
+        const segment: SplitStaySegment = {
           id: `segment-${index}`,
           duration,
           startDate: segmentStartDate.toISOString(),
@@ -97,11 +141,18 @@ export function SplitStayManager({
           segmentIndex: index
         }
         
+        // Preserve hotel and room selection if it exists
+        if (existingSegment) {
+          segment.hotel = existingSegment.hotel
+          segment.selectedRoom = existingSegment.selectedRoom
+        }
+        
         console.log(`SplitStayManager: Created segment ${index}`, {
           duration,
           startDate: segmentStartDate.toISOString(),
           endDate: segmentEndDate.toISOString(),
-          segmentIndex: index
+          segmentIndex: index,
+          hasHotel: !!existingSegment?.hotel
         })
         
         newSegments.push(segment)
@@ -111,7 +162,7 @@ export function SplitStayManager({
       console.log('SplitStayManager: All segments created', newSegments)
       setSegments(newSegments)
     }
-  }, [durations, startDate])
+  }, [durations, startDate]) // Removed segments from deps to avoid infinite loop
 
   // Notify parent of changes
   useEffect(() => {
@@ -122,10 +173,17 @@ export function SplitStayManager({
       if (segmentsChanged) {
         console.log('SplitStayManager: Notifying parent of segment changes', segments)
         previousSegmentsRef.current = segments
+        
+        // If we have segments (with or without hotels), ensure we're on the hotels step
+        // This keeps the UI visible so users can see selections and continue selecting
+        if (segments.length > 0 && currentStep !== 'hotels') {
+          setCurrentStep('hotels')
+        }
+        
         onSplitStayChange(segments)
       }
     }
-  }, [segments]) // Remove onSplitStayChange from dependencies to prevent infinite loop
+  }, [segments]) // Removed currentStep to prevent loop - it's set conditionally inside
 
   const handleToggle = (enabled: boolean) => {
     if (externalOnToggle) {
@@ -147,6 +205,8 @@ export function SplitStayManager({
     setDurations(newDurations)
     if (newDurations.length > 1) {
       setCurrentStep('hotels')
+    } else {
+      setCurrentStep('toggle')
     }
   }
 
@@ -189,16 +249,33 @@ export function SplitStayManager({
         coordinates: hotel.coordinates || { lat: 0, lng: 0 }
       }
       
+      // Store the selected room information
+      const selectedRoom = room ? {
+        id: room.id,
+        name: room.name || 'Standard Room',
+        priceCents: room.priceCents,
+        pricePerNight: room.pricePerNight,
+        baseMealPlan: room.baseMealPlan,
+        boardBasis: room.boardBasis
+      } : undefined
+      
       const updatedSegments = segments.map(segment => 
         segment.segmentIndex === editingSegmentIndex 
-          ? { ...segment, hotel: hotelType }
+          ? { ...segment, hotel: hotelType, selectedRoom }
           : segment
       )
       
       console.log('SplitStayManager: Updated segments', updatedSegments)
       setSegments(updatedSegments)
+      
+      // Close the hotel selector modal but keep the split stay UI visible
       setShowHotelSelector(false)
       setEditingSegmentIndex(null)
+      
+      // Ensure we stay on the hotels step to show the selected hotel
+      if (currentStep !== 'hotels') {
+        setCurrentStep('hotels')
+      }
     } catch (error) {
       console.error('SplitStayManager: Error in handleHotelSelect', error)
     }
@@ -317,13 +394,14 @@ export function SplitStayManager({
         )}
       </AnimatePresence>
 
-      {/* Step 3: Hotel Selection */}
+      {/* Step 3: Hotel Selection - Always show when enabled and segments exist */}
       <AnimatePresence>
-        {isEnabled && currentStep === 'hotels' && !showHotelSelector && (
+        {isEnabled && segments.length > 0 && !showHotelSelector && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
+            key="hotels-display"
           >
             <SplitStayDisplay
               segments={segments}
