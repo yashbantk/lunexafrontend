@@ -260,81 +260,6 @@ export default function CreateProposalPage() {
     }
   }, [trip, createProposalAndRedirect, router, fetchTripProposals])
 
-  const handlePreviewProposal = useCallback(async (proposalToPreview: Proposal | null) => {
-    console.log('handlePreviewProposal called')
-    
-    if (!proposalToPreview || !trip) {
-      console.error('No proposal or trip data available')
-      return
-    }
-    
-    try {
-      // First, check if a proposal already exists for this trip
-      const { data } = await fetchTripProposals({
-        variables: { tripId: trip.id }
-      })
-      
-      if (data?.proposals && data.proposals.length > 0) {
-        // Get the most recent proposal - sort by createdAt desc
-        const existingProposal = data.proposals.sort((a: any, b: any) => {
-          const dateA = new Date(a.createdAt || 0).getTime()
-          const dateB = new Date(b.createdAt || 0).getTime()
-          return dateB - dateA
-        })[0]
-        
-        console.log('Found existing proposal, redirecting to:', existingProposal.id)
-        // Redirect to the existing proposal
-        router.push(`/proposal/${existingProposal.id}`)
-      } else {
-        // No existing proposal, create one first and then redirect
-        console.log('No existing proposal found, creating one for preview...')
-        
-        // Calculate total price from proposal
-        const totalPriceCents = proposalToPreview.priceBreakdown?.total 
-          ? Math.round(proposalToPreview.priceBreakdown.total * 100)
-          : 0
-        
-        // Prepare proposal data
-        const proposalData: ProposalInput = {
-          trip: trip.id,
-          name: proposalToPreview.tripName || `Proposal for ${trip.fromCity.name}`,
-          status: 'draft',
-          currency: 'INR',
-          totalPriceCents,
-          estimatedDateOfBooking: new Date().toISOString(),
-          areFlightsBooked: false,
-          flightsMarkup: Number(trip.markupFlightPercent) || 0,
-          landMarkup: Number(trip.markupLandPercent) || 0,
-          landMarkupType: 'percentage'
-        }
-        
-        // Create proposal and redirect
-        await createProposalAndRedirect(proposalData)
-      }
-    } catch (error: any) {
-      console.error('Error in handlePreviewProposal:', error)
-      
-      // If creation fails, try to fetch existing proposals again
-      try {
-        const { data } = await fetchTripProposals({
-          variables: { tripId: trip.id }
-        })
-        
-        if (data?.proposals && data.proposals.length > 0) {
-          const existingProposal = data.proposals.sort((a: any, b: any) => {
-            const dateA = new Date(a.createdAt || 0).getTime()
-            const dateB = new Date(b.createdAt || 0).getTime()
-            return dateB - dateA
-          })[0]
-          
-          router.push(`/proposal/${existingProposal.id}`)
-        }
-      } catch (fetchError) {
-        console.error('Error fetching existing proposals in preview:', fetchError)
-      }
-    }
-  }, [trip, router, fetchTripProposals, createProposalAndRedirect])
-
   // Convert Trip data to Proposal format
   const convertTripToProposalFormat = (tripData: TripData): Proposal => {
     const trip = tripData
@@ -1680,7 +1605,7 @@ export default function CreateProposalPage() {
               <PriceSummary
                 proposal={proposal}
                 onSaveProposal={() => saveProposal(proposal)}
-                onPreview={() => handlePreviewProposal(proposal)}
+                onPreview={() => console.log('Preview proposal')}
               />
             </motion.div>
           </div>
