@@ -101,7 +101,7 @@ export function PriceSummary({ proposal, onSaveProposal, onPreview }: PriceSumma
                 <Save className="h-4 w-4 mr-2" />
                 Save As Proposal
               </Button>
-              <Button
+              {/* <Button
                 variant="outline"
                 size="sm"
                 onClick={onPreview}
@@ -109,7 +109,7 @@ export function PriceSummary({ proposal, onSaveProposal, onPreview }: PriceSumma
               >
                 <Eye className="h-3 w-3 mr-1" />
                 Preview Proposal
-              </Button>
+              </Button> */}
             </div>
           </CardContent>
         </Card>
@@ -192,7 +192,7 @@ export function PriceSummary({ proposal, onSaveProposal, onPreview }: PriceSumma
             )}
 
             {/* Quick Add Button */}
-            <div className="pt-4 border-t border-gray-200">
+            {/* <div className="pt-4 border-t border-gray-200">
               <Button
                 variant="outline"
                 size="sm"
@@ -202,7 +202,7 @@ export function PriceSummary({ proposal, onSaveProposal, onPreview }: PriceSumma
                 <Plus className="h-3 w-3 mr-1" />
                 Quick Add
               </Button>
-            </div>
+            </div> */}
           </CardContent>
         </Card>
       </motion.div>

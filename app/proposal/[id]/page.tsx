@@ -316,6 +316,15 @@ export default function ProposalDetailPage() {
     }
   }
 
+  // Handle edit proposal
+  const handleEditProposal = (proposal: { trip: { id: string } | null }) => {
+    if (!proposal.trip?.id) {
+      toast({ description: "Trip ID not available", type: "error" })
+      return
+    }
+    router.push(`/proposals/create/${proposal.trip.id}`)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
@@ -745,8 +754,8 @@ export default function ProposalDetailPage() {
                       nationality: proposal.trip?.nationality || { name: "Unknown" }
                     }
                   }}
-                  onEditProposal={() => console.log('Edit proposal')}
-                  onUpdateMarkup={() => console.log('Update markup')}
+                  onEditProposal={() => proposal && handleEditProposal(proposal)}
+                  onUpdateMarkup={() => proposal && handleEditProposal(proposal)}
                   onBookNow={() => console.log('Book now')}
                   onDownloadPDF={handleDownloadPDF}
                   onMail={handleMail}

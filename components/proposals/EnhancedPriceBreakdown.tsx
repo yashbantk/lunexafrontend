@@ -17,6 +17,8 @@ interface EnhancedPriceBreakdownProps {
       nationality?: {
         name: string
       }
+      markupLandPercent: number
+      markupFlightPercent: number
     }
   }
   onEditProposal?: () => void
@@ -100,7 +102,7 @@ export function EnhancedPriceBreakdown({
         <div className="space-y-3 mb-4">
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-600">1 room, {proposal.trip.totalTravelers} adults</span>
-            <a href="#" className="text-blue-600 hover:underline">Edit</a>
+            {/* <a href="#" className="text-blue-600 hover:underline">Edit</a> */}
           </div>
           <div className="text-sm text-gray-600">
             Nationality: {proposal.trip.nationality?.name || 'India'}
@@ -150,12 +152,12 @@ export function EnhancedPriceBreakdown({
               <span className="text-gray-600">Total Earnings</span>
               <div className="w-3 h-3 text-gray-400">→</div>
             </div>
-            <span className="font-medium">{formatCurrency(totalEarnings * 100)} (1.5%)</span>
+            <span className="font-medium">{formatCurrency(totalEarnings * 100)} ({proposal.trip.markupLandPercent}%)</span>
           </div>
 
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Markup</span>
-            <span className="font-medium">{formatCurrency(totalEarnings * 100)}</span>
+            <span className="font-medium">{formatCurrency(totalEarnings * 100)} ({proposal.trip.markupLandPercent}%)</span>
           </div>
         </div>
       </div>
