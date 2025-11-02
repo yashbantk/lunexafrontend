@@ -680,19 +680,6 @@ export default function CreateProposalPage() {
     if (!proposal || !trip) return
 
     try {
-      if (editingHotelIndex !== null) {
-        // Update existing hotel - delete old trip stay first
-        const existingHotel = proposal.hotels[editingHotelIndex]
-        const tripDay = trip.days.find(day => 
-          day.stay && day.stay.room.hotel.id === existingHotel.id
-        )
-        
-        if (tripDay?.stay?.id) {
-          console.log('Deleting existing trip stay:', tripDay.stay.id)
-          await deleteTripStay(tripDay.stay.id)
-        }
-      }
-
       // Find the trip day for this hotel
       // If editing existing hotel, use the same day
       // If adding new hotel, use the first day that doesn't have a stay
@@ -717,41 +704,89 @@ export default function CreateProposalPage() {
         return
       }
 
-      // Calculate check-in and check-out dates
-      const checkIn = proposal.hotels[editingHotelIndex || 0]?.checkIn || new Date().toISOString().split('T')[0]
-      const checkOut = proposal.hotels[editingHotelIndex || 0]?.checkOut || new Date().toISOString().split('T')[0]
-      const nights = proposal.hotels[editingHotelIndex || 0]?.nights || 1
-
-      // Create new trip stay
-      console.log('Room object received:', room)
-      console.log('Room ID:', room.id)
-      console.log('Room name:', room.name)
-      console.log('Room structure:', JSON.stringify(room, null, 2))
-      
       // Validate that we have a room ID
       if (!room.id) {
         console.error('No room ID found in room object:', room)
         throw new Error('No room ID found in selected room')
       }
-      
-      const tripStayData = {
-        tripDay: targetDay.id,
-        room: room.id, // This should be the room ID, not hotel ID
-        checkIn: checkIn,
-        checkOut: checkOut,
-        nights: nights,
-        roomsCount: 1, // Default to 1 room
-        mealPlan: room.board || 'BB', // Default to Bed & Breakfast
-        currency: 'INR',
-        priceTotalCents: room.pricePerNight * nights * 100, // Convert to cents
-        confirmationStatus: 'pending'
+
+      // Calculate check-in and check-out dates
+      const checkIn = proposal.hotels[editingHotelIndex || 0]?.checkIn || new Date().toISOString().split('T')[0]
+      const checkOut = proposal.hotels[editingHotelIndex || 0]?.checkOut || new Date().toISOString().split('T')[0]
+      const nights = proposal.hotels[editingHotelIndex || 0]?.nights || 1
+
+      // Check if we're updating an existing trip stay or creating a new one
+      if (targetDay.stay?.id) {
+        // Update existing trip stay using updateTripStays mutation
+        console.log('Updating existing trip stay:', targetDay.stay.id)
+        
+        const tripStayInput: TripStayPartialInput = {
+          id: targetDay.stay.id,
+          room: { set: room.id },
+          checkIn,
+          checkOut,
+          nights,
+          roomsCount: 1,
+          mealPlan: room.baseMealPlan || room.boardBasis || room.board || 'BB',
+          currency: { set: trip.currency?.code || 'INR' },
+          priceTotalCents: (room.priceCents || room.pricePerNight * 100) * nights,
+          confirmationStatus: 'pending'
+        }
+
+        await updateTripStays([tripStayInput], async (response) => {
+          console.log('Trip stay updated successfully:', response)
+          
+          // Update proposal with new trip data
+          if (response.updateTripStays && response.updateTripStays.length > 0 && trip) {
+            const updatedTripData = {
+              ...trip,
+              days: trip.days.map((day: any) => {
+                const updatedStay = response.updateTripStays.find((stay: any) => stay.tripDay.id === day.id)
+                if (updatedStay) {
+                  return {
+                    ...day,
+                    stay: {
+                      ...day.stay,
+                      ...updatedStay,
+                      room: updatedStay.room
+                    }
+                  }
+                }
+                return day
+              })
+            } as TripData
+            
+            const updatedProposal = convertTripToProposalFormat(updatedTripData)
+            updateProposalWithPrices(updatedProposal)
+          }
+        })
+
+        // Refresh trip data in background
+        setTimeout(async () => {
+          if (refetchTrip) {
+            await refetchTrip()
+          }
+        }, 500)
+      } else {
+        // Create new trip stay (only if day doesn't have a stay)
+        console.log('Creating new trip stay for day:', targetDay.id)
+        
+        const tripStayData = {
+          tripDay: targetDay.id,
+          room: room.id,
+          checkIn: checkIn,
+          checkOut: checkOut,
+          nights: nights,
+          roomsCount: 1,
+          mealPlan: room.baseMealPlan || room.boardBasis || room.board || 'BB',
+          currency: 'INR',
+          priceTotalCents: (room.priceCents || room.pricePerNight * 100) * nights,
+          confirmationStatus: 'pending'
+        }
+
+        await createTripStay(tripStayData)
+        await refetchTrip()
       }
-
-      console.log('Creating new trip stay with data:', tripStayData)
-      await createTripStay(tripStayData)
-
-      // Refresh trip data to get updated information
-      await refetchTrip()
 
     } catch (error) {
       console.error('Error handling hotel selection:', error)
@@ -1322,41 +1357,62 @@ export default function CreateProposalPage() {
         return
       }
 
-      // Delete the existing trip stay
-      console.log('Deleting existing trip stay:', tripDay.stay.id)
-      await deleteTripStay(tripDay.stay.id)
-
-      // Create new trip stay with the new room
-      console.log('Hotel object received in handleRoomSelect:', hotel)
-      console.log('Room object received in handleRoomSelect:', room)
-      console.log('Room ID in handleRoomSelect:', room.id)
-      console.log('Room name in handleRoomSelect:', room.name)
-      console.log('Room structure in handleRoomSelect:', JSON.stringify(room, null, 2))
-      
       // Validate that we have a room ID
       if (!room.id) {
         console.error('No room ID found in room object in handleRoomSelect:', room)
         throw new Error('No room ID found in selected room')
       }
+
+      // Update existing trip stay using updateTripStays mutation (instead of delete + create)
+      console.log('Updating existing trip stay:', tripDay.stay.id, 'with new room:', room.id)
       
-      const tripStayData = {
-        tripDay: tripDay.id,
-        room: room.id, // This should now be the correct room ID
+      const tripStayInput: TripStayPartialInput = {
+        id: tripDay.stay.id,
+        room: { set: room.id },
         checkIn: selectedHotelForDetails.checkIn || new Date().toISOString().split('T')[0],
         checkOut: selectedHotelForDetails.checkOut || new Date().toISOString().split('T')[0],
         nights: selectedHotelForDetails.nights || 1,
-        roomsCount: 1, // Default to 1 room
-        mealPlan: room.board || 'BB', // Default to Bed & Breakfast
-        currency: 'INR',
-        priceTotalCents: room.pricePerNight * (selectedHotelForDetails.nights || 1) * 100, // Convert to cents
+        roomsCount: 1,
+        mealPlan: room.baseMealPlan || room.boardBasis || room.board || 'BB',
+        currency: { set: trip.currency?.code || 'INR' },
+        priceTotalCents: (room.priceCents || room.pricePerNight * 100) * (selectedHotelForDetails.nights || 1),
         confirmationStatus: 'pending'
       }
 
-      console.log('Creating new trip stay with data:', tripStayData)
-      await createTripStay(tripStayData)
+      await updateTripStays([tripStayInput], async (response) => {
+        console.log('Trip stay updated successfully:', response)
+        
+        // Update proposal with new trip data
+        if (response.updateTripStays && response.updateTripStays.length > 0 && trip) {
+          const updatedTripData = {
+            ...trip,
+            days: trip.days.map((day: any) => {
+              const updatedStay = response.updateTripStays.find((stay: any) => stay.tripDay.id === day.id)
+              if (updatedStay) {
+                return {
+                  ...day,
+                  stay: {
+                    ...day.stay,
+                    ...updatedStay,
+                    room: updatedStay.room
+                  }
+                }
+              }
+              return day
+            })
+          } as TripData
+          
+          const updatedProposal = convertTripToProposalFormat(updatedTripData)
+          updateProposalWithPrices(updatedProposal)
+        }
+      })
 
-      // Refresh trip data to get updated information
-      await refetchTrip()
+      // Refresh trip data in background
+      setTimeout(async () => {
+        if (refetchTrip) {
+          await refetchTrip()
+        }
+      }, 500)
 
     } catch (error) {
       console.error('Error handling room selection:', error)
@@ -2250,7 +2306,7 @@ export default function CreateProposalPage() {
               <PriceSummary
                 proposal={proposal}
                 onSaveProposal={() => saveProposal(proposal)}
-                onPreview={() => handlePreviewProposal(proposal)}
+                onPreview={() => console.log('Preview proposal')}
               />
             </motion.div>
           </div>

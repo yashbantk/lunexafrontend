@@ -336,6 +336,23 @@ async function fetchProposalData(proposalId: string, authToken?: string) {
   }
 }
 
+// Get activity icon based on slot
+function getActivitySlotIconForDetails(slot: string): string {
+  if (slot === 'morning') {
+    return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-orange-500">
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/>
+    </svg>`
+  } else if (slot === 'afternoon') {
+    return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-yellow-500">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
+    </svg>`
+  } else {
+    return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-purple-500">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
+    </svg>`
+  }
+}
+
 // Generate Day-Wise Details page HTML
 function generateDayWiseDetailsPage(day: any, proposal: any): string {
   if (!day.stay || !day.stay.room) {
@@ -375,11 +392,8 @@ function generateDayWiseDetailsPage(day: any, proposal: any): string {
   const totalNights = proposal.trip?.days?.reduce((acc: number, d: any) => acc + (d.stay?.nights || 0), 0) || stay.nights || 1
 
   return `
-    <!-- Page Break -->
-    <div class="page-break"></div>
-
     <!-- Day-Wise Details Page -->
-        <div class="max-w-4xl mx-auto p-4 print:p-0">
+        <div class="max-w-4xl mx-auto p-4 print:p-0 mb-6">
         <!-- Header -->
         <header class="mb-4 print:mb-3">
             <div class="flex items-start justify-between mb-3">
@@ -399,7 +413,7 @@ function generateDayWiseDetailsPage(day: any, proposal: any): string {
                 </div>
                 
         <!-- Hotel Card Section -->
-        <section class="bg-white rounded-xl shadow-md overflow-hidden mb-4 avoid-break print:shadow-none print:rounded-none">
+        <section class="bg-white rounded-xl shadow-md overflow-hidden mb-4 print:shadow-none print:rounded-none allow-break">
             <div class="flex flex-col md:flex-row">
                 <!-- Hotel Image -->
                 <figure class="md:w-64 flex-shrink-0">
@@ -467,7 +481,7 @@ function generateDayWiseDetailsPage(day: any, proposal: any): string {
         </section>
 
         <!-- Room Details Section -->
-        <section class="bg-white rounded-xl shadow-md p-4 mb-4 avoid-break print:shadow-none print:rounded-none">
+        <section class="bg-white rounded-xl shadow-md p-4 mb-4 print:shadow-none print:rounded-none allow-break">
             <div class="flex items-start justify-between mb-3">
                 <h3 class="text-base font-semibold text-gray-800">
                     ${escapeHtml(room.name)}${stay.roomsCount > 1 ? ` x ${stay.roomsCount}` : ''}
@@ -505,6 +519,116 @@ function generateDayWiseDetailsPage(day: any, proposal: any): string {
             </div>
             ` : ''}
         </section>
+
+        <!-- Activities Section -->
+        ${day.activityBookings && day.activityBookings.length > 0 ? `
+        <section class="bg-white rounded-xl shadow-md p-4 mb-4 print:shadow-none print:rounded-none allow-break">
+            ${day.activityBookings.map((activity: any, actIndex: number) => {
+              const activityTitle = activity.option?.activity?.title || activity.option?.name || 'Activity'
+              const activityDescription = activity.option?.activity?.description || activity.option?.activity?.summary || ''
+              const startTime = activity.option?.startTime || activity.option?.activity?.startTime || ''
+              const durationMinutes = activity.option?.durationMinutes || activity.option?.activity?.durationMinutes || 60
+              const durationHours = Math.round(durationMinutes / 60 * 10) / 10 || 1 // Convert to hours, round to 1 decimal
+              const slot = activity.slot || activity.option?.slot || 'morning'
+              const activityCity = day.city?.name || ''
+              
+              // Get activity image
+              const activityImages = activity.option?.activity?.activityImages || []
+              const primaryImage = activityImages.length > 0 ? activityImages[0] : null
+              
+              // Handle inclusions/exclusions
+              let inclusions: string[] = []
+              if (activity.option?.inclusions) {
+                if (Array.isArray(activity.option.inclusions)) {
+                  inclusions = activity.option.inclusions
+                } else if (typeof activity.option.inclusions === 'string') {
+                  inclusions = activity.option.inclusions.split(/\n|,/).map((item: string) => item.trim()).filter((item: string) => item.length > 0)
+                }
+              }
+              
+              let exclusions: string[] = []
+              if (activity.option?.exclusions) {
+                if (Array.isArray(activity.option.exclusions)) {
+                  exclusions = activity.option.exclusions
+                } else if (typeof activity.option.exclusions === 'string') {
+                  exclusions = activity.option.exclusions.split(/\n|,/).map((item: string) => item.trim()).filter((item: string) => item.length > 0)
+                }
+              }
+              
+              return `
+                <div class="${actIndex > 0 ? 'mt-4' : ''}">
+                    <!-- Activity Header -->
+                    <div class="flex items-start space-x-3 mb-3">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="text-gray-600 mt-0.5">
+                            <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" fill="currentColor"/>
+                        </svg>
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-2 mb-1">
+                                <span class="text-xs font-semibold text-gray-800">ACTIVITY</span>
+                                ${durationHours ? `<span class="text-xs text-gray-500">• ${durationHours} Hour${durationHours !== 1 ? 's' : ''}</span>` : ''}
+                                ${activityCity ? `<span class="text-xs text-gray-500">• In ${escapeHtml(activityCity)}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Activity Content -->
+                    <div class="flex items-start space-x-3">
+                        ${primaryImage?.url ? `
+                        <div class="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border border-gray-200">
+                            <img src="${primaryImage.url}" alt="${escapeHtml(activityTitle)}" class="w-full h-full object-cover" />
+                        </div>
+                        ` : ''}
+                        <div class="flex-1">
+                            <h4 class="text-sm font-semibold text-gray-800 mb-1">
+                                ${escapeHtml(activityTitle)}
+                            </h4>
+                            ${activityDescription ? `
+                            <p class="text-xs text-gray-600 mb-2 leading-relaxed">
+                                ${escapeHtml(activityDescription)}
+                            </p>
+                            ` : ''}
+                            ${startTime || durationHours ? `
+                            <div class="flex items-center space-x-2 text-xs text-gray-600 mb-2">
+                                <div class="flex items-center space-x-1">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" class="text-gray-500">
+                                        <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" fill="currentColor"/>
+                                    </svg>
+                                    <span>Duration ${durationHours} Hour${durationHours !== 1 ? 's' : ''} • ${startTime || 'Anytime'}</span>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <!-- Inclusions/Exclusions -->
+                    ${(inclusions.length > 0 || exclusions.length > 0) ? `
+                    <div class="mt-3 bg-gray-100 rounded-lg p-3">
+                        <div class="text-xs font-semibold text-gray-800 mb-2">Inclusions/Exclusions</div>
+                        <div class="space-y-1.5">
+                            ${inclusions.map((inclusion: string) => `
+                            <div class="flex items-start space-x-2">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="text-green-600 mt-0.5 flex-shrink-0">
+                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" fill="currentColor"/>
+                                </svg>
+                                <span class="text-xs text-gray-700">${escapeHtml(inclusion)}</span>
+                            </div>
+                            `).join('')}
+                            ${exclusions.map((exclusion: string) => `
+                            <div class="flex items-start space-x-2">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="text-red-600 mt-0.5 flex-shrink-0">
+                                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>
+                                </svg>
+                                <span class="text-xs text-gray-700">${escapeHtml(exclusion)}</span>
+                            </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+              `
+            }).join('')}
+        </section>
+        ` : ''}
 
         <!-- Footer Section -->
         <footer class="mt-6 print:mt-4">
@@ -550,11 +674,8 @@ function generateDynamicItineraryPage(proposal: any): string {
   }
 
   return `
-    <!-- Page Break -->
-    <div class="page-break"></div>
-
     <!-- Page 2 - Itinerary Page -->
-        <div class="max-w-4xl mx-auto p-4 print:p-0">
+        <div class="max-w-4xl mx-auto p-4 print:p-0 mb-6">
         <!-- Header -->
         <header class="mb-4 print:mb-3">
             <div class="text-center">
@@ -577,64 +698,45 @@ function generateDynamicItineraryPage(proposal: any): string {
 
         <!-- Main Content -->
         <main class="relative">
-            <!-- Deyor Vertical Badge -->
-            <div class="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1/2 bg-red-500 text-white px-2 py-4 rounded-r-lg text-xs font-bold writing-mode-vertical">
-                DEYOR
-            </div>
-            
-            <!-- Two Column Layout -->
-            <div class="grid grid-cols-12 gap-0 border border-gray-300 rounded-lg overflow-hidden">
-                <!-- Left Column - Dates -->
-                <div class="col-span-3 bg-gray-50">
-                    ${days.map((day: any, dayIndex: number) => {
-                      const dayDate = new Date(day.date)
-                      const formattedDayDate = formatDateShort(day.date)
-                      const isLast = dayIndex === days.length - 1
-                      return `
-                        <div class="avoid-break border-b border-gray-200 ${isLast ? '' : ''}">
-                        <div class="p-2 text-center h-16 flex flex-col justify-center">
-                                <div class="text-sm font-semibold text-gray-800">${formattedDayDate}</div>
-                                <div class="text-xs text-gray-600 mt-1">Day ${day.dayNumber}</div>
-                        </div>
-                    </div>
-                      `
-                    }).join('')}
-                </div>
+            <!-- Itinerary Container -->
+            <div class="bg-white border border-gray-300 rounded-lg overflow-hidden">
+                ${days.map((day: any, index: number) => {
+                  const activities = day.activityBookings || []
+                  const stay = day.stay
+                  const formattedDayDate = formatDateShort(day.date)
+                  
+                  // Group activities by type
+                  const meals = activities.filter((a: any) => {
+                    const title = a.option?.activity?.title?.toLowerCase() || ''
+                    return title.includes('breakfast') || title.includes('lunch') || title.includes('dinner') || title.includes('meal')
+                  })
+                  
+                  const otherActivities = activities.filter((a: any) => {
+                    const title = a.option?.activity?.title?.toLowerCase() || ''
+                    return !title.includes('breakfast') && !title.includes('lunch') && !title.includes('dinner') && !title.includes('meal')
+                  })
 
-                <!-- Right Column - Events -->
-                <div class="col-span-9 bg-white">
-                    <!-- Header -->
-                    <div class="bg-orange-200 px-4 py-3 border-b border-gray-200">
-                        <div class="text-sm font-semibold text-gray-800">Daily Activities & Meals</div>
-                    </div>
-                    
-                    ${days.map((day: any, index: number) => {
-                      const activities = day.activityBookings || []
-                      const stay = day.stay
-                      
-                      // Group activities by type
-                      const meals = activities.filter((a: any) => {
-                        const title = a.option?.activity?.title?.toLowerCase() || ''
-                        return title.includes('breakfast') || title.includes('lunch') || title.includes('dinner') || title.includes('meal')
-                      })
-                      
-                      const otherActivities = activities.filter((a: any) => {
-                        const title = a.option?.activity?.title?.toLowerCase() || ''
-                        return !title.includes('breakfast') && !title.includes('lunch') && !title.includes('dinner') && !title.includes('meal')
-                      })
+                  // Add meal plan info from stay if mealPlan exists and no meal activities
+                  const stayMealPlan = stay?.mealPlan
+                  const showStayMeals = stayMealPlan && meals.length === 0
 
-                      // Add meal plan info from stay if mealPlan exists and no meal activities
-                      const stayMealPlan = stay?.mealPlan
-                      const showStayMeals = stayMealPlan && meals.length === 0
-
-                      const isLastDay = index === days.length - 1
-                      
-                      return `
-                        <!-- Day ${day.dayNumber} -->
-                        <div class="avoid-break ${isLastDay ? '' : 'border-b border-gray-200'}">
-                        <div class="p-2 min-h-16">
-                            <div class="space-y-1">
-                                    ${stay && stay.checkIn ? `
+                  const isLastDay = index === days.length - 1
+                  
+                  return `
+                    <!-- Day ${day.dayNumber} -->
+                    <div class="allow-break ${isLastDay ? '' : 'border-b border-gray-200'}">
+                        <div class="p-4">
+                            <!-- Day Header - Date and Day Number aligned with content -->
+                            <div class="mb-3">
+                                <div class="flex items-baseline space-x-2">
+                                    <div class="text-base font-semibold text-gray-800">${formattedDayDate}</div>
+                                    <div class="text-sm font-medium text-gray-600">Day ${day.dayNumber}</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Activities List -->
+                            <div class="space-y-1.5 pl-0">
+                                ${stay && stay.checkIn ? `
                                 <div class="flex items-start space-x-3">
                                     <div class="flex-shrink-0 mt-0.5">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-gray-600">
@@ -643,17 +745,17 @@ function generateDynamicItineraryPage(proposal: any): string {
                                     </div>
                                     <div class="flex-1">
                                         <div class="text-xs text-gray-800">
-                                                <span class="font-semibold">Check in to:</span> ${escapeHtml(stay.room?.hotel?.name || 'Hotel')}
+                                            <span class="font-semibold">Check in to:</span> ${escapeHtml(stay.room?.hotel?.name || 'Hotel')}
                                         </div>
-                                            <div class="text-xs text-gray-500 mt-0.5">${formatTime(stay.checkIn)}</div>
+                                        <div class="text-xs text-gray-500 mt-0.5">${formatTime(stay.checkIn)}</div>
                                     </div>
                                 </div>
-                                    ` : ''}
+                                ` : ''}
 
-                                    ${meals.map((meal: any) => {
-                                      const time = meal.option?.startTime || meal.option?.activity?.startTime || ''
-                                      const title = meal.option?.activity?.title || meal.option?.name || 'Meal'
-                                      return `
+                                ${meals.map((meal: any) => {
+                                  const time = meal.option?.startTime || meal.option?.activity?.startTime || ''
+                                  const title = meal.option?.activity?.title || meal.option?.name || 'Meal'
+                                  return `
                                 <div class="flex items-start space-x-3">
                                     <div class="flex-shrink-0 mt-0.5">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-gray-600">
@@ -662,15 +764,15 @@ function generateDynamicItineraryPage(proposal: any): string {
                                     </div>
                                     <div class="flex-1">
                                         <div class="text-xs text-gray-800">
-                                                    <span class="font-semibold">${escapeHtml(title)}</span>
+                                            <span class="font-semibold">${escapeHtml(title)}</span>
                                         </div>
-                                                ${time ? `<div class="text-xs text-gray-500 mt-0.5">${time}</div>` : ''}
+                                        ${time ? `<div class="text-xs text-gray-500 mt-0.5">${time}</div>` : ''}
                                     </div>
                                 </div>
-                                      `
-                                    }).join('')}
+                                  `
+                                }).join('')}
 
-                                    ${showStayMeals ? `
+                                ${showStayMeals ? `
                                 <div class="flex items-start space-x-3">
                                     <div class="flex-shrink-0 mt-0.5">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-gray-600">
@@ -679,53 +781,52 @@ function generateDynamicItineraryPage(proposal: any): string {
                                     </div>
                                     <div class="flex-1">
                                         <div class="text-xs text-gray-800">
-                                                <span class="font-semibold">Meals:</span> ${escapeHtml(stayMealPlan)} Included
+                                            <span class="font-semibold">Meals:</span> ${escapeHtml(stayMealPlan)} Included
                                         </div>
                                     </div>
                                 </div>
-                                    ` : ''}
+                                ` : ''}
 
-                                    ${otherActivities.map((activity: any) => {
-                                      const time = activity.option?.startTime || activity.option?.activity?.startTime || ''
-                                      const title = activity.option?.activity?.title || activity.option?.name || 'Activity'
-                                      const slot = activity.slot || activity.option?.slot || 'morning'
-                                      return `
+                                ${otherActivities.map((activity: any) => {
+                                  const time = activity.option?.startTime || activity.option?.activity?.startTime || ''
+                                  const title = activity.option?.activity?.title || activity.option?.name || 'Activity'
+                                  const slot = activity.slot || activity.option?.slot || 'morning'
+                                  return `
                                 <div class="flex items-start space-x-3">
                                     <div class="flex-shrink-0 mt-0.5">
-                                                ${getActivityIcon(slot)}
+                                        ${getActivityIcon(slot)}
                                     </div>
                                     <div class="flex-1">
                                         <div class="text-xs text-gray-800">
-                                                    <span class="font-semibold">${escapeHtml(title)}</span>
+                                            <span class="font-semibold">${escapeHtml(title)}</span>
                                         </div>
-                                                ${time ? `<div class="text-xs text-gray-500 mt-0.5">${time}</div>` : ''}
+                                        ${time ? `<div class="text-xs text-gray-500 mt-0.5">${time}</div>` : ''}
                                     </div>
                                 </div>
-                                      `
-                                    }).join('')}
+                                  `
+                                }).join('')}
 
-                                    ${day.stay?.checkOut && index === days.length - 1 ? `
+                                ${day.stay?.checkOut && index === days.length - 1 ? `
                                 <div class="flex items-start space-x-3">
                                     <div class="flex-shrink-0 mt-0.5">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-gray-600">
-                                                <path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z" fill="currentColor"/>
+                                            <path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z" fill="currentColor"/>
                                         </svg>
                                     </div>
                                     <div class="flex-1">
                                         <div class="text-xs text-gray-800">
-                                                <span class="font-semibold">Checkout</span>
+                                            <span class="font-semibold">Checkout</span>
                                         </div>
-                                            <div class="text-xs text-gray-500 mt-0.5">${formatTime(day.stay.checkOut)}</div>
+                                        <div class="text-xs text-gray-500 mt-0.5">${formatTime(day.stay.checkOut)}</div>
                                     </div>
                                 </div>
-                                    ` : ''}
-                                    </div>
-                                        </div>
-                                    </div>
-                      `
-                    }).join('')}
-                                </div>
-                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                  `
+                }).join('')}
+            </div>
         </main>
 
         <!-- Footer Artwork -->
@@ -1031,14 +1132,18 @@ async function generateDynamicProposalPDF(proposalId: string, request: NextReque
   // Filter days with hotels
   const daysWithHotels = days.filter((day: any) => day.stay && day.stay.room)
   
-  // Generate all day-wise pages
-  const dayWisePages = daysWithHotels.map((day: any) => generateDayWiseDetailsPage(day, proposal)).join('')
-  
   // Generate cover page
   const coverPage = generateDynamicCoverPage(proposal)
   
-  // Generate itinerary page
-  const itineraryPage = generateDynamicItineraryPage(proposal)
+  // Generate itinerary page (add page break before)
+  const itineraryPage = `<div class="page-break"></div>${generateDynamicItineraryPage(proposal)}`
+  
+  // Generate all day-wise pages (no page breaks between, let content flow naturally)
+  const dayWisePages = daysWithHotels.map((day: any, index: number) => {
+    const dayPage = generateDayWiseDetailsPage(day, proposal)
+    // Only add page break before first day-wise page, not between days
+    return index === 0 ? `<div class="page-break"></div>${dayPage}` : dayPage
+  }).join('')
 
   // Combine all pages
   const html = `
@@ -1054,8 +1159,13 @@ async function generateDynamicProposalPDF(proposalId: string, request: NextReque
         @page { size: A4; margin: 6mm; }
         @media print { 
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .avoid-break { page-break-inside: avoid; break-inside: avoid; }
+            .avoid-break { page-break-inside: avoid; break-inside: avoid; orphans: 3; widows: 3; }
             .page-break { page-break-after: always; break-after: page; }
+            .allow-break { page-break-inside: auto; break-inside: auto; }
+            /* Allow natural flow - only break between major sections */
+            .max-w-4xl { page-break-inside: auto; }
+            /* Prevent orphans and widows */
+            section, div { orphans: 2; widows: 2; }
         }
         .deyor-red { color: #E63946; }
         .deyor-blue { color: #2E9AD6; }

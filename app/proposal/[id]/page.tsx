@@ -152,53 +152,149 @@ export default function ProposalDetailPage() {
     }, 100)
   }
 
-  // Handle download PDF
-  const handleDownloadPDF = async () => {
-    console.log('Download PDF clicked, proposalId:', proposalId)
-    
+  // Download PDF - triggers download and opens in new tab
+  const downloadPDF = async (): Promise<boolean> => {
     if (!proposalId) {
       toast({ description: "Proposal ID not found", type: "error" })
-      return
+      return false
     }
-    
-    setIsDownloadingPDF(true)
     
     try {
       const pdfUrl = `/api/proposals/generate-pdf?id=${proposalId}`
-      console.log('Opening PDF URL:', pdfUrl)
       
-      // First, verify the endpoint is accessible
-      try {
-        const response = await fetch(pdfUrl, { method: 'HEAD' })
-        console.log('PDF endpoint response status:', response.status)
-      } catch (fetchError) {
-        console.error('Error checking PDF endpoint:', fetchError)
-      }
-      
-      // Open PDF generation endpoint in new tab
+      // Open PDF in new tab - this allows the page to load and user can print/save as PDF
       const newWindow = window.open(pdfUrl, '_blank', 'noopener,noreferrer')
       
       if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-        // Popup blocked or failed to open
-        console.warn('Popup blocked, trying fallback')
-        toast({ 
-          description: "Popup blocked. Opening in same window...", 
-          type: "info" 
-        })
-        // Fallback: navigate in same window after short delay
+        // Popup blocked, try fallback - open in same window temporarily
+        const originalLocation = window.location.href
+        window.location.href = pdfUrl
+        
+        // Give user time to save, then we'll redirect back (but this is not ideal)
         setTimeout(() => {
-          window.location.href = pdfUrl
-        }, 500)
-      } else {
-        toast({ 
-          description: "Opening PDF...", 
-          type: "success" 
-        })
+          window.location.href = originalLocation
+        }, 2000)
+        return true
       }
+      
+      // Wait for the window to load, then trigger print dialog for saving as PDF
+      setTimeout(() => {
+        try {
+          if (newWindow && !newWindow.closed) {
+            // Try to trigger print dialog in the new window
+            newWindow.focus()
+            // Note: We can't directly call window.print() on another window due to security,
+            // but the page should have print styles and user can use Ctrl+P or Cmd+P
+          }
+        } catch (e) {
+          console.log('Cannot access new window for print (security restriction)')
+        }
+      }, 1000)
+      
+      return true
     } catch (error) {
       console.error('Error opening PDF:', error)
       toast({ 
         description: "Failed to open PDF. Please try again.", 
+        type: "error" 
+      })
+      return false
+    }
+  }
+
+  // Handle download PDF
+  const handleDownloadPDF = async () => {
+    console.log('Download PDF clicked, proposalId:', proposalId)
+    
+    setIsDownloadingPDF(true)
+    
+    try {
+      const success = await downloadPDF()
+      if (success) {
+        toast({ 
+          description: "PDF downloaded successfully", 
+          type: "success" 
+        })
+      }
+    } catch (error) {
+      console.error('Error downloading PDF:', error)
+    } finally {
+      setTimeout(() => setIsDownloadingPDF(false), 2000)
+    }
+  }
+
+  // Handle WhatsApp - Download PDF and open WhatsApp
+  const handleWhatsApp = async () => {
+    setIsDownloadingPDF(true)
+    
+    try {
+      // Open PDF page first (user can save it)
+      const pdfUrl = `/api/proposals/generate-pdf?id=${proposalId}`
+      window.open(pdfUrl, '_blank', 'noopener,noreferrer')
+      
+      // Small delay to let PDF page start loading
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Get proposal details for WhatsApp message
+      const proposalName = proposal?.name || "Travel Proposal"
+      const proposalLink = window.location.href
+      
+      // Create WhatsApp message
+      const message = encodeURIComponent(
+        `Hi! Please find the travel proposal for ${proposalName}.\n\nView proposal: ${proposalLink}`
+      )
+      
+      // Open WhatsApp (web or app) - this will open in a new tab
+      const whatsappUrl = `https://wa.me/?text=${message}`
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer')
+      
+      toast({ 
+        description: "Opening PDF and WhatsApp...", 
+        type: "success" 
+      })
+    } catch (error) {
+      console.error('Error in WhatsApp handler:', error)
+      toast({ 
+        description: "Failed to process. Please try again.", 
+        type: "error" 
+      })
+    } finally {
+      setTimeout(() => setIsDownloadingPDF(false), 2000)
+    }
+  }
+
+  // Handle Mail - Download PDF and open Gmail
+  const handleMail = async () => {
+    setIsDownloadingPDF(true)
+    
+    try {
+      // Open PDF page first (user can save it)
+      const pdfUrl = `/api/proposals/generate-pdf?id=${proposalId}`
+      window.open(pdfUrl, '_blank', 'noopener,noreferrer')
+      
+      // Small delay to let PDF page start loading
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Get proposal details for email
+      const proposalName = proposal?.name || "Travel Proposal"
+      const proposalLink = window.location.href
+      const subject = encodeURIComponent(`Travel Proposal: ${proposalName}`)
+      const body = encodeURIComponent(
+        `Hi,\n\nPlease find the travel proposal attached.\n\nView proposal: ${proposalLink}\n\nBest regards`
+      )
+      
+      // Open Gmail compose - this will open in a new tab
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`
+      window.open(gmailUrl, '_blank', 'noopener,noreferrer')
+      
+      toast({ 
+        description: "Opening PDF and Gmail...", 
+        type: "success" 
+      })
+    } catch (error) {
+      console.error('Error in Mail handler:', error)
+      toast({ 
+        description: "Failed to process. Please try again.", 
         type: "error" 
       })
     } finally {
@@ -653,8 +749,8 @@ export default function ProposalDetailPage() {
                   onUpdateMarkup={() => console.log('Update markup')}
                   onBookNow={() => console.log('Book now')}
                   onDownloadPDF={handleDownloadPDF}
-                  onMail={() => console.log('Mail')}
-                  onWhatsApp={() => console.log('WhatsApp')}
+                  onMail={handleMail}
+                  onWhatsApp={handleWhatsApp}
                 />
                 )}
               </div>
