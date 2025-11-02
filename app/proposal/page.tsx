@@ -1,7 +1,23 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core"
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,7 +26,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { motion } from "framer-motion"
 import { 
-  ArrowLeft, 
   Plus, 
   MapPin, 
   Calendar, 
@@ -19,7 +34,8 @@ import {
   Plane,
   Car,
   Home,
-  X
+  X,
+  GripVertical
 } from "lucide-react"
 import { CitySearch } from "@/components/cities/CitySearch"
 import { CountrySearch } from "@/components/countries/CountrySearch"
@@ -67,6 +83,101 @@ interface TripDestination {
   selectedDestination?: Destination
 }
 
+// Sortable Destination Item Component
+function SortableDestinationItem({
+  destination,
+  index,
+  totalDestinations,
+  onUpdateDestination,
+  onSelectDestination,
+  onDaysChange,
+  onRemove,
+}: {
+  destination: TripDestination
+  index: number
+  totalDestinations: number
+  onUpdateDestination: (field: keyof TripDestination, value: string) => void
+  onSelectDestination: (destination: Destination) => void
+  onDaysChange: (value: string) => void
+  onRemove: () => void
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: destination.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <motion.div
+      ref={setNodeRef}
+      style={style}
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.1 }}
+      className="flex gap-4 items-end"
+    >
+      {totalDestinations > 1 && (
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing flex items-center pt-8 pb-2 text-gray-400 hover:text-gray-600 transition-colors"
+          title="Drag to reorder"
+        >
+          <GripVertical className="h-5 w-5" />
+        </div>
+      )}
+      <div className="flex-1">
+        <DestinationSearch
+          value={destination.city}
+          onChange={(value) => onUpdateDestination("city", value)}
+          onSelectDestination={onSelectDestination}
+          placeholder="Search for a destination (e.g., Paris, Tokyo)"
+          label="Destination"
+          required
+        />
+      </div>
+      <div className="w-32">
+        <Label htmlFor={`days-${destination.id}`}>Days</Label>
+        <Select
+          value={destination.nights}
+          onValueChange={onDaysChange}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Array.from({ length: 14 }, (_, i) => i + 1).map(days => (
+              <SelectItem key={days} value={days.toString()}>
+                {days} {days === 1 ? 'day' : 'days'}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {totalDestinations > 1 && (
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={onRemove}
+          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      )}
+    </motion.div>
+  )
+}
+
 // Initial form data with proper defaults
 const getInitialFormData = (): DirectFormData => ({
   fromCity: null,
@@ -108,6 +219,14 @@ export default function ProposalPage() {
   })
   const [selectedFromCity, setSelectedFromCity] = useState<City | null>(null)
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null)
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
   // Helper functions for form updates
   const updateTravelerDetails = (updates: Partial<DirectFormData['travelerDetails']>) => {
@@ -207,6 +326,32 @@ export default function ProposalPage() {
           i === index ? { ...dest, numberOfDays } : dest
         )
       }))
+    }
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (over && active.id !== over.id) {
+      const oldIndex = destinations.findIndex((dest) => dest.id === active.id)
+      const newIndex = destinations.findIndex((dest) => dest.id === over.id)
+
+      const newDestinations = arrayMove(destinations, oldIndex, newIndex)
+      setDestinations(newDestinations)
+
+      // Update formData destinations order
+      setFormData((prev) => {
+        const newFormDestinations = arrayMove(prev.destinations, oldIndex, newIndex).map(
+          (dest, index) => ({
+            ...dest,
+            order: index + 1,
+          })
+        )
+        return {
+          ...prev,
+          destinations: newFormDestinations,
+        }
+      })
     }
   }
 
@@ -322,27 +467,6 @@ export default function ProposalPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-      {/* Header */}
-      <div className="bg-white border-b sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link
-              href="/"
-              className="flex items-center text-gray-600 hover:text-primary transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Home
-            </Link>
-            <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-white font-bold text-sm">D</span>
-              </div>
-              <span className="text-lg font-bold text-gray-900">Deyor</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="container mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -373,58 +497,32 @@ export default function ProposalPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {destinations.map((destination, index) => (
-                  <motion.div
-                    key={destination.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="flex gap-4 items-end"
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={destinations.map((dest) => dest.id)}
+                    strategy={verticalListSortingStrategy}
                   >
-                    <div className="flex-1">
-                      <DestinationSearch
-                        value={destination.city}
-                        onChange={(value) => updateDestination(destination.id, "city", value)}
+                    {destinations.map((destination, index) => (
+                      <SortableDestinationItem
+                        key={destination.id}
+                        destination={destination}
+                        index={index}
+                        totalDestinations={destinations.length}
+                        onUpdateDestination={(field, value) => updateDestination(destination.id, field, value)}
                         onSelectDestination={(destinationData) => handleDestinationSelect(destination.id, destinationData)}
-                        placeholder="Search for a destination (e.g., Paris, Tokyo)"
-                        label="Destination"
-                        required
-                      />
-                    </div>
-                    <div className="w-32">
-                      <Label htmlFor={`days-${destination.id}`}>Days</Label>
-                      <Select
-                        value={destination.nights}
-                        onValueChange={(value) => {
+                        onDaysChange={(value) => {
                           updateDestination(destination.id, "nights", value)
                           handleDestinationDaysChange(destination.id, parseInt(value))
                         }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Array.from({ length: 14 }, (_, i) => i + 1).map(days => (
-                            <SelectItem key={days} value={days.toString()}>
-                              {days} {days === 1 ? 'day' : 'days'}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {destinations.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => removeDestination(destination.id)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </motion.div>
-                ))}
+                        onRemove={() => removeDestination(destination.id)}
+                      />
+                    ))}
+                  </SortableContext>
+                </DndContext>
 
                 <div className="flex gap-4 pt-4">
                   <Button
@@ -435,13 +533,6 @@ export default function ProposalPage() {
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Another City
-                  </Button>
-                  <Button
-                    type="button"
-                    className="bg-primary hover:bg-primary/90"
-                  >
-                    <MapPin className="h-4 w-4 mr-2" />
-                    Suggest Itinerary
                   </Button>
                 </div>
               </CardContent>

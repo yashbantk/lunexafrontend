@@ -31,13 +31,6 @@ export function TopBar({ totalPrice, currency = 'INR', adults = 2, childrenCount
     >
         <div className="w-full px-4 py-4">
         <div className="flex items-center justify-between">
-          {/* Left - Title */}
-          <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-semibold text-gray-900">
-              Create Customized Proposal
-            </h1>
-          </div>
-
           {/* Center - Total Price */}
           <div className="text-center">
             <div className="text-3xl font-bold text-primary">

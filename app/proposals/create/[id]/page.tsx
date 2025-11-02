@@ -1,9 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { TopBar } from "@/components/proposals/TopBar"
 import { ProposalHeader } from "@/components/proposals/ProposalHeader"
 import { FlightCard } from "@/components/proposals/FlightCard"
 import { HotelCard } from "@/components/proposals/HotelCard"
@@ -25,6 +24,8 @@ import { CreateItineraryProposalResponse } from "@/hooks/useCreateItineraryPropo
 import { useActivityBooking, ActivityBookingInput, ActivityBookingResponse } from "@/hooks/useActivityBooking"
 import { useTrip, TripData } from "@/hooks/useTrip"
 import { useCreateProposal, ProposalInput } from "@/hooks/useCreateProposal"
+import { useLazyQuery } from "@apollo/client/react"
+import { GET_TRIP_PROPOSALS } from "@/graphql/queries/proposal"
 import { useDeleteTripStay } from "@/hooks/useDeleteTripStay"
 import { useCreateTripStay } from "@/hooks/useCreateTripStay"
 import { 
@@ -75,6 +76,12 @@ export default function CreateProposalPage() {
   
   // Proposal creation hook
   const { createProposalAndRedirect, isLoading: isCreatingProposal } = useCreateProposal()
+  
+  // Router for navigation
+  const router = useRouter()
+  
+  // Lazy query for fetching existing proposals
+  const [fetchTripProposals] = useLazyQuery<{ proposals: Array<{ id: string; version: number; name: string; status: string; createdAt: string; updatedAt: string }> }>(GET_TRIP_PROPOSALS)
   
   // Delete trip stay hook
   const { deleteTripStay, isLoading: isDeletingTripStay } = useDeleteTripStay()
@@ -193,12 +200,140 @@ export default function CreateProposalPage() {
       console.log('Creating proposal with data:', proposalData)
       
       // Create proposal and redirect
-      await createProposalAndRedirect(proposalData)
+      const result = await createProposalAndRedirect(proposalData)
       
-    } catch (error) {
+      // If creation failed (likely because proposal already exists), fetch existing proposals
+      if (!result) {
+        console.log('Proposal creation returned null, checking for existing proposals...')
+        
+        // Fetch existing proposals for this trip
+        const { data } = await fetchTripProposals({
+          variables: { tripId: trip.id }
+        })
+        
+        if (data?.proposals && data.proposals.length > 0) {
+          // Get the first (most recent) proposal - sort by createdAt desc if available
+          const existingProposal = data.proposals.sort((a: any, b: any) => {
+            const dateA = new Date(a.createdAt || 0).getTime()
+            const dateB = new Date(b.createdAt || 0).getTime()
+            return dateB - dateA
+          })[0]
+          
+          console.log('Found existing proposal:', existingProposal.id)
+          
+          // Redirect to the existing proposal
+          router.push(`/proposal/${existingProposal.id}`)
+        }
+      }
+      
+    } catch (error: any) {
       console.error('Error saving proposal:', error)
+      
+      // Check if error message indicates proposal already exists
+      const errorMessage = error?.message || ''
+      if (errorMessage.includes('already exists') || errorMessage.includes('unique') || errorMessage.includes('Trip and Version')) {
+        console.log('Proposal already exists, fetching existing proposals...')
+        
+        try {
+          // Fetch existing proposals for this trip
+          const { data } = await fetchTripProposals({
+            variables: { tripId: trip.id }
+          })
+          
+          if (data?.proposals && data.proposals.length > 0) {
+            // Get the first (most recent) proposal - sort by createdAt desc if available
+            const existingProposal = data.proposals.sort((a: any, b: any) => {
+              const dateA = new Date(a.createdAt || 0).getTime()
+              const dateB = new Date(b.createdAt || 0).getTime()
+              return dateB - dateA
+            })[0]
+            
+            console.log('Found existing proposal:', existingProposal.id)
+            
+            // Redirect to the existing proposal
+            router.push(`/proposal/${existingProposal.id}`)
+          }
+        } catch (fetchError) {
+          console.error('Error fetching existing proposals:', fetchError)
+        }
+      }
     }
-  }, [trip, createProposalAndRedirect])
+  }, [trip, createProposalAndRedirect, router, fetchTripProposals])
+
+  const handlePreviewProposal = useCallback(async (proposalToPreview: Proposal | null) => {
+    console.log('handlePreviewProposal called')
+    
+    if (!proposalToPreview || !trip) {
+      console.error('No proposal or trip data available')
+      return
+    }
+    
+    try {
+      // First, check if a proposal already exists for this trip
+      const { data } = await fetchTripProposals({
+        variables: { tripId: trip.id }
+      })
+      
+      if (data?.proposals && data.proposals.length > 0) {
+        // Get the most recent proposal - sort by createdAt desc
+        const existingProposal = data.proposals.sort((a: any, b: any) => {
+          const dateA = new Date(a.createdAt || 0).getTime()
+          const dateB = new Date(b.createdAt || 0).getTime()
+          return dateB - dateA
+        })[0]
+        
+        console.log('Found existing proposal, redirecting to:', existingProposal.id)
+        // Redirect to the existing proposal
+        router.push(`/proposal/${existingProposal.id}`)
+      } else {
+        // No existing proposal, create one first and then redirect
+        console.log('No existing proposal found, creating one for preview...')
+        
+        // Calculate total price from proposal
+        const totalPriceCents = proposalToPreview.priceBreakdown?.total 
+          ? Math.round(proposalToPreview.priceBreakdown.total * 100)
+          : 0
+        
+        // Prepare proposal data
+        const proposalData: ProposalInput = {
+          trip: trip.id,
+          name: proposalToPreview.tripName || `Proposal for ${trip.fromCity.name}`,
+          status: 'draft',
+          currency: 'INR',
+          totalPriceCents,
+          estimatedDateOfBooking: new Date().toISOString(),
+          areFlightsBooked: false,
+          flightsMarkup: Number(trip.markupFlightPercent) || 0,
+          landMarkup: Number(trip.markupLandPercent) || 0,
+          landMarkupType: 'percentage'
+        }
+        
+        // Create proposal and redirect
+        await createProposalAndRedirect(proposalData)
+      }
+    } catch (error: any) {
+      console.error('Error in handlePreviewProposal:', error)
+      
+      // If creation fails, try to fetch existing proposals again
+      try {
+        const { data } = await fetchTripProposals({
+          variables: { tripId: trip.id }
+        })
+        
+        if (data?.proposals && data.proposals.length > 0) {
+          const existingProposal = data.proposals.sort((a: any, b: any) => {
+            const dateA = new Date(a.createdAt || 0).getTime()
+            const dateB = new Date(b.createdAt || 0).getTime()
+            return dateB - dateA
+          })[0]
+          
+          router.push(`/proposal/${existingProposal.id}`)
+        }
+      } catch (fetchError) {
+        console.error('Error fetching existing proposals in preview:', fetchError)
+      }
+    }
+  }, [trip, router, fetchTripProposals, createProposalAndRedirect])
 
   // Convert Trip data to Proposal format
   const convertTripToProposalFormat = (tripData: TripData): Proposal => {
@@ -284,7 +419,7 @@ export default function CreateProposalPage() {
       internalNotes: '',
       salesperson: trip.createdBy?.firstName + ' ' + trip.createdBy?.lastName || '',
       validityDays: 30,
-      markupPercent: parseFloat(trip.markupLandPercent),
+      markupPercent: trip.markupLandPercent ? (isNaN(parseFloat(trip.markupLandPercent)) ? null : parseFloat(trip.markupLandPercent)) : null,
       currency: 'INR',
       flights: [], // Empty for now
       hotels: convertedHotels,
@@ -410,10 +545,16 @@ export default function CreateProposalPage() {
 
   const handleFieldChange = (field: string, value: any) => {
     if (!proposal) return
-    updateProposal({
+    const updatedProposal = {
       ...proposal,
       [field]: value
-    })
+    }
+    // If markup is changed, recalculate prices
+    if (field === 'markupPercent') {
+      updateProposalWithPrices(updatedProposal)
+    } else {
+      updateProposal(updatedProposal)
+    }
   }
 
   // Convert proposal Hotel to HotelType for the modal
@@ -1061,15 +1202,6 @@ export default function CreateProposalPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-      <TopBar 
-        totalPrice={proposal?.priceBreakdown?.total || 0}
-        currency={proposal?.currency || 'INR'}
-        adults={proposal?.adults || 2}
-        childrenCount={proposal?.children || 0}
-        onSaveDraft={() => saveProposal(proposal)}
-        isSaving={isCreatingProposal}
-      />
-      
       <div className="w-full px-4 py-6">
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
           {/* Left Column - Main Content */}
@@ -1135,7 +1267,8 @@ export default function CreateProposalPage() {
                </div>
              </motion.div> */}
 
-             {/* Flights Section */}
+             {/* Flights Section - Hidden for now */}
+            {false && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1169,6 +1302,7 @@ export default function CreateProposalPage() {
                 </div>
               </div>
             </motion.div>
+            )}
 
             {/* Hotels Section */}
             <motion.div
@@ -1390,7 +1524,8 @@ export default function CreateProposalPage() {
                </div>
              </motion.div>
 
-             {/* Optional Sections */}
+             {/* Optional Sections - Hidden for now */}
+             {false && (
              <motion.div
                initial={{ opacity: 0, y: 20 }}
                animate={{ opacity: 1, y: 0 }}
@@ -1439,6 +1574,7 @@ export default function CreateProposalPage() {
                  </div>
                </div>
              </motion.div>
+             )}
 
              {/* Proposal Metadata */}
              <motion.div
@@ -1501,9 +1637,21 @@ export default function CreateProposalPage() {
                      <Input
                        id="markupPercent"
                        type="number"
-                       value={proposal?.markupPercent || 5}
-                       onChange={(e) => handleFieldChange('markupPercent', parseFloat(e.target.value))}
-                       placeholder="5"
+                       min="0"
+                       step="0.01"
+                       value={proposal?.markupPercent ?? ''}
+                       onChange={(e) => {
+                         const inputValue = e.target.value
+                         if (inputValue === '') {
+                           handleFieldChange('markupPercent', null)
+                         } else {
+                           const numValue = parseFloat(inputValue)
+                           if (!isNaN(numValue) && numValue >= 0) {
+                             handleFieldChange('markupPercent', numValue)
+                           }
+                         }
+                       }}
+                       placeholder="Enter markup %"
                      />
                    </div>
                  </div>
@@ -1532,7 +1680,7 @@ export default function CreateProposalPage() {
               <PriceSummary
                 proposal={proposal}
                 onSaveProposal={() => saveProposal(proposal)}
-                onPreview={() => console.log('Preview proposal')}
+                onPreview={() => handlePreviewProposal(proposal)}
               />
             </motion.div>
           </div>

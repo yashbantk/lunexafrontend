@@ -6,13 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { 
   Save, 
-  Send, 
   Eye, 
   Plus, 
   Plane, 
   Home, 
   Car,
-  CheckCircle
+  CheckCircle,
+  Users
 } from "lucide-react"
 import { Proposal } from "@/types/proposal"
 
@@ -35,6 +35,8 @@ export function PriceSummary({ proposal, onSaveProposal, onPreview }: PriceSumma
   }
 
   const { priceBreakdown } = proposal
+  const totalAdults = proposal.adults || 0
+  const totalChildren = proposal.children || 0
 
   return (
     <div className="space-y-4">
@@ -52,6 +54,16 @@ export function PriceSummary({ proposal, onSaveProposal, onPreview }: PriceSumma
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Total Price and Travelers Info */}
+            <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg p-4 text-center border border-primary/20">
+              <div className="text-3xl font-bold text-primary mb-2">
+                {formatPrice(priceBreakdown.total)}
+              </div>
+              <div className="text-sm text-gray-600 flex items-center justify-center space-x-1">
+                <Users className="h-4 w-4" />
+                <span>{totalAdults} {totalAdults === 1 ? 'adult' : 'adults'}{totalChildren > 0 ? `, ${totalChildren} ${totalChildren === 1 ? 'child' : 'children'}` : ''}</span>
+              </div>
+            </div>
             {/* Price Breakdown */}
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
@@ -69,7 +81,7 @@ export function PriceSummary({ proposal, onSaveProposal, onPreview }: PriceSumma
                 <span className="font-medium">{formatPrice(priceBreakdown.taxes)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Markup ({proposal.markupPercent}%)</span>
+                <span className="text-gray-600">Markup {proposal.markupPercent != null ? `(${proposal.markupPercent}%)` : ''}</span>
                 <span className="font-medium">{formatPrice(priceBreakdown.markup)}</span>
               </div>
               <div className="border-t border-gray-200 pt-2">
@@ -89,17 +101,6 @@ export function PriceSummary({ proposal, onSaveProposal, onPreview }: PriceSumma
                 <Save className="h-4 w-4 mr-2" />
                 Save As Proposal
               </Button>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => console.log('Send to client')}
-                  className="text-xs"
-                >
-                  <Send className="h-3 w-3 mr-1" />
-                  Send
-                </Button>
-              </div>
               <Button
                 variant="outline"
                 size="sm"
