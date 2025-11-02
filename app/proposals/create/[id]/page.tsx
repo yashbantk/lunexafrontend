@@ -441,7 +441,7 @@ export default function CreateProposalPage() {
   }, [trip, tripId])
 
   // Convert Trip data to Proposal format
-  const convertTripToProposalFormat = (tripData: TripData): Proposal => {
+  const convertTripToProposalFormat = useCallback((tripData: TripData): Proposal => {
     const trip = tripData
     
     console.log('=== CONVERSION DEBUG ===')
@@ -561,7 +561,30 @@ export default function CreateProposalPage() {
       ...initialProposal,
       priceBreakdown
     }
-  }
+  }, [calculatePriceBreakdown])
+
+  // Update blocked time slots from trip data
+  const updateBlockedTimeSlots = useCallback((tripData: TripData) => {
+    const blockedSlots: ActivityTimeBlock[] = []
+    
+    tripData.days.forEach(day => {
+      day.activityBookings.forEach(booking => {
+        // Use the option start time, or default to '09:00' if not available
+        const startTime = booking.option.startTime || '09:00'
+        const endTime = calculateEndTime(startTime, booking.option.durationMinutes)
+        
+        blockedSlots.push({
+          id: booking.id,
+          startTime,
+          endTime,
+          title: booking.option.name,
+          slot: booking.slot as DaySlot // Use the actual slot type from the booking
+        })
+      })
+    })
+    
+    setBlockedTimeSlots(blockedSlots)
+  }, [])
 
   // Load trip data and convert to proposal format
   useEffect(() => {
@@ -631,30 +654,7 @@ export default function CreateProposalPage() {
     }
     
     loadTripAndProposalData()
-  }, [trip, tripLoading, fetchTripProposals])
-
-  // Update blocked time slots from trip data
-  const updateBlockedTimeSlots = (tripData: TripData) => {
-    const blockedSlots: ActivityTimeBlock[] = []
-    
-    tripData.days.forEach(day => {
-      day.activityBookings.forEach(booking => {
-        // Use the option start time, or default to '09:00' if not available
-        const startTime = booking.option.startTime || '09:00'
-        const endTime = calculateEndTime(startTime, booking.option.durationMinutes)
-        
-        blockedSlots.push({
-          id: booking.id,
-          startTime,
-          endTime,
-          title: booking.option.name,
-          slot: booking.slot as DaySlot // Use the actual slot type from the booking
-        })
-      })
-    })
-    
-    setBlockedTimeSlots(blockedSlots)
-  }
+  }, [trip, tripLoading, fetchTripProposals, convertTripToProposalFormat, updateProposalWithPrices, updateBlockedTimeSlots])
 
   // Auto-save functionality removed - only save when user explicitly clicks "Save as Proposal"
 
@@ -1370,7 +1370,7 @@ export default function CreateProposalPage() {
         console.error('Error in handleSplitStayChange:', error)
       }
     }
-  }, [proposal, updateProposalWithPrices, splitStaySegments, trip, updateTripStays, refetchTrip])
+  }, [proposal, updateProposalWithPrices, splitStaySegments, trip, updateTripStays, refetchTrip, convertTripToProposalFormat, tripId])
 
   const handleSplitStayToggle = (enabled: boolean) => {
     setIsSplitStayEnabled(enabled)

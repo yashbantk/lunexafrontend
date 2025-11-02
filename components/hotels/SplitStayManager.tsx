@@ -72,25 +72,27 @@ export function SplitStayManager({
   initialSegments = [],
   className = ''
 }: SplitStayManagerProps) {
-  // Don't render split stay manager for trips with 1 day or less
-  if (totalNights <= 1) {
-    return null
-  }
-
+  // All hooks must be called before any conditional returns  
   const [internalIsEnabled, setInternalIsEnabled] = useState(false)
   const isEnabled = externalIsEnabled !== undefined ? externalIsEnabled : internalIsEnabled
   const [currentStep, setCurrentStep] = useState<SplitStayStep>(initialSegments.length > 0 ? 'hotels' : 'toggle')
   const [durations, setDurations] = useState<number[]>(initialSegments.map(s => s.duration))
   const [segments, setSegments] = useState<SplitStaySegment[]>(initialSegments)
+  const [editingSegmentIndex, setEditingSegmentIndex] = useState<number | null>(null)
+  const [showHotelSelector, setShowHotelSelector] = useState(false)
+  const previousSegmentsRef = useRef<SplitStaySegment[]>([])
+  const previousInitialSegmentsRef = useRef<SplitStaySegment[]>(initialSegments)
   
   // Restore segments from initialSegments prop when they change externally (from parent)
   useEffect(() => {
-    if (initialSegments && initialSegments.length > 0) {
-      // Only update if initialSegments actually changed (to avoid overwriting user selections)
-      const currentSegmentsStr = JSON.stringify(segments)
-      const initialSegmentsStr = JSON.stringify(initialSegments)
+    const previousInitialStr = JSON.stringify(previousInitialSegmentsRef.current)
+    const currentInitialStr = JSON.stringify(initialSegments)
+    
+    // Only update if initialSegments actually changed (to avoid overwriting user selections)
+    if (previousInitialStr !== currentInitialStr) {
+      previousInitialSegmentsRef.current = initialSegments
       
-      if (currentSegmentsStr !== initialSegmentsStr) {
+      if (initialSegments && initialSegments.length > 0) {
         console.log('SplitStayManager: Restoring segments from initialSegments', initialSegments)
         setSegments(initialSegments)
         
@@ -101,16 +103,13 @@ export function SplitStayManager({
           // Always show hotels step if we have segments
           setCurrentStep('hotels')
         }
+      } else if (initialSegments.length === 0) {
+        // Reset if initialSegments is empty
+        setSegments([])
+        setDurations([])
       }
-    } else if (initialSegments.length === 0 && segments.length === 0) {
-      // Reset if initialSegments is empty and we have no segments
-      setSegments([])
-      setDurations([])
     }
-  }, [initialSegments, totalNights]) // Removed segments from deps to avoid circular updates
-  const [editingSegmentIndex, setEditingSegmentIndex] = useState<number | null>(null)
-  const [showHotelSelector, setShowHotelSelector] = useState(false)
-  const previousSegmentsRef = useRef<SplitStaySegment[]>([])
+  }, [initialSegments, totalNights])
 
   // Initialize segments when durations change
   useEffect(() => {
@@ -162,7 +161,8 @@ export function SplitStayManager({
       console.log('SplitStayManager: All segments created', newSegments)
       setSegments(newSegments)
     }
-  }, [durations, startDate]) // Removed segments from deps to avoid infinite loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [durations, startDate]) // segments is read but not in deps to avoid circular updates
 
   // Notify parent of changes
   useEffect(() => {
@@ -183,7 +183,7 @@ export function SplitStayManager({
         onSplitStayChange(segments)
       }
     }
-  }, [segments]) // Removed currentStep to prevent loop - it's set conditionally inside
+  }, [segments, currentStep, onSplitStayChange]) // Added missing dependencies
 
   const handleToggle = (enabled: boolean) => {
     if (externalOnToggle) {
@@ -334,6 +334,11 @@ export function SplitStayManager({
       currency: 'INR',
       maximumFractionDigits: 0
     }).format(price)
+  }
+
+  // Don't render split stay manager for trips with 1 day or less
+  if (totalNights <= 1) {
+    return null
   }
 
   return (

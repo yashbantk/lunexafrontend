@@ -101,9 +101,11 @@ export function useUpdateTripStays() {
       console.log('Update trip stays response:', response.data)
 
       // Check for GraphQL errors in the response
-      if (response.errors && response.errors.length > 0) {
-        const errorMessages = response.errors.map((err: any) => err.message).join(', ')
-        console.error('GraphQL errors in response:', response.errors)
+      // Apollo Client returns errors in response.data.errors or response.errors
+      const graphqlErrors = (response as any).errors || (response.data as any)?.errors
+      if (graphqlErrors && graphqlErrors.length > 0) {
+        const errorMessages = graphqlErrors.map((err: any) => err.message).join(', ')
+        console.error('GraphQL errors in response:', graphqlErrors)
         toast({ description: errorMessages, type: 'error' })
         
         if (onError) {
