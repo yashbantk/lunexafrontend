@@ -9,6 +9,7 @@ interface EnhancedPriceBreakdownProps {
     id: string
     totalPriceCents: number
     estimatedDateOfBooking: string
+    landMarkup: number
     trip: {
       totalTravelers: number
       fromCity?: {
@@ -17,8 +18,6 @@ interface EnhancedPriceBreakdownProps {
       nationality?: {
         name: string
       }
-      markupLandPercent: number
-      markupFlightPercent: number
     }
   }
   onEditProposal?: () => void
@@ -56,12 +55,12 @@ export function EnhancedPriceBreakdown({
     })
   }
 
-  const totalPrice = proposal.totalPriceCents / 100
+  const totalPrice = proposal.totalPriceCents/100
   const pricePerAdult = totalPrice / proposal.trip.totalTravelers
-  const netPrice = totalPrice * 0.95
-  const totalEarnings = totalPrice * 0.015
-  const gstAmount = totalPrice * 0.05
-  const tcsAmount = totalPrice > 1000000 ? totalPrice * 0.20 : totalPrice * 0.05
+  const netPrice = totalPrice - ( totalPrice * (proposal.landMarkup / 100))
+  const totalEarnings = totalPrice - netPrice 
+  // const gstAmount = totalPrice * 0.05
+  // const tcsAmount = totalPrice > 1000000 ? totalPrice * 0.20 : totalPrice * 0.05
 
   return (
     <motion.div
@@ -152,12 +151,12 @@ export function EnhancedPriceBreakdown({
               <span className="text-gray-600">Total Earnings</span>
               <div className="w-3 h-3 text-gray-400">→</div>
             </div>
-            <span className="font-medium">{formatCurrency(totalEarnings * 100)} ({proposal.trip.markupLandPercent}%)</span>
+            <span className="font-medium">{formatCurrency(totalEarnings * 100)} ({proposal.landMarkup}%)</span>
           </div>
 
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Markup</span>
-            <span className="font-medium">{formatCurrency(totalEarnings * 100)} ({proposal.trip.markupLandPercent}%)</span>
+            <span className="font-medium">{formatCurrency(totalEarnings * 100)} ({proposal.landMarkup}%)</span>
           </div>
         </div>
       </div>

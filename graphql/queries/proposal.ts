@@ -589,6 +589,9 @@ export const GET_TRIP_PROPOSALS = gql`
       version
       name
       status
+      flightsMarkup
+      landMarkup
+      landMarkupType
       createdAt
       updatedAt
     }

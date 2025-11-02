@@ -17,7 +17,8 @@ export interface Proposal {
   internalNotes: string
   salesperson: string
   validityDays: number
-  markupPercent: number | null
+  markupFlightPercent: number | null
+  markupLandPercent: number | null
   currency: string
   flights: Flight[]
   hotels: Hotel[]

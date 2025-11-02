@@ -81,7 +81,7 @@ export function PriceSummary({ proposal, onSaveProposal, onPreview }: PriceSumma
                 <span className="font-medium">{formatPrice(priceBreakdown.taxes)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Markup {proposal.markupPercent != null ? `(${proposal.markupPercent}%)` : ''}</span>
+                <span className="text-gray-600">Markup {proposal.markupLandPercent != null ? `(${proposal.markupLandPercent}%)` : ''}</span>
                 <span className="font-medium">{formatPrice(priceBreakdown.markup)}</span>
               </div>
               <div className="border-t border-gray-200 pt-2">

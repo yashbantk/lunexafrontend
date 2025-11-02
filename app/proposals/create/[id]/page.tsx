@@ -24,6 +24,7 @@ import { CreateItineraryProposalResponse } from "@/hooks/useCreateItineraryPropo
 import { useActivityBooking, ActivityBookingInput, ActivityBookingResponse } from "@/hooks/useActivityBooking"
 import { useTrip, TripData } from "@/hooks/useTrip"
 import { useCreateProposal, ProposalInput } from "@/hooks/useCreateProposal"
+import { useUpdateProposal, ProposalPartialInput } from "@/hooks/useUpdateProposal"
 import { useLazyQuery } from "@apollo/client/react"
 import { GET_TRIP_PROPOSALS } from "@/graphql/queries/proposal"
 import { useDeleteTripStay } from "@/hooks/useDeleteTripStay"
@@ -96,11 +97,14 @@ export default function CreateProposalPage() {
   // Proposal creation hook
   const { createProposalAndRedirect, isLoading: isCreatingProposal } = useCreateProposal()
   
+  // Proposal update hook
+  const { updateProposalAndRedirect, isLoading: isUpdatingProposal } = useUpdateProposal()
+  
   // Router for navigation
   const router = useRouter()
   
   // Lazy query for fetching existing proposals
-  const [fetchTripProposals] = useLazyQuery<{ proposals: Array<{ id: string; version: number; name: string; status: string; createdAt: string; updatedAt: string }> }>(GET_TRIP_PROPOSALS)
+  const [fetchTripProposals] = useLazyQuery<{ proposals: Array<{ id: string; version: number; name: string; status: string; flightsMarkup?: number | null; landMarkup?: number | null; landMarkupType?: string | null; createdAt: string; updatedAt: string }> }>(GET_TRIP_PROPOSALS)
   
   // Delete trip stay hook
   const { deleteTripStay, isLoading: isDeletingTripStay } = useDeleteTripStay()
@@ -154,8 +158,8 @@ export default function CreateProposalPage() {
     // Calculate taxes (10%)
     const taxes = subtotal * 0.1
 
-    // Calculate markup
-    const markupPercent = proposal.markupPercent || 0
+    // Calculate markup using land markup percentage
+    const markupPercent = proposal.markupLandPercent || 0
     const markup = subtotal * (markupPercent / 100)
 
     // Calculate total
@@ -196,91 +200,97 @@ export default function CreateProposalPage() {
       return
     }
     
+    // Calculate total price from proposal
+    const totalPriceCents = proposalToSave.priceBreakdown?.total 
+      ? Math.round(proposalToSave.priceBreakdown.total * 100)
+      : 0
+    
+    // Prepare common data
+    const proposalName = proposalToSave.tripName || `Proposal for ${trip.fromCity.name}`
+    const flightsMarkup = Number(proposalToSave.markupFlightPercent) || 0
+    const landMarkup = Number(proposalToSave.markupLandPercent) || 0
+    
+    // First, try to update existing proposal
+    let updateSuccess = false
     try {
-      console.log('Saving proposal:', proposalToSave)
+      console.log('Attempting to update proposal first...')
       
-      // Calculate total price from proposal
-      const totalPriceCents = proposalToSave.priceBreakdown?.total 
-        ? Math.round(proposalToSave.priceBreakdown.total * 100)
-        : 0
+      // Check if a proposal already exists for this trip
+      const { data } = await fetchTripProposals({
+        variables: { tripId: trip.id }
+      })
       
-      // Prepare proposal data
-      const proposalData: ProposalInput = {
-        trip: trip.id, // Required - Trip ID
-        name: proposalToSave.tripName || `Proposal for ${trip.fromCity.name}`, // Optional - Proposal name
-        status: 'draft', // Optional - Proposal status
-        currency: 'INR', // Optional - Currency code
-        totalPriceCents, // Optional - Total price in cents
-        estimatedDateOfBooking: new Date().toISOString(), // Optional - Estimated booking date
-        areFlightsBooked: false, // Optional - Whether flights are booked
-        flightsMarkup: Number(trip.markupFlightPercent) || 0, // Optional - Flight markup percentage
-        landMarkup: Number(trip.markupLandPercent) || 0, // Optional - Land markup percentage
-        landMarkupType: 'percentage' // Optional - Land markup type
-        // version will be automatically determined by the hook
+      let existingProposal = null
+      if (data?.proposals && data.proposals.length > 0) {
+        // Get the first (most recent) proposal - sort by createdAt desc if available
+        existingProposal = data.proposals.sort((a: any, b: any) => {
+          const dateA = new Date(a.createdAt || 0).getTime()
+          const dateB = new Date(b.createdAt || 0).getTime()
+          return dateB - dateA
+        })[0]
       }
       
-      console.log('Creating proposal with data:', proposalData)
-      
-      // Create proposal and redirect
-      const result = await createProposalAndRedirect(proposalData)
-      
-      // If creation failed (likely because proposal already exists), fetch existing proposals
-      if (!result) {
-        console.log('Proposal creation returned null, checking for existing proposals...')
+      if (existingProposal?.id) {
+        // Try to update existing proposal
+        console.log('Found existing proposal, attempting to update:', existingProposal.id)
         
-        // Fetch existing proposals for this trip
-        const { data } = await fetchTripProposals({
-          variables: { tripId: trip.id }
-        })
-        
-        if (data?.proposals && data.proposals.length > 0) {
-          // Get the first (most recent) proposal - sort by createdAt desc if available
-          const existingProposal = data.proposals.sort((a: any, b: any) => {
-            const dateA = new Date(a.createdAt || 0).getTime()
-            const dateB = new Date(b.createdAt || 0).getTime()
-            return dateB - dateA
-          })[0]
-          
-          console.log('Found existing proposal:', existingProposal.id)
-          
-          // Redirect to the existing proposal
-          router.push(`/proposal/${existingProposal.id}`)
+        const updateData: ProposalPartialInput = {
+          id: existingProposal.id,
+          name: proposalName,
+          status: 'draft',
+          currency: { set: trip.currency?.code || 'INR' },
+          totalPriceCents,
+          estimatedDateOfBooking: new Date().toISOString(),
+          areFlightsBooked: false,
+          flightsMarkup,
+          landMarkup,
+          landMarkupType: 'percentage'
         }
+        
+        console.log('Updating proposal with data:', updateData)
+        const updateResult = await updateProposalAndRedirect(updateData)
+        
+        // If update was successful, we're done
+        if (updateResult) {
+          console.log('Proposal updated successfully')
+          updateSuccess = true
+          return
+        }
+      } else {
+        console.log('No existing proposal found, will create new one')
       }
-      
-    } catch (error: any) {
-      console.error('Error saving proposal:', error)
-      
-      // Check if error message indicates proposal already exists
-      const errorMessage = error?.message || ''
-      if (errorMessage.includes('already exists') || errorMessage.includes('unique') || errorMessage.includes('Trip and Version')) {
-        console.log('Proposal already exists, fetching existing proposals...')
+    } catch (updateError: any) {
+      console.log('Update failed, will create new proposal:', updateError?.message)
+      // Continue to create new proposal below
+    }
+    
+    // If update failed or no proposal exists, create a new one
+    if (!updateSuccess) {
+      try {
+        console.log('Creating new proposal...')
         
-        try {
-          // Fetch existing proposals for this trip
-          const { data } = await fetchTripProposals({
-            variables: { tripId: trip.id }
-          })
-          
-          if (data?.proposals && data.proposals.length > 0) {
-            // Get the first (most recent) proposal - sort by createdAt desc if available
-            const existingProposal = data.proposals.sort((a: any, b: any) => {
-              const dateA = new Date(a.createdAt || 0).getTime()
-              const dateB = new Date(b.createdAt || 0).getTime()
-              return dateB - dateA
-            })[0]
-            
-            console.log('Found existing proposal:', existingProposal.id)
-            
-            // Redirect to the existing proposal
-            router.push(`/proposal/${existingProposal.id}`)
-          }
-        } catch (fetchError) {
-          console.error('Error fetching existing proposals:', fetchError)
+        const proposalData: ProposalInput = {
+          trip: trip.id, // Required - Trip ID
+          name: proposalName, // Optional - Proposal name
+          status: 'draft', // Optional - Proposal status
+          currency: 'INR', // Optional - Currency code
+          totalPriceCents, // Optional - Total price in cents
+          estimatedDateOfBooking: new Date().toISOString(), // Optional - Estimated booking date
+          areFlightsBooked: false, // Optional - Whether flights are booked
+          flightsMarkup, // Optional - Flight markup percentage
+          landMarkup, // Optional - Land markup percentage
+          landMarkupType: 'percentage' // Optional - Land markup type
+          // version will be automatically determined by the hook
         }
+        
+        console.log('Creating proposal with data:', proposalData)
+        await createProposalAndRedirect(proposalData)
+      } catch (createError: any) {
+        console.error('Error creating proposal:', createError)
+        // Error handling is done in the hooks
       }
     }
-  }, [trip, createProposalAndRedirect, router, fetchTripProposals])
+  }, [trip, createProposalAndRedirect, updateProposalAndRedirect, fetchTripProposals])
 
   const handlePreviewProposal = useCallback(async (proposalToPreview: Proposal | null) => {
     console.log('handlePreviewProposal called')
@@ -325,8 +335,8 @@ export default function CreateProposalPage() {
           totalPriceCents,
           estimatedDateOfBooking: new Date().toISOString(),
           areFlightsBooked: false,
-          flightsMarkup: Number(trip.markupFlightPercent) || 0,
-          landMarkup: Number(trip.markupLandPercent) || 0,
+          flightsMarkup: Number(proposalToPreview.markupFlightPercent) || 0,
+          landMarkup: Number(proposalToPreview.markupLandPercent) || 0,
           landMarkupType: 'percentage'
         }
         
@@ -514,7 +524,8 @@ export default function CreateProposalPage() {
       internalNotes: '',
       salesperson: trip.createdBy?.firstName + ' ' + trip.createdBy?.lastName || '',
       validityDays: 30,
-      markupPercent: trip.markupLandPercent ? (isNaN(parseFloat(trip.markupLandPercent)) ? null : parseFloat(trip.markupLandPercent)) : null,
+      markupFlightPercent: trip.markupFlightPercent ? (isNaN(parseFloat(trip.markupFlightPercent)) ? null : parseFloat(trip.markupFlightPercent)) : null,
+      markupLandPercent: trip.markupLandPercent ? (isNaN(parseFloat(trip.markupLandPercent)) ? null : parseFloat(trip.markupLandPercent)) : null,
       currency: 'INR',
       flights: [], // Empty for now
       hotels: convertedHotels,
@@ -554,37 +565,73 @@ export default function CreateProposalPage() {
 
   // Load trip data and convert to proposal format
   useEffect(() => {
-    if (trip && !tripLoading) {
-      try {
-        console.log('=== TRIP DATA DEBUG ===')
-        console.log('Full trip object:', JSON.stringify(trip, null, 2))
-        console.log('Trip nationality:', trip.nationality)
-        console.log('Trip starRating:', trip.starRating)
-        console.log('Trip fromCity:', trip.fromCity)
-        console.log('Trip fromCity name:', trip.fromCity?.name)
-        console.log('Trip nationality name:', trip.nationality?.name)
-        console.log('Trip starRating type:', typeof trip.starRating)
-        console.log('Trip starRating value:', trip.starRating)
-        
-        // Convert the trip data to proposal format
-        const convertedProposal = convertTripToProposalFormat(trip)
-        console.log('Converted proposal:', convertedProposal)
-        updateProposalWithPrices(convertedProposal)
-        setIsLoading(false)
-        
-        // Update blocked time slots from existing activities
-        updateBlockedTimeSlots(trip)
-        
-        console.log('Loaded and converted trip data to proposal:', convertedProposal)
-      } catch (error) {
-        console.error('Error converting trip data:', error)
+    const loadTripAndProposalData = async () => {
+      if (trip && !tripLoading) {
+        try {
+          console.log('=== TRIP DATA DEBUG ===')
+          console.log('Full trip object:', JSON.stringify(trip, null, 2))
+          console.log('Trip nationality:', trip.nationality)
+          console.log('Trip starRating:', trip.starRating)
+          console.log('Trip fromCity:', trip.fromCity)
+          console.log('Trip fromCity name:', trip.fromCity?.name)
+          console.log('Trip nationality name:', trip.nationality?.name)
+          console.log('Trip starRating type:', typeof trip.starRating)
+          console.log('Trip starRating value:', trip.starRating)
+          
+          // Convert the trip data to proposal format
+          let convertedProposal = convertTripToProposalFormat(trip)
+          
+          // Check if there's an existing proposal and merge its data
+          try {
+            const { data } = await fetchTripProposals({
+              variables: { tripId: trip.id }
+            })
+            
+            if (data?.proposals && data.proposals.length > 0) {
+              // Get the first (most recent) proposal
+              const existingProposal = data.proposals.sort((a: any, b: any) => {
+                const dateA = new Date(a.createdAt || 0).getTime()
+                const dateB = new Date(b.createdAt || 0).getTime()
+                return dateB - dateA
+              })[0]
+              
+              console.log('Found existing proposal, merging data:', existingProposal)
+              
+              // Merge existing proposal data with converted proposal
+              if (existingProposal.landMarkup != null) {
+                convertedProposal.markupLandPercent = existingProposal.landMarkup
+              }
+              if (existingProposal.flightsMarkup != null) {
+                convertedProposal.markupFlightPercent = existingProposal.flightsMarkup
+              }
+              
+              console.log('Updated proposal with existing data:', convertedProposal)
+            }
+          } catch (proposalError) {
+            console.log('No existing proposal found or error fetching:', proposalError)
+            // Continue with trip-based data
+          }
+          
+          console.log('Converted proposal:', convertedProposal)
+          updateProposalWithPrices(convertedProposal)
+          setIsLoading(false)
+          
+          // Update blocked time slots from existing activities
+          updateBlockedTimeSlots(trip)
+          
+          console.log('Loaded and converted trip data to proposal:', convertedProposal)
+        } catch (error) {
+          console.error('Error converting trip data:', error)
+          setIsLoading(false)
+        }
+      } else if (!tripLoading && !trip) {
+        // Trip loading is complete but no trip data found
         setIsLoading(false)
       }
-    } else if (!tripLoading && !trip) {
-      // Trip loading is complete but no trip data found
-      setIsLoading(false)
     }
-  }, [trip, tripLoading])
+    
+    loadTripAndProposalData()
+  }, [trip, tripLoading, fetchTripProposals])
 
   // Update blocked time slots from trip data
   const updateBlockedTimeSlots = (tripData: TripData) => {
@@ -645,7 +692,7 @@ export default function CreateProposalPage() {
       [field]: value
     }
     // If markup is changed, recalculate prices
-    if (field === 'markupPercent') {
+    if (field === 'markupLandPercent' || field === 'markupFlightPercent') {
       updateProposalWithPrices(updatedProposal)
     } else {
       updateProposal(updatedProposal)
@@ -2258,28 +2305,50 @@ export default function CreateProposalPage() {
                        placeholder="7"
                      />
                    </div>
-                   <div className="space-y-2">
-                     <Label htmlFor="markupPercent">Markup %</Label>
-                     <Input
-                       id="markupPercent"
-                       type="number"
-                       min="0"
-                       step="0.01"
-                       value={proposal?.markupPercent ?? ''}
-                       onChange={(e) => {
-                         const inputValue = e.target.value
-                         if (inputValue === '') {
-                           handleFieldChange('markupPercent', null)
-                         } else {
-                           const numValue = parseFloat(inputValue)
-                           if (!isNaN(numValue) && numValue >= 0) {
-                             handleFieldChange('markupPercent', numValue)
-                           }
-                         }
-                       }}
-                       placeholder="Enter markup %"
-                     />
-                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="markupFlightPercent">Flight Markup %</Label>
+                    <Input
+                      id="markupFlightPercent"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={proposal?.markupFlightPercent ?? ''}
+                      onChange={(e) => {
+                        const inputValue = e.target.value
+                        if (inputValue === '') {
+                          handleFieldChange('markupFlightPercent', null)
+                        } else {
+                          const numValue = parseFloat(inputValue)
+                          if (!isNaN(numValue) && numValue >= 0) {
+                            handleFieldChange('markupFlightPercent', numValue)
+                          }
+                        }
+                      }}
+                      placeholder="Enter flight markup %"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="markupLandPercent">Land Markup %</Label>
+                    <Input
+                      id="markupLandPercent"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={proposal?.markupLandPercent ?? ''}
+                      onChange={(e) => {
+                        const inputValue = e.target.value
+                        if (inputValue === '') {
+                          handleFieldChange('markupLandPercent', null)
+                        } else {
+                          const numValue = parseFloat(inputValue)
+                          if (!isNaN(numValue) && numValue >= 0) {
+                            handleFieldChange('markupLandPercent', numValue)
+                          }
+                        }
+                      }}
+                      placeholder="Enter land markup %"
+                    />
+                  </div>
                  </div>
                  <div className="mt-4">
                    <Label htmlFor="internalNotes">Internal Notes</Label>

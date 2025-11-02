@@ -748,6 +748,7 @@ export default function ProposalDetailPage() {
                     id: proposal.id,
                     totalPriceCents: proposal.totalPriceCents,
                     estimatedDateOfBooking: proposal.estimatedDateOfBooking,
+                    landMarkup: proposal.landMarkup,
                     trip: {
                       totalTravelers: proposal.trip?.totalTravelers || 0,
                       fromCity: proposal.trip?.fromCity || { name: "Unknown" },
