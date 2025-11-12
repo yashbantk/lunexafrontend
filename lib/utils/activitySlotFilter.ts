@@ -14,6 +14,7 @@ export interface ActivityTimeBlock {
   endTime: string
   title: string
   slot: DaySlot
+  dayId?: string // Optional day ID to filter by specific day
 }
 
 /**

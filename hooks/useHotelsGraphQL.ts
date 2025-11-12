@@ -95,18 +95,26 @@ export const useHotelsGraphQL = ({
     const baseFilters: HotelFilters = { ...filters }
 
     // Add city filter if cityId is provided
-    // if (cityId) {
-    //   baseFilters.city = { pk: cityId }
-    // }
+    // City filter should be in AND clause to combine with other filters
+    if (cityId) {
+      baseFilters.AND = {
+        ...(baseFilters.AND || {}),
+        city: {
+          id: {
+            exact: cityId
+          }
+        }
+      } as any
+    }
 
     // Exclude current hotel if currentHotelName is provided (for "Change Room" functionality)
-    // if (currentHotelName) {
-    //   baseFilters.NOT = {
-    //     name: {
-    //       iExact: currentHotelName
-    //     }
-    //   }
-    // }
+    if (currentHotelName) {
+      baseFilters.NOT = {
+        name: {
+          iExact: currentHotelName
+        }
+      } as any
+    }
 
     return baseFilters
   }, [filters, cityId, currentHotelName])

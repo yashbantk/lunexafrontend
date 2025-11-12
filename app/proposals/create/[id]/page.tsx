@@ -14,14 +14,18 @@ import HotelDetailsModal from "@/components/hotels/HotelDetailsModal"
 import { SplitStayManager } from "@/components/hotels/SplitStayManager"
 import ActivityExplorerModal from "@/components/activities/ActivityExplorerModal"
 import ActivityDetailsModal from "@/components/activities/ActivityDetailsModal"
+import TransferExplorerModal from "@/components/transfers/TransferExplorerModal"
+import TransferDetailsModal from "@/components/transfers/TransferDetailsModal"
 import { Proposal, Day, Flight, Hotel, Activity, PriceBreakdown } from "@/types/proposal"
 import { Hotel as HotelType } from "@/types/hotel"
 import { Activity as ActivityType, ActivitySelection } from "@/types/activity"
+import { TransferProduct, TransferSelection } from "@/types/transfer"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { CreateItineraryProposalResponse } from "@/hooks/useCreateItineraryProposal"
 import { useActivityBooking, ActivityBookingInput, ActivityBookingResponse } from "@/hooks/useActivityBooking"
+import { useTransferBooking, TransferBookingInput } from "@/hooks/useTransferBooking"
 import { useTrip, TripData } from "@/hooks/useTrip"
 import { useCreateProposal, ProposalInput } from "@/hooks/useCreateProposal"
 import { useUpdateProposal, ProposalPartialInput } from "@/hooks/useUpdateProposal"
@@ -54,13 +58,19 @@ export default function CreateProposalPage() {
   const [editingItem, setEditingItem] = useState<any>(null)
   const [isHotelSelectOpen, setIsHotelSelectOpen] = useState(false)
   const [editingHotelIndex, setEditingHotelIndex] = useState<number | null>(null)
+  const [editingHotelDayId, setEditingHotelDayId] = useState<string | null>(null)
   const [isHotelDetailsOpen, setIsHotelDetailsOpen] = useState(false)
   const [selectedHotelForDetails, setSelectedHotelForDetails] = useState<Hotel | null>(null)
+  const [selectedHotelDayId, setSelectedHotelDayId] = useState<string | null>(null)
   const [isActivityExplorerOpen, setIsActivityExplorerOpen] = useState(false)
   const [isActivityDetailsOpen, setIsActivityDetailsOpen] = useState(false)
   const [selectedActivityForDetails, setSelectedActivityForDetails] = useState<Activity | null>(null)
   const [editingDayIndex, setEditingDayIndex] = useState<number | null>(null)
   const [editingActivityBookingId, setEditingActivityBookingId] = useState<string | null>(null)
+  const [isTransferExplorerOpen, setIsTransferExplorerOpen] = useState(false)
+  const [isTransferDetailsOpen, setIsTransferDetailsOpen] = useState(false)
+  const [selectedTransferForDetails, setSelectedTransferForDetails] = useState<TransferProduct | null>(null)
+  const [editingTransferBookingId, setEditingTransferBookingId] = useState<string | null>(null)
   
   // Split Stay state - with persistence
   const [isSplitStayEnabled, setIsSplitStayEnabled] = useState(() => {
@@ -93,6 +103,9 @@ export default function CreateProposalPage() {
   
   // Activity booking hook
   const { createActivityBooking, deleteActivityBooking, isLoading: isCreatingActivityBooking } = useActivityBooking()
+  
+  // Transfer booking hook
+  const { createTransfer, deleteTransfer, isLoading: isCreatingTransfer } = useTransferBooking()
   
   // Proposal creation hook
   const { createProposalAndRedirect, isLoading: isCreatingProposal } = useCreateProposal()
@@ -469,7 +482,7 @@ export default function CreateProposalPage() {
         included: false
       })),
       accommodation: day.stay && day.stay.room && day.stay.room.hotel ? `${day.stay.roomsCount} room(s) at ${day.stay.room.hotel.name} (${day.stay.room.name}, ${day.stay.mealPlan})` : undefined,
-      transfers: [],
+      transfers: day.transfers || [],
       meals: {
         breakfast: day.stay?.mealPlan?.toLowerCase().includes('breakfast') || false,
         lunch: day.stay?.mealPlan?.toLowerCase().includes('lunch') || false,
@@ -578,7 +591,8 @@ export default function CreateProposalPage() {
           startTime,
           endTime,
           title: booking.option.name,
-          slot: booking.slot as DaySlot // Use the actual slot type from the booking
+          slot: booking.slot as DaySlot, // Use the actual slot type from the booking
+          dayId: day.id // Add day ID to filter by day
         })
       })
     })
@@ -654,7 +668,8 @@ export default function CreateProposalPage() {
     }
     
     loadTripAndProposalData()
-  }, [trip, tripLoading, fetchTripProposals, convertTripToProposalFormat, updateProposalWithPrices, updateBlockedTimeSlots])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trip?.id, tripLoading])
 
   // Auto-save functionality removed - only save when user explicitly clicks "Save as Proposal"
 
@@ -728,14 +743,21 @@ export default function CreateProposalPage() {
 
     try {
       // Find the trip day for this hotel
-      // If editing existing hotel, use the same day
+      // If editing existing hotel, use the tracked day ID or find the day with this hotel
       // If adding new hotel, use the first day that doesn't have a stay
       let targetDay
       if (editingHotelIndex !== null) {
-        // Use the same day as the existing hotel
-        targetDay = trip.days.find(day => 
-          day.stay && day.stay.room.hotel.id === proposal.hotels[editingHotelIndex].id
-        )
+        // First try to use the tracked day ID if available
+        if (editingHotelDayId) {
+          targetDay = trip.days.find(day => day.id === editingHotelDayId)
+        }
+        
+        // If not found by ID, find by hotel ID (for backward compatibility)
+        if (!targetDay) {
+          targetDay = trip.days.find(day => 
+            day.stay && day.stay.room.hotel.id === proposal.hotels[editingHotelIndex].id
+          )
+        }
       } else {
         // Find the first day without a stay (for new hotel)
         targetDay = trip.days.find(day => !day.stay)
@@ -841,21 +863,40 @@ export default function CreateProposalPage() {
 
     setIsHotelSelectOpen(false)
     setEditingHotelIndex(null)
+    setEditingHotelDayId(null)
   }
 
   const handleChangeHotel = (index: number) => {
+    if (!trip || !proposal) return
+    
+    // Find the day that has this hotel
+    const hotel = proposal.hotels[index]
+    const dayWithHotel = trip.days.find(day => 
+      day.stay && day.stay.room.hotel.id === hotel.id
+    )
+    
     setEditingHotelIndex(index)
+    setEditingHotelDayId(dayWithHotel?.id || null)
     setIsHotelSelectOpen(true)
   }
 
   const handleChangeRoom = (hotel: Hotel) => {
+    if (!trip || !proposal) return
+    
+    // Find the day that has this hotel
+    const dayWithHotel = trip.days.find(day => 
+      day.stay && day.stay.room.hotel.id === hotel.id
+    )
+    
     setSelectedHotelForDetails(hotel)
+    setSelectedHotelDayId(dayWithHotel?.id || null)
     setIsHotelDetailsOpen(true)
   }
 
   const handleCloseHotelDetails = () => {
     setIsHotelDetailsOpen(false)
     setSelectedHotelForDetails(null)
+    setSelectedHotelDayId(null)
   }
 
   // Split Stay handlers
@@ -1390,14 +1431,18 @@ export default function CreateProposalPage() {
     if (!proposal || !selectedHotelForDetails || !trip) return
 
     try {
-      // Find the hotel index in the proposal
-      const hotelIndex = proposal.hotels.findIndex(h => h.id === selectedHotelForDetails.id)
-      if (hotelIndex === -1) return
-
-      // Find the corresponding trip day and stay
-      const tripDay = trip.days.find(day => 
-        day.stay && day.stay.room.hotel.id === selectedHotelForDetails.id
-      )
+      // Find the trip day - use tracked day ID if available, otherwise find by hotel ID
+      let tripDay
+      if (selectedHotelDayId) {
+        tripDay = trip.days.find(day => day.id === selectedHotelDayId)
+      }
+      
+      // Fallback to finding by hotel ID if day ID not found
+      if (!tripDay) {
+        tripDay = trip.days.find(day => 
+          day.stay && day.stay.room.hotel.id === selectedHotelForDetails.id
+        )
+      }
       
       if (!tripDay?.stay?.id) {
         console.error('No trip stay found for hotel:', selectedHotelForDetails.id)
@@ -1542,6 +1587,80 @@ export default function CreateProposalPage() {
     setIsActivityExplorerOpen(true)
   }
 
+  const handleTransferSelect = async (transferProduct: TransferProduct, selection: TransferSelection, bookingIdToDelete?: string) => {
+    console.log('handleTransferSelect called', {
+      transferProductId: transferProduct.id,
+      bookingIdToDelete,
+      proposal: !!proposal,
+      trip: !!trip
+    })
+
+    if (!proposal || !trip) {
+      console.log('Missing proposal or trip data')
+      return
+    }
+
+    try {
+      // Determine the target day ID
+      let targetDayId: string
+      
+      if (editingDayIndex !== null && trip) {
+        targetDayId = trip.days[editingDayIndex].id
+        console.log('Using editing day ID:', targetDayId)
+      } else if (trip && trip.days.length > 0) {
+        targetDayId = trip.days[0].id
+        console.log('Using first day ID:', targetDayId)
+      } else {
+        console.warn('No valid day found for transfer booking')
+        return
+      }
+
+      // If we're editing, delete the old booking first
+      if (bookingIdToDelete) {
+        console.log('Deleting old transfer booking:', bookingIdToDelete)
+        const deleteResult = await deleteTransfer(bookingIdToDelete)
+        console.log('Delete result:', deleteResult)
+      }
+
+      // Create transfer booking
+      const transferInput: TransferBookingInput = {
+        tripDay: targetDayId,
+        transferProduct: transferProduct.id,
+        pickupTime: selection.pickupTime,
+        currency: selection.currency,
+        confirmationStatus: selection.confirmationStatus,
+        pickupLocation: selection.pickupLocation,
+        dropoffLocation: selection.dropoffLocation,
+        vehiclesCount: selection.vehiclesCount,
+        paxAdults: selection.paxAdults,
+        paxChildren: selection.paxChildren,
+        priceTotalCents: selection.priceTotalCents
+      }
+
+      console.log('Creating transfer with input:', transferInput)
+      const result = await createTransfer(transferInput, (response) => {
+        console.log('Transfer created successfully:', response)
+        // Refetch trip data to update UI
+        refetchTrip()
+      })
+
+      if (result) {
+        // Close the modal
+        setIsTransferExplorerOpen(false)
+        setEditingDayIndex(null)
+        setEditingTransferBookingId(null)
+      }
+
+    } catch (error: any) {
+      console.error('Error in handleTransferSelect:', error)
+    }
+  }
+
+  const handleAddTransfer = (dayIndex?: number) => {
+    setEditingDayIndex(dayIndex !== undefined ? dayIndex : null)
+    setIsTransferExplorerOpen(true)
+  }
+
   // Utility function to add activity booking with minimal parameters
   const addActivityToDay = async (
     dayIndex: number,
@@ -1643,17 +1762,26 @@ export default function CreateProposalPage() {
       const response = await createActivityBooking(
         bookingInput,
         // Success callback - update UI immediately
-        (response: ActivityBookingResponse) => {
+        async (response: ActivityBookingResponse) => {
           console.log('Activity booking created successfully:', response)
           
           // Update the trip data and refetch to get the latest data
           console.log('Activity booking created successfully, refetching trip data...')
-          refetchTrip().then(() => {
-            // Update blocked time slots after successful booking
-            if (trip) {
-              updateBlockedTimeSlots(trip)
+          try {
+            const refetchResult = await refetchTrip()
+            const updatedTripData = refetchResult?.data?.trip
+            
+            if (updatedTripData) {
+              // Update blocked time slots with the newly refetched trip data
+              updateBlockedTimeSlots(updatedTripData)
+              
+              // Convert and update proposal with new trip data
+              const updatedProposal = convertTripToProposalFormat(updatedTripData)
+              updateProposalWithPrices(updatedProposal)
             }
-          })
+          } catch (refetchError) {
+            console.error('Error refetching trip data:', refetchError)
+          }
         },
         // Error callback
         (error: string) => {
@@ -1989,6 +2117,7 @@ export default function CreateProposalPage() {
                       <button
                         onClick={() => {
                           setEditingHotelIndex(null)
+                          setEditingHotelDayId(null)
                           setIsHotelSelectOpen(true)
                         }}
                         className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
@@ -2179,16 +2308,88 @@ export default function CreateProposalPage() {
                             })
                             
                             // Refresh trip data to get updated activity bookings
-                            if (refetchTrip) {
-                              console.log('Refreshing trip data')
-                              refetchTrip()
-                            }
+                          if (refetchTrip) {
+                            console.log('Refreshing trip data')
+                            refetchTrip().then((refetchResult) => {
+                              const updatedTripData = refetchResult?.data?.trip
+                              if (updatedTripData) {
+                                updateBlockedTimeSlots(updatedTripData)
+                                const updatedProposal = convertTripToProposalFormat(updatedTripData)
+                                updateProposalWithPrices(updatedProposal)
+                              }
+                            })
+                          }
                           } else {
                             console.error('Delete result was null/undefined')
                           }
                         } catch (error) {
                           console.error('Error removing activity:', error)
                           // The error toast will be shown by the useActivityBooking hook
+                        }
+                      }}
+                      onAddTransfer={() => handleAddTransfer(index)}
+                      onEditTransfer={(transfer, dayIndex) => {
+                        // Find the actual transfer data from trip data
+                        const currentTransfer = trip?.days
+                          .flatMap(day => day.transfers || [])
+                          .find(t => t.id === transfer.id)
+                        
+                        if (currentTransfer?.transferProduct) {
+                          setSelectedTransferForDetails({
+                            id: currentTransfer.transferProduct.id,
+                            name: currentTransfer.transferProduct.name || 'Transfer',
+                            description: currentTransfer.transferProduct.description || '',
+                            city: {
+                              id: currentTransfer.transferProduct.city?.id || '',
+                              name: currentTransfer.transferProduct.city?.name || '',
+                              country: {
+                                iso2: currentTransfer.transferProduct.city?.country?.iso2 || '',
+                                name: currentTransfer.transferProduct.city?.country?.name || ''
+                              }
+                            },
+                            vehicle: {
+                              id: currentTransfer.transferProduct.vehicle?.id || '',
+                              type: currentTransfer.transferProduct.vehicle?.type || '',
+                              name: currentTransfer.transferProduct.vehicle?.name || '',
+                              capacityAdults: currentTransfer.transferProduct.vehicle?.capacityAdults || 0,
+                              capacityChildren: currentTransfer.transferProduct.vehicle?.capacityChildren || 0,
+                              amenities: currentTransfer.transferProduct.vehicle?.amenities || {}
+                            },
+                            supplier: {
+                              id: currentTransfer.transferProduct.supplier?.id || '',
+                              name: currentTransfer.transferProduct.supplier?.name || ''
+                            },
+                            currency: {
+                              id: '', // Currency doesn't have id in schema, use code as identifier
+                              code: currentTransfer.currency?.code || trip?.currency?.code || 'INR',
+                              name: currentTransfer.currency?.name || trip?.currency?.name || 'Indian Rupee'
+                            },
+                            priceCents: currentTransfer.transferProduct.priceCents || 0,
+                            cancellationPolicy: currentTransfer.transferProduct.cancellationPolicy,
+                            commissionRate: currentTransfer.transferProduct.commissionRate || 0
+                          })
+                          setIsTransferDetailsOpen(true)
+                          setEditingDayIndex(dayIndex)
+                          setEditingTransferBookingId(transfer.id)
+                        }
+                      }}
+                      onRemoveTransfer={async (transferId, dayIndex) => {
+                        console.log('onRemoveTransfer called with:', { transferId, dayIndex })
+                        
+                        if (!proposal) {
+                          console.error('No proposal available')
+                          return
+                        }
+                        
+                        try {
+                          console.log('Calling deleteTransfer with ID:', transferId)
+                          const result = await deleteTransfer(transferId)
+                          if (result) {
+                            console.log('Transfer deleted successfully, refetching trip data')
+                            await refetchTrip()
+                          }
+                        } catch (error) {
+                          console.error('Error removing transfer:', error)
                         }
                       }}
                     />
@@ -2398,6 +2599,7 @@ export default function CreateProposalPage() {
         onClose={() => {
           setIsHotelSelectOpen(false)
           setEditingHotelIndex(null)
+          setEditingHotelDayId(null)
         }}
         onSelectHotel={handleHotelSelect}
         currentHotel={editingHotelIndex !== null && proposal?.hotels[editingHotelIndex] ? convertProposalHotelToHotelType(proposal.hotels[editingHotelIndex]) : undefined}
@@ -2407,8 +2609,8 @@ export default function CreateProposalPage() {
         nights={proposal?.hotels[editingHotelIndex || 0]?.nights || trip?.durationDays || 1}
         adults={trip?.travelerDetails?.adults || proposal?.adults || 2}
         childrenCount={trip?.travelerDetails?.children || proposal?.children || 0}
-        cityId={trip?.days?.[0]?.city?.id || proposal?.destinations?.[0]?.id || '2'}
-        cityName={trip?.days?.[0]?.city?.name || proposal?.destinations?.[0]?.name || 'Miami'}
+        cityId={editingHotelDayId ? trip?.days.find(d => d.id === editingHotelDayId)?.city?.id : (trip?.days?.[0]?.city?.id || proposal?.destinations?.[0]?.id || '2')}
+        cityName={editingHotelDayId ? trip?.days.find(d => d.id === editingHotelDayId)?.city?.name : (trip?.days?.[0]?.city?.name || proposal?.destinations?.[0]?.name || 'Miami')}
       />
 
       {/* Hotel Details Modal for Room Selection */}
@@ -2527,6 +2729,38 @@ export default function CreateProposalPage() {
             }
             return undefined
           })() : undefined}
+        />
+      )}
+
+      {/* Transfer Explorer Modal */}
+      <TransferExplorerModal
+        isOpen={isTransferExplorerOpen}
+        onClose={() => {
+          setIsTransferExplorerOpen(false)
+          setEditingDayIndex(null)
+        }}
+        onSelectTransfer={handleTransferSelect}
+        dayId={editingDayIndex !== null ? proposal?.days[editingDayIndex]?.id || 'day-1' : 'day-1'}
+        mode="add"
+      />
+
+      {/* Transfer Details Modal */}
+      {selectedTransferForDetails && (
+        <TransferDetailsModal
+          isOpen={isTransferDetailsOpen}
+          onClose={() => {
+            setIsTransferDetailsOpen(false)
+            setSelectedTransferForDetails(null)
+            setEditingDayIndex(null)
+            setEditingTransferBookingId(null)
+          }}
+          transferProductId={selectedTransferForDetails.id}
+          onAddToPackage={handleTransferSelect}
+          dayId={editingDayIndex !== null ? proposal?.days[editingDayIndex]?.id || 'day-1' : 'day-1'}
+          adults={proposal?.adults || 0}
+          childrenCount={proposal?.children || 0}
+          isEditMode={!!editingTransferBookingId}
+          currentBookingId={editingTransferBookingId || undefined}
         />
       )}
     </div>

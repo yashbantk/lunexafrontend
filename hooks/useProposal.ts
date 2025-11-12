@@ -231,6 +231,48 @@ export interface ProposalDetails {
         } | null
         confirmationStatus: string
       }> | null
+      transfers: Array<{
+        id: string
+        pickupTime: string
+        pickupLocation: string | null
+        dropoffLocation: string | null
+        vehiclesCount: number | null
+        paxAdults: number
+        paxChildren: number
+        priceTotalCents: number | null
+        confirmationStatus: string
+        transferProduct: {
+          id: string
+          name: string
+          description: string | null
+          city: {
+            id: string
+            name: string
+            country: {
+              iso2: string
+              name: string
+            }
+          }
+          vehicle: {
+            id: string
+            type: string
+            name: string
+            capacityAdults: number
+            capacityChildren: number
+          }
+          currency: {
+            code: string
+            name: string
+          }
+          priceCents: number
+          cancellationPolicy: string | null
+          commissionRate: number
+        }
+        currency: {
+          code: string
+          name: string
+        }
+      }> | null
     }> | null
   } | null
 }

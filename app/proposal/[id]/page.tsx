@@ -605,6 +605,69 @@ export default function ProposalDetailPage() {
                     
                     console.log(`Mapped Day ${day.dayNumber} activities:`, activities.length, activities)
                     
+                    // Map transfers
+                    const transfers = (day.transfers || [])
+                      .map((transfer: {
+                        id: string
+                        pickupTime: string
+                        pickupLocation: string | null
+                        dropoffLocation: string | null
+                        vehiclesCount: number | null
+                        paxAdults: number
+                        paxChildren: number
+                        priceTotalCents: number | null
+                        confirmationStatus: string
+                        transferProduct: {
+                          id: string
+                          name: string
+                          description: string | null
+                          city: {
+                            id: string
+                            name: string
+                            country: {
+                              iso2: string
+                              name: string
+                            }
+                          }
+                          vehicle: {
+                            id: string
+                            type: string
+                            name: string
+                            capacityAdults: number
+                            capacityChildren: number
+                          }
+                          currency: {
+                            code: string
+                            name: string
+                          }
+                          priceCents: number
+                          cancellationPolicy: string | null
+                          commissionRate: number
+                        }
+                        currency: {
+                          code: string
+                          name: string
+                        }
+                      }) => {
+                        try {
+                          return {
+                            id: transfer.id,
+                            name: transfer.transferProduct?.name || 'Transfer',
+                            pickupTime: transfer.pickupTime || 'TBD',
+                            pickupLocation: transfer.pickupLocation || '',
+                            dropoffLocation: transfer.dropoffLocation || '',
+                            vehiclesCount: transfer.vehiclesCount || 1,
+                            price: (transfer.priceTotalCents || 0) / 100,
+                            currency: transfer.currency?.code || proposal.currency?.code || 'INR',
+                            confirmationStatus: transfer.confirmationStatus || 'pending'
+                          }
+                        } catch (error) {
+                          console.error('Error mapping transfer:', error, transfer)
+                          return null
+                        }
+                      })
+                      .filter((transfer): transfer is NonNullable<typeof transfer> => transfer !== null)
+                    
                     return {
                       id: day.id,
                       dayNumber: day.dayNumber || index + 1,
@@ -613,6 +676,7 @@ export default function ProposalDetailPage() {
                       summary: activities.length > 0 ? `${activities.length} activit${activities.length > 1 ? 'ies' : 'y'}` : "Day activities",
                       description: day.city?.name ? `Exploring ${day.city.name}` : "Day description",
                       activities: activities,
+                      transfers: transfers,
                       accommodation: day.stay?.room?.hotel?.name || undefined,
                       meals: {
                         breakfast: day.stay?.mealPlan?.toLowerCase().includes('breakfast') || false,

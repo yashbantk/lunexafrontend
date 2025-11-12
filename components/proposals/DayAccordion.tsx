@@ -28,11 +28,14 @@ interface DayAccordionProps {
   onAddActivity: () => void
   onEditActivity?: (activity: Activity, dayIndex: number) => void
   onRemoveActivity?: (activityId: string, dayIndex: number) => void
+  onAddTransfer?: () => void
+  onEditTransfer?: (transfer: any, dayIndex: number) => void
+  onRemoveTransfer?: (transferId: string, dayIndex: number) => void
   blockedTimeSlots?: ActivityTimeBlock[]
   hideTimeline?: boolean
 }
 
-export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, onEditActivity, onRemoveActivity, blockedTimeSlots = [], hideTimeline = false }: DayAccordionProps) {
+export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, onEditActivity, onRemoveActivity, onAddTransfer, onEditTransfer, onRemoveTransfer, blockedTimeSlots = [], hideTimeline = false }: DayAccordionProps) {
   const [isExpanded, setIsExpanded] = useState(day.dayNumber <= 2) // Open first 2 days by default
 
   const formatTime = (time: string) => {
@@ -135,21 +138,40 @@ export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, o
                 <div className="mb-4">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-medium text-gray-900">Timeline</h4>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={onAddActivity}
-                      className="text-xs"
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Add Activity
-                    </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={onAddActivity}
+                        className="text-xs"
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add Activity
+                      </Button>
+                      {onAddTransfer && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={onAddTransfer}
+                          className="text-xs"
+                        >
+                          <Car className="h-3 w-3 mr-1" />
+                          Add Transfer
+                        </Button>
+                      )}
                   </div>
                   
                   <div className="grid grid-cols-3 gap-4">
                     {['morning', 'afternoon', 'evening'].map((timeSlot) => {
-                      const slotBlockedSlots = blockedTimeSlots.filter(slot => slot.slot === timeSlot)
-                      const isBlocked = slotBlockedSlots.length > 0
+                      // Filter blocked slots by day ID if available, otherwise filter by slot type
+                      const slotBlockedSlots = blockedTimeSlots.filter(slot => {
+                        const slotMatches = slot.slot === timeSlot
+                        const dayMatches = !slot.dayId || slot.dayId === day.id
+                        return slotMatches && dayMatches
+                      })
+                      
+                      // Also get activities for this day and slot to display in timeline
+                      const dayActivities = day.activities.filter(activity => activity.type === timeSlot)
+                      const isBlocked = slotBlockedSlots.length > 0 || dayActivities.length > 0
                       
                       return (
                         <div key={timeSlot} className="text-center">
@@ -161,7 +183,7 @@ export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, o
                           </div>
                           
                           {/* Timeline visualization within each slot */}
-                          {isBlocked && (
+                          {(isBlocked || dayActivities.length > 0) && (
                             <div className="mb-2">
                               <div className="relative bg-gray-100 rounded-lg h-6 overflow-hidden">
                                 {/* Time markers */}
@@ -184,15 +206,17 @@ export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, o
                                   })}
                                 </div>
 
-                                {/* Blocked time slots */}
+                                {/* Blocked time slots and activities */}
                                 {slotBlockedSlots.map((slot, index) => {
                                   const startHour = parseInt(slot.startTime.split(':')[0])
+                                  const startMinute = parseInt(slot.startTime.split(':')[1] || '0')
                                   const endHour = parseInt(slot.endTime.split(':')[0])
+                                  const endMinute = parseInt(slot.endTime.split(':')[1] || '0')
                                   const slotStart = timeSlot === 'morning' ? 6 : timeSlot === 'afternoon' ? 12 : 18
                                   const slotEnd = timeSlot === 'morning' ? 12 : timeSlot === 'afternoon' ? 18 : 24
                                   
-                                  const startPosition = ((startHour - slotStart) / (slotEnd - slotStart)) * 100
-                                  const width = ((endHour - startHour) / (slotEnd - slotStart)) * 100
+                                  const startPosition = (((startHour + startMinute / 60) - slotStart) / (slotEnd - slotStart)) * 100
+                                  const width = (((endHour + endMinute / 60) - (startHour + startMinute / 60)) / (slotEnd - slotStart)) * 100
                                   
                                   return (
                                     <div
@@ -210,13 +234,70 @@ export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, o
                                     </div>
                                   )
                                 })}
+                                
+                                {/* Display activities in timeline */}
+                                {dayActivities.map((activity) => {
+                                  // Parse activity time (format: "HH:MM" or "TBD")
+                                  let startHour = 9
+                                  let startMinute = 0
+                                  let endHour = 10
+                                  let endMinute = 0
+                                  
+                                  if (activity.time && activity.time !== 'TBD') {
+                                    const timeMatch = activity.time.match(/(\d{1,2}):(\d{2})/)
+                                    if (timeMatch) {
+                                      startHour = parseInt(timeMatch[1])
+                                      startMinute = parseInt(timeMatch[2])
+                                      // Calculate end time from duration
+                                      const durationMatch = activity.duration.match(/(\d+)/)
+                                      if (durationMatch) {
+                                        const durationMinutes = parseInt(durationMatch[1])
+                                        const totalMinutes = startHour * 60 + startMinute + durationMinutes
+                                        endHour = Math.floor(totalMinutes / 60)
+                                        endMinute = totalMinutes % 60
+                                      }
+                                    }
+                                  }
+                                  
+                                  const slotStart = timeSlot === 'morning' ? 6 : timeSlot === 'afternoon' ? 12 : 18
+                                  const slotEnd = timeSlot === 'morning' ? 12 : timeSlot === 'afternoon' ? 18 : 24
+                                  
+                                  // Only show if activity time falls within this slot
+                                  if (startHour < slotStart || startHour >= slotEnd) {
+                                    return null
+                                  }
+                                  
+                                  const startPosition = (((startHour + startMinute / 60) - slotStart) / (slotEnd - slotStart)) * 100
+                                  const width = (((endHour + endMinute / 60) - (startHour + startMinute / 60)) / (slotEnd - slotStart)) * 100
+                                  
+                                  return (
+                                    <div
+                                      key={activity.id}
+                                      className="absolute top-0 h-full bg-blue-500 border border-blue-600 rounded-sm flex items-center justify-center"
+                                      style={{
+                                        left: `${Math.max(0, startPosition)}%`,
+                                        width: `${Math.min(100 - startPosition, width)}%`,
+                                        zIndex: 5
+                                      }}
+                                    >
+                                      <div className="text-white text-xs font-medium px-1 truncate">
+                                        {activity.title}
+                                      </div>
+                                    </div>
+                                  )
+                                })}
                               </div>
                               
-                              {/* Blocked slots details */}
+                              {/* Blocked slots and activities details */}
                               <div className="mt-1 space-y-1">
                                 {slotBlockedSlots.map((slot) => (
                                   <div key={slot.id} className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
                                     {slot.title} ({slot.startTime} - {slot.endTime})
+                                  </div>
+                                ))}
+                                {dayActivities.map((activity) => (
+                                  <div key={activity.id} className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                    {activity.title} ({activity.time} • {activity.duration})
                                   </div>
                                 ))}
                               </div>
@@ -291,6 +372,65 @@ export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, o
                             >
                               <X className="h-3 w-3" />
                             </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Transfers */}
+                {day.transfers && day.transfers.length > 0 && (
+                  <div className="mb-4">
+                    <h4 className="font-medium text-gray-900 mb-3">Transfers</h4>
+                    <div className="space-y-2">
+                      {day.transfers.map((transfer: any, index: number) => (
+                        <div key={transfer.id || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            <Car className="h-4 w-4 text-gray-500" />
+                            <div>
+                              <div className="font-medium text-sm text-gray-900">
+                                {transfer.transferProduct?.name || transfer.name || 'Transfer'}
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                {transfer.pickupTime ? new Date(`2000-01-01T${transfer.pickupTime}`).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'TBD'} • {transfer.pickupLocation || 'Pickup'} → {transfer.dropoffLocation || 'Dropoff'}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {transfer.priceTotalCents && transfer.priceTotalCents > 0 && (
+                              <span className="text-sm font-medium text-primary">
+                                ₹{transfer.priceTotalCents / 100}
+                              </span>
+                            )}
+                            {onEditTransfer && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                onClick={() => onEditTransfer(transfer, dayIndex)}
+                                title="Edit transfer"
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                            )}
+                            {onRemoveTransfer && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  if (window.confirm(`Are you sure you want to remove this transfer?`)) {
+                                    onRemoveTransfer(transfer.id, dayIndex)
+                                  }
+                                }}
+                                title="Remove transfer"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            )}
                           </div>
                         </div>
                       ))}

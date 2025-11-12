@@ -644,3 +644,145 @@ export const UPDATE_TRIP_STAYS = gql`
     }
   }
 `
+
+export const CREATE_TRANSFER = gql`
+  mutation CreateTransfer($data: TransferInput!) {
+    createTransfer(data: $data) {
+      ... on TransferType {
+        id
+        tripDay {
+          id
+          dayNumber
+          date
+        }
+        transferProduct {
+          id
+          name
+          description
+          city {
+            id
+            name
+            country {
+              iso2
+              name
+            }
+          }
+          vehicle {
+            id
+            type
+            name
+            capacityAdults
+            capacityChildren
+          }
+          currency {
+            id
+            code
+            name
+          }
+          priceCents
+        }
+        pickupTime
+        pickupLocation
+        dropoffLocation
+        vehiclesCount
+        paxAdults
+        paxChildren
+        currency {
+          id
+          code
+          name
+        }
+        priceTotalCents
+        confirmationStatus
+      }
+      ... on OperationInfo {
+        messages {
+          code
+          field
+          kind
+          message
+        }
+      }
+    }
+  }
+`
+
+export const DELETE_TRANSFER = gql`
+  mutation DeleteTransfer($data: BookingDeleteInput!) {
+    deleteTransfer(data: $data) {
+      ... on TransferType {
+        id
+      }
+      ... on OperationInfo {
+        messages {
+          kind
+          message
+          field
+          code
+        }
+      }
+    }
+  }
+`
+
+export const UPDATE_TRANSFER = gql`
+  mutation UpdateTransfer($data: TransferPartialInput!) {
+    updateTransfer(data: $data) {
+      ... on TransferType {
+        id
+        tripDay {
+          id
+          dayNumber
+          date
+        }
+        transferProduct {
+          id
+          name
+          description
+          city {
+            id
+            name
+            country {
+              iso2
+              name
+            }
+          }
+          vehicle {
+            id
+            type
+            name
+            capacityAdults
+            capacityChildren
+          }
+          currency {
+            id
+            code
+            name
+          }
+          priceCents
+        }
+        pickupTime
+        pickupLocation
+        dropoffLocation
+        vehiclesCount
+        paxAdults
+        paxChildren
+        currency {
+          id
+          code
+          name
+        }
+        priceTotalCents
+        confirmationStatus
+      }
+      ... on OperationInfo {
+        messages {
+          kind
+          message
+          field
+          code
+        }
+      }
+    }
+  }
+`

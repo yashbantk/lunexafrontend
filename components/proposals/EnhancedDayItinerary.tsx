@@ -27,6 +27,18 @@ interface Activity {
   }
 }
 
+interface Transfer {
+  id: string
+  name: string
+  pickupTime: string
+  pickupLocation: string
+  dropoffLocation: string
+  vehiclesCount: number
+  price: number
+  currency: string
+  confirmationStatus: string
+}
+
 interface Day {
   id: string
   dayNumber: number
@@ -35,7 +47,7 @@ interface Day {
   summary: string
   activities: Activity[]
   accommodation?: string
-  transfers?: string[]
+  transfers?: Transfer[]
   meals: {
     breakfast: boolean
     lunch: boolean
@@ -240,6 +252,67 @@ export function EnhancedDayItinerary({ days, onViewActivity, onViewTransfer }: E
                         </div>
                       </div>
                     )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Transfers */}
+            {day.transfers && day.transfers.length > 0 && (
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900 mb-3">Transfers</h4>
+                {day.transfers.map((transfer) => (
+                  <div key={transfer.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Car className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900">{transfer.name}</h4>
+                          {transfer.pickupTime && (
+                            <div className="text-sm text-gray-600">
+                              Pickup at {formatTime(transfer.pickupTime)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {transfer.price > 0 && (
+                        <div className="text-right">
+                          <div className="font-semibold text-primary">
+                            {new Intl.NumberFormat('en-IN', {
+                              style: 'currency',
+                              currency: transfer.currency || 'INR',
+                              minimumFractionDigits: 0
+                            }).format(transfer.price)}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {transfer.vehiclesCount} vehicle{transfer.vehiclesCount > 1 ? 's' : ''}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2 text-sm text-gray-700">
+                      {transfer.pickupLocation && (
+                        <div className="flex items-center">
+                          <MapPin className="h-4 w-4 mr-2 text-gray-400" />
+                          <span><strong>From:</strong> {transfer.pickupLocation}</span>
+                        </div>
+                      )}
+                      {transfer.dropoffLocation && (
+                        <div className="flex items-center">
+                          <MapPin className="h-4 w-4 mr-2 text-gray-400" />
+                          <span><strong>To:</strong> {transfer.dropoffLocation}</span>
+                        </div>
+                      )}
+                      {transfer.confirmationStatus && (
+                        <div className="flex items-center">
+                          <Info className="h-4 w-4 mr-2 text-gray-400" />
+                          <span>Status: <strong className="capitalize">{transfer.confirmationStatus}</strong></span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

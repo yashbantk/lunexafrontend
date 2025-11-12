@@ -45,9 +45,11 @@ export const HOTELS_QUERY = gql`
 `
 
 export interface HotelFilters {
-  // city?: {
-  //   pk: string
-  // }
+  city?: {
+    id?: {
+      exact?: string
+    }
+  }
   name?: {
     iContains?: string
     iExact?: string
