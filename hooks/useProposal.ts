@@ -233,7 +233,7 @@ export interface ProposalDetails {
       }> | null
       transfers: Array<{
         id: string
-        pickupTime: string
+        pickupTime: string | null
         pickupLocation: string | null
         dropoffLocation: string | null
         vehiclesCount: number | null
@@ -245,6 +245,11 @@ export interface ProposalDetails {
           id: string
           name: string
           description: string | null
+          priceCents: number | null
+          cancellationPolicy: string | null
+          commissionRate: number | null
+          createdAt: string
+          updatedAt: string
           city: {
             id: string
             name: string
@@ -255,22 +260,20 @@ export interface ProposalDetails {
           }
           vehicle: {
             id: string
-            type: string
             name: string
-            capacityAdults: number
-            capacityChildren: number
+            capacityAdults: number | null
+            capacityChildren: number | null
+            type: string | null
+            amenities: any
           }
           currency: {
             code: string
-            name: string
+            name: string | null
           }
-          priceCents: number
-          cancellationPolicy: string | null
-          commissionRate: number
         }
         currency: {
           code: string
-          name: string
+          name: string | null
         }
       }> | null
     }> | null

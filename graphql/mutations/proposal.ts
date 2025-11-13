@@ -675,7 +675,6 @@ export const CREATE_TRANSFER = gql`
             capacityChildren
           }
           currency {
-            id
             code
             name
           }
@@ -688,7 +687,6 @@ export const CREATE_TRANSFER = gql`
         paxAdults
         paxChildren
         currency {
-          id
           code
           name
         }
@@ -755,7 +753,6 @@ export const UPDATE_TRANSFER = gql`
             capacityChildren
           }
           currency {
-            id
             code
             name
           }
@@ -768,7 +765,6 @@ export const UPDATE_TRANSFER = gql`
         paxAdults
         paxChildren
         currency {
-          id
           code
           name
         }

@@ -120,7 +120,6 @@ export interface GraphQLTransferProduct {
   name: string
   description: string
   currency: {
-    id: string
     code: string
     name: string
     createdAt: string

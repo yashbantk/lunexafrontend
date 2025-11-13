@@ -109,12 +109,29 @@ export interface Day {
     description: string
   }
   accommodation?: string
-  transfers: string[]
+  transfers: TransferDetail[]
   meals: {
     breakfast: boolean
     lunch: boolean
     dinner: boolean
   }
+}
+
+export interface TransferDetail {
+  id?: string
+  name?: string
+  pickupTime?: string | null
+  pickupLocation?: string | null
+  dropoffLocation?: string | null
+  vehiclesCount?: number | null
+  price?: number | null
+  currency?: string | null
+  currencyCode?: string | null
+  confirmationStatus?: string | null
+  transferProduct?: {
+    name?: string | null
+  } | null
+  [key: string]: any
 }
 
 export interface PriceBreakdown {

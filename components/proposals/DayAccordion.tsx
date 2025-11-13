@@ -46,6 +46,15 @@ export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, o
     })
   }
 
+  const formatCurrency = (amountInCents: number, currencyCode: string = 'INR') => {
+    const amount = amountInCents / 100
+    return new Intl.NumberFormat(currencyCode === 'INR' ? 'en-IN' : 'en-US', {
+      style: 'currency',
+      currency: currencyCode,
+      minimumFractionDigits: currencyCode === 'INR' ? 0 : 2,
+    }).format(amount)
+  }
+
   const getTimeSlotColor = (timeSlot: string) => {
     const colors = {
       morning: 'bg-yellow-100 text-yellow-800',
@@ -400,7 +409,10 @@ export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, o
                           <div className="flex items-center space-x-2">
                             {transfer.priceTotalCents && transfer.priceTotalCents > 0 && (
                               <span className="text-sm font-medium text-primary">
-                                ₹{transfer.priceTotalCents / 100}
+                                {formatCurrency(
+                                  transfer.priceTotalCents,
+                                  transfer.currency?.code || transfer.currencyCode || 'INR'
+                                )}
                               </span>
                             )}
                             {onEditTransfer && (
@@ -468,12 +480,27 @@ export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, o
                   <div className="mb-4">
                     <h4 className="font-medium text-gray-900 mb-3">Transfers</h4>
                     <div className="space-y-2">
-                      {day.transfers.map((transfer, index) => (
+                      {day.transfers.map((transfer, index) => {
+                        const summary =
+                          typeof transfer === 'string'
+                            ? transfer
+                            : [
+                                transfer.transferProduct?.name || 'Transfer',
+                                transfer.pickupTime ? `Pickup at ${formatTime(transfer.pickupTime)}` : null,
+                                transfer.pickupLocation || transfer.dropoffLocation
+                                  ? `${transfer.pickupLocation || 'Pickup'} → ${transfer.dropoffLocation || 'Dropoff'}`
+                                  : null,
+                              ]
+                                .filter(Boolean)
+                                .join(' • ')
+
+                        return (
                         <div key={index} className="flex items-center space-x-2">
                           <CheckCircle className="h-4 w-4 text-green-500" />
-                          <span className="text-sm text-gray-700">{transfer}</span>
-                        </div>
-                      ))}
+                            <span className="text-sm text-gray-700">{summary}</span>
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
                 )}

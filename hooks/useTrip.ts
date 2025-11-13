@@ -80,6 +80,51 @@ export interface TripData {
       createdAt: string
       updatedAt: string
     }
+    transfers: Array<{
+      id: string
+      pickupTime: string | null
+      pickupLocation: string | null
+      dropoffLocation: string | null
+      vehiclesCount: number | null
+      paxAdults: number
+      paxChildren: number
+      priceTotalCents: number | null
+      confirmationStatus: string
+      transferProduct: {
+        id: string
+        name: string
+        description: string | null
+        priceCents: number | null
+        cancellationPolicy: string | null
+        commissionRate: number | null
+        createdAt: string
+        updatedAt: string
+        city: {
+          id: string
+          name: string
+          country: {
+            iso2: string
+            name: string
+          } | null
+        } | null
+        vehicle: {
+          id: string
+          name: string
+          capacityAdults: number | null
+          capacityChildren: number | null
+          type: string | null
+          amenities: any
+        } | null
+        currency: {
+          code: string
+          name: string | null
+        } | null
+      } | null
+      currency: {
+        code: string
+        name: string | null
+      } | null
+    }> | null
     stay: {
       id: string
       room: {

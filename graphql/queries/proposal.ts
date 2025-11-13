@@ -80,6 +80,51 @@ export const GET_TRIP = gql`
           createdAt
           updatedAt
         }
+        transfers {
+          id
+          transferProduct {
+            id
+            name
+            description
+            priceCents
+            cancellationPolicy
+            commissionRate
+            createdAt
+            updatedAt
+            city {
+              id
+              name
+              country {
+                iso2
+                name
+              }
+            }
+            vehicle {
+              id
+              name
+              capacityAdults
+              capacityChildren
+              type
+              amenities
+            }
+            currency {
+              code
+              name
+            }
+          }
+          pickupTime
+          pickupLocation
+          dropoffLocation
+          vehiclesCount
+          paxAdults
+          paxChildren
+          currency {
+            code
+            name
+          }
+          priceTotalCents
+          confirmationStatus
+        }
         stay {
           id
           room {
@@ -430,6 +475,51 @@ export const GET_PROPOSAL_DETAILS = gql`
           city {
             id
             name
+          }
+          transfers {
+            id
+            transferProduct {
+              id
+              name
+              description
+              priceCents
+              cancellationPolicy
+              commissionRate
+              createdAt
+              updatedAt
+              city {
+                id
+                name
+                country {
+                  iso2
+                  name
+                }
+              }
+              vehicle {
+                id
+                name
+                capacityAdults
+                capacityChildren
+                type
+                amenities
+              }
+              currency {
+                code
+                name
+              }
+            }
+            pickupTime
+            pickupLocation
+            dropoffLocation
+            vehiclesCount
+            paxAdults
+            paxChildren
+            currency {
+              code
+              name
+            }
+            priceTotalCents
+            confirmationStatus
           }
           stay {
             id

@@ -87,6 +87,37 @@ const GET_PROPOSAL_DETAILS_QUERY = gql`
           city {
             id
             name
+            country {
+              iso2
+              name
+            }
+          }
+          transfers {
+            id
+            pickupTime
+            pickupLocation
+            dropoffLocation
+            vehiclesCount
+            paxAdults
+            paxChildren
+            priceTotalCents
+            confirmationStatus
+            currency {
+              code
+              name
+            }
+            transferProduct {
+              id
+              name
+              description
+              vehicle {
+                id
+                name
+                type
+                capacityAdults
+                capacityChildren
+              }
+            }
           }
           stay {
             id
@@ -284,6 +315,20 @@ function formatTime(dateString: string): string {
   })
 }
 
+function formatTimeValue(timeString?: string | null): string {
+  if (!timeString) return ''
+  const normalized = timeString.length === 5 ? `${timeString}:00` : timeString
+  const date = new Date(`1970-01-01T${normalized}`)
+  if (Number.isNaN(date.getTime())) {
+    return timeString
+  }
+  return date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  })
+}
+
 // Format currency
 function formatCurrency(cents: number, currencyCode: string = 'INR'): string {
   const amount = cents / 100
@@ -362,6 +407,7 @@ function generateDayWiseDetailsPage(day: any, proposal: any): string {
   const stay = day.stay
   const room = stay.room
   const hotel = room.hotel
+  const transfers: any[] = Array.isArray(day.transfers) ? day.transfers : []
   
   const checkInDate = new Date(stay.checkIn)
   const checkOutDate = new Date(stay.checkOut)
@@ -630,6 +676,70 @@ function generateDayWiseDetailsPage(day: any, proposal: any): string {
         </section>
         ` : ''}
 
+        <!-- Transfers Section -->
+        ${transfers.length > 0 ? `
+        <section class="bg-white rounded-xl shadow-md p-4 mb-4 print:shadow-none print:rounded-none allow-break">
+            <div class="flex items-center space-x-2 mb-4">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="text-blue-600">
+                    <path d="M3 13h2v-2H3v2zm16-7h-4l-3-3H8a2 2 0 0 0-2 2v2h2V5h5.17l3 3H19a1 1 0 0 1 1 1v2h-8a3 3 0 0 0-3 3v4H6v-3H3v5h6v-2h2v2h10v-8a4 4 0 0 0-4-4z" fill="currentColor"/>
+                </svg>
+                <h3 class="text-base font-semibold text-gray-800">Transfers</h3>
+            </div>
+            <div class="space-y-4">
+                ${transfers.map((transfer: any) => {
+                  const transferName = transfer.transferProduct?.name || transfer.name || 'Transfer'
+                  const pickupTimeFormatted = formatTimeValue(transfer.pickupTime)
+                  const pickupLocation = transfer.pickupLocation || 'Pickup location TBD'
+                  const dropoffLocation = transfer.dropoffLocation || 'Dropoff location TBD'
+                  const passengers = (transfer.paxAdults || 0) + (transfer.paxChildren || 0)
+                  const vehiclesCount = transfer.vehiclesCount || 1
+                  const priceText = typeof transfer.priceTotalCents === 'number'
+                    ? formatCurrency(transfer.priceTotalCents, transfer.currency?.code || proposal.currency?.code || 'INR')
+                    : null
+                  return `
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <div class="flex items-center space-x-2 mb-1">
+                                <span class="text-xs font-semibold text-blue-600 uppercase tracking-wide">Transfer</span>
+                                ${vehiclesCount ? `<span class="text-xs text-gray-500">• ${vehiclesCount} vehicle${vehiclesCount > 1 ? 's' : ''}</span>` : ''}
+                                ${passengers ? `<span class="text-xs text-gray-500">• ${passengers} guest${passengers > 1 ? 's' : ''}</span>` : ''}
+                            </div>
+                            <h4 class="text-sm font-semibold text-gray-900">${escapeHtml(transferName)}</h4>
+                        </div>
+                        ${priceText ? `<div class="text-right text-sm font-semibold text-gray-800">${priceText}</div>` : ''}
+                    </div>
+                    <div class="space-y-2 text-sm text-gray-700">
+                        <div class="flex items-center">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="text-gray-400 mr-2">
+                                <path d="M7 10v2h14v-2l-2-5h-3V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v1H7L5 4 3 5v2h2l2 3zm16 4H1a1 1 0 0 0-1 1v3h2v2h2v-2h14v2h2v-2h2v-3a1 1 0 0 0-1-1z" fill="currentColor"/>
+                            </svg>
+                            <span class="flex-1">${escapeHtml(pickupLocation)} → ${escapeHtml(dropoffLocation)}</span>
+                        </div>
+                        ${pickupTimeFormatted ? `
+                        <div class="flex items-center">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="text-gray-400 mr-2">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm.5 5H11v6l4.75 2.85.75-1.23-4-2.37V7z" fill="currentColor"/>
+                            </svg>
+                            <span>${pickupTimeFormatted}</span>
+                        </div>
+                        ` : ''}
+                        ${transfer.confirmationStatus ? `
+                        <div class="flex items-center">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="text-gray-400 mr-2">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15l-5-5 1.41-1.41L11 14.17l7.59-7.59L20 8l-9 9z" fill="currentColor"/>
+                            </svg>
+                            <span>Status: <span class="capitalize font-medium">${escapeHtml(transfer.confirmationStatus)}</span></span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+                  `
+                }).join('')}
+            </div>
+        </section>
+        ` : ''}
+
         <!-- Footer Section -->
         <footer class="mt-6 print:mt-4">
             <div class="mb-3">
@@ -704,6 +814,7 @@ function generateDynamicItineraryPage(proposal: any): string {
                   const activities = day.activityBookings || []
                   const stay = day.stay
                   const formattedDayDate = formatDateShort(day.date)
+                  const transfers = Array.isArray(day.transfers) ? day.transfers : []
                   
                   // Group activities by type
                   const meals = activities.filter((a: any) => {
@@ -806,6 +917,32 @@ function generateDynamicItineraryPage(proposal: any): string {
                                   `
                                 }).join('')}
 
+                                ${transfers.map((transfer: any) => {
+                                  const transferName = transfer.transferProduct?.name || transfer.name || 'Transfer'
+                                  const pickupTime = formatTimeValue(transfer.pickupTime)
+                                  const pickupLocation = transfer.pickupLocation || 'Pickup location TBD'
+                                  const dropoffLocation = transfer.dropoffLocation || 'Dropoff location TBD'
+                                  const vehiclesCount = transfer.vehiclesCount || 1
+                                  return `
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0 mt-0.5">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-gray-600">
+                                            <path d="M3 13h2v-2H3v2zm16-7h-4l-3-3H8a2 2 0 0 0-2 2v2h2V5h5.17l3 3H19a1 1 0 0 1 1 1v2h-8a3 3 0 0 0-3 3v4H6v-3H3v5h6v-2h2v2h10v-8a4 4 0 0 0-4-4z" fill="currentColor"/>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="text-xs text-gray-800">
+                                            <span class="font-semibold">${escapeHtml(transferName)}</span>
+                                            <span class="text-gray-500 ml-1">(${vehiclesCount} vehicle${vehiclesCount > 1 ? 's' : ''})</span>
+                                        </div>
+                                        <div class="text-xs text-gray-500 mt-0.5">
+                                            ${escapeHtml(pickupLocation)} → ${escapeHtml(dropoffLocation)}${pickupTime ? ` • ${pickupTime}` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                                  `
+                                }).join('')}
+
                                 ${day.stay?.checkOut && index === days.length - 1 ? `
                                 <div class="flex items-start space-x-3">
                                     <div class="flex-shrink-0 mt-0.5">
@@ -849,7 +986,7 @@ function generateDynamicCoverPage(proposal: any): string {
   const days = trip?.days || []
   const customer = trip?.customer
   const createdBy = trip?.createdBy
-  const destination = days[0]?.city?.name || 'Destination'
+  const destination = days[0]?.city?.country?.name || days[0]?.city?.name || 'Destination'
   const fromCity = trip?.fromCity?.name || 'Origin'
   const customerName = customer?.name || 'Traveler'
   const startDate = trip?.startDate ? new Date(trip.startDate) : new Date()
@@ -864,6 +1001,7 @@ function generateDynamicCoverPage(proposal: any): string {
   // Get highlights (hotels, activities count)
   const hotelsCount = new Set(days.filter((d: any) => d.stay?.room?.hotel?.id).map((d: any) => d.stay.room.hotel.id)).size
   const activitiesCount = days.reduce((acc: number, day: any) => acc + (day.activityBookings?.length || 0), 0)
+  const transfersCount = days.reduce((acc: number, day: any) => acc + ((Array.isArray(day.transfers) ? day.transfers.length : 0)), 0)
   
   // Format proposal creation date
   const createdDate = proposal.createdAt ? new Date(proposal.createdAt) : new Date()
@@ -886,7 +1024,9 @@ function generateDynamicCoverPage(proposal: any): string {
   // Get curator info
   const curatorName = createdBy?.name || createdBy?.firstName + ' ' + createdBy?.lastName || 'Deyor Team'
   const curatorEmail = createdBy?.email || 'support@deyor.in'
-  const curatorPhone = createdBy?.phone || createdBy?.countryCode + ' ' + createdBy?.phone || ''
+  const curatorPhone = createdBy?.phone
+    ? [createdBy.countryCode, createdBy.phone].filter(Boolean).join(' ')
+    : ''
 
   return `
     <!-- Page 1 - Cover Page -->
@@ -969,6 +1109,9 @@ function generateDynamicCoverPage(proposal: any): string {
                             ${activitiesCount > 0 ? `<div class="flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-full">
                                 <span class="text-gray-700 text-sm">${activitiesCount} Activ${activitiesCount > 1 ? 'ities' : 'ity'}</span>
                             </div>` : ''}
+                            ${transfersCount > 0 ? `<div class="flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-full">
+                                <span class="text-gray-700 text-sm">${transfersCount} Transfer${transfersCount > 1 ? 's' : ''}</span>
+                            </div>` : ''}
                             <div class="flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-full">
                                 <span class="text-gray-700 text-sm">Meals Included</span>
                                     </div>
@@ -980,7 +1123,7 @@ function generateDynamicCoverPage(proposal: any): string {
                 <aside class="lg:col-span-1">
                     <div class="bg-blue-50 rounded-2xl p-6 shadow-sm avoid-break">
                         <div class="text-right">
-                            <p class="text-gray-500 text-sm mb-1">Generated by</p>
+                            <p class="text-gray-500 text-sm mb-1">created by</p>
                             <p class="text-gray-800 font-semibold text-lg mb-1">${escapeHtml(curatorName)}</p>
                             <p class="text-gray-500 text-sm mb-4">Travel Expert</p>
                             
@@ -994,27 +1137,6 @@ function generateDynamicCoverPage(proposal: any): string {
                                     </div>
                 </aside>
                                 </div>
-
-            <!-- Promo Banner -->
-            <div class="mt-4 bg-gradient-to-r from-teal-400 to-green-500 rounded-2xl p-3 avoid-break">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                        <div>
-                            <h3 class="text-gray-800 font-semibold text-lg">Plan Your Trip with Deyor</h3>
-                            <div class="flex items-center space-x-2 text-sm text-gray-600">
-                                <span>A travel quotation</span>
-                                <span class="text-gray-400">|</span>
-                                <span>A Customize your service</span>
-                                <span class="text-gray-400">|</span>
-                                <span>A Customize to suit you</span>
-                                    </div>
-                                        </div>
-                                    </div>
-                    <button class="bg-white text-teal-600 px-6 py-2 rounded-full font-medium">
-                        VIEW YOUR QUOTES
-                    </button>
-                                </div>
-                            </div>
 
             <!-- Total Cost Box -->
             <div class="mt-4 bg-blue-50 rounded-2xl p-3 avoid-break">
@@ -1041,6 +1163,181 @@ function generateDynamicCoverPage(proposal: any): string {
             </div>
         </main>
                 </div>
+  `
+}
+
+// Generate Combined Policy & Terms Page (Concise)
+function generatePolicyAndTermsPage(): string {
+  return `
+    <!-- Policy & Terms Page -->
+    <div class="max-w-4xl mx-auto p-4 print:p-0 mb-6">
+        <!-- Header -->
+        <header class="mb-3 print:mb-2">
+            <div class="flex items-start justify-between mb-2">
+                <p class="text-blue-600 text-xs font-medium">Policies & Terms</p>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800" style="font-family: 'Playfair Display', serif;">
+                Cancellation, Date Change & Terms
+            </h1>
+        </header>
+
+        <!-- Combined Content -->
+        <section class="bg-white rounded-xl shadow-md p-5 print:shadow-none print:rounded-none allow-break">
+            <!-- Cancellation Policy -->
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold text-gray-800 mb-2">Cancellation Policy</h2>
+                <ul class="list-disc list-inside space-y-1 text-xs text-gray-700 ml-2">
+                    <li>30+ days before departure: 25% charge</li>
+                    <li>15-29 days before departure: 50% charge</li>
+                    <li>7-14 days before departure: 75% charge</li>
+                    <li>Less than 7 days: 100% charge (no refund)</li>
+                </ul>
+                <p class="text-xs text-gray-600 mt-2">Refunds processed within 15-20 business days. Airline tickets, visa fees, and insurance premiums are non-refundable.</p>
+            </div>
+
+            <!-- Date Change Policy -->
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold text-gray-800 mb-2">Date Change Policy</h2>
+                <ul class="list-disc list-inside space-y-1 text-xs text-gray-700 ml-2">
+                    <li>30+ days before: ₹2,000/person + cost difference</li>
+                    <li>15-29 days before: ₹3,000/person + cost difference</li>
+                    <li>7-14 days before: ₹5,000/person + cost difference</li>
+                    <li>Less than 7 days: Subject to availability</li>
+                </ul>
+                <p class="text-xs text-gray-600 mt-2">Changes subject to availability. Seasonal pricing differences apply.</p>
+            </div>
+
+            <!-- Terms & Conditions -->
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold text-gray-800 mb-2">Terms & Conditions</h2>
+                <div class="space-y-2 text-xs text-gray-700">
+                    <p><strong>Booking:</strong> Confirmed upon receipt of 30% deposit. Balance due 30 days before departure.</p>
+                    <p><strong>Documents:</strong> Traveler responsible for valid passport, visa, and health certificates.</p>
+                    <p><strong>Liability:</strong> Deyor acts as intermediary. Not liable for service provider acts/omissions or force majeure events.</p>
+                    <p><strong>Changes:</strong> Itinerary modifications may occur due to operational reasons while maintaining quality standards.</p>
+                    <p><strong>Insurance:</strong> Comprehensive travel insurance strongly recommended.</p>
+                </div>
+            </div>
+
+            <!-- Contact -->
+            <div class="mt-4 pt-3 border-t border-gray-200">
+                <p class="text-xs text-gray-600">For queries, contact our customer support team.</p>
+            </div>
+        </section>
+    </div>
+  `
+}
+
+// Generate Creator Details Page
+function generateCreatorDetailsPage(proposal: any): string {
+  const createdBy = proposal.trip?.createdBy
+  const curatorName = createdBy?.name || (createdBy?.firstName && createdBy?.lastName ? `${createdBy.firstName} ${createdBy.lastName}` : 'Deyor Team')
+  const curatorEmail = createdBy?.email || 'support@deyor.in'
+  const curatorPhone = createdBy?.phone
+    ? [createdBy.countryCode, createdBy.phone].filter(Boolean).join(' ')
+    : ''
+  const curatorProfileImage = createdBy?.profileImageUrl || ''
+  const curatorGender = createdBy?.gender || ''
+  
+  // Format proposal creation date
+  const createdDate = proposal.createdAt ? new Date(proposal.createdAt) : new Date()
+  const quotationDate = createdDate.toLocaleDateString('en-US', { 
+    day: 'numeric', 
+    month: 'short', 
+    year: 'numeric' 
+  })
+  const quotationTime = createdDate.toLocaleTimeString('en-US', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    hour12: true 
+  })
+
+  return `
+    <!-- Creator Details Page -->
+    <div class="max-w-4xl mx-auto p-4 print:p-0 mb-6">
+        <!-- Header -->
+        <header class="mb-4 print:mb-3">
+            <div class="flex items-start justify-between mb-3">
+                <p class="text-blue-600 text-sm font-medium">Travel Expert</p>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800" style="font-family: 'Playfair Display', serif;">
+                About Your Travel Expert
+            </h1>
+        </header>
+
+        <!-- Creator Card -->
+        <section class="bg-white rounded-xl shadow-md p-6 print:shadow-none print:rounded-none allow-break">
+            <div class="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
+                <!-- Profile Image -->
+                ${curatorProfileImage ? `
+                <div class="flex-shrink-0">
+                    <img src="${curatorProfileImage}" alt="${escapeHtml(curatorName)}" class="w-24 h-24 rounded-full object-cover border-2 border-gray-200" />
+                </div>
+                ` : `
+                <div class="flex-shrink-0 w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center border-2 border-gray-200">
+                    <span class="text-blue-600 text-2xl font-bold">${curatorName.charAt(0).toUpperCase()}</span>
+                </div>
+                `}
+                
+                <!-- Details -->
+                <div class="flex-1">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">${escapeHtml(curatorName)}</h2>
+                    <p class="text-gray-600 mb-4">Travel Expert</p>
+                    
+                    <div class="space-y-2 text-sm">
+                        ${curatorPhone ? `
+                        <div class="flex items-center space-x-2">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-gray-500">
+                                <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" fill="currentColor"/>
+                            </svg>
+                            <span class="text-gray-700">${escapeHtml(curatorPhone)}</span>
+                        </div>
+                        ` : ''}
+                        <div class="flex items-center space-x-2">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-gray-500">
+                                <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" fill="currentColor"/>
+                            </svg>
+                            <span class="text-gray-700">${escapeHtml(curatorEmail)}</span>
+                        </div>
+                        ${curatorGender ? `
+                        <div class="flex items-center space-x-2">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-gray-500">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" fill="currentColor"/>
+                            </svg>
+                            <span class="text-gray-700 capitalize">${escapeHtml(curatorGender)}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Proposal Info -->
+            <div class="mt-6 pt-6 border-t border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">Proposal Information</h3>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <p class="text-gray-500 mb-1">Proposal Created</p>
+                        <p class="text-gray-800 font-medium">${quotationDate}</p>
+                        <p class="text-gray-600 text-xs">${quotationTime}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 mb-1">Proposal Name</p>
+                        <p class="text-gray-800 font-medium">${escapeHtml(proposal.name || 'Travel Proposal')}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message -->
+            <div class="mt-6 pt-6 border-t border-gray-200">
+                <div class="bg-blue-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-700 italic">
+                        "I'm here to help make your travel dreams come true. Feel free to reach out if you have any questions or need assistance with your booking."
+                    </p>
+                    <p class="text-sm text-gray-600 mt-2 text-right">— ${escapeHtml(curatorName)}</p>
+                </div>
+            </div>
+        </section>
+    </div>
   `
 }
 
@@ -1145,6 +1442,10 @@ async function generateDynamicProposalPDF(proposalId: string, request: NextReque
     return index === 0 ? `<div class="page-break"></div>${dayPage}` : dayPage
   }).join('')
 
+  // Generate combined policy & terms page and creator details page
+  const policyAndTermsPage = `<div class="page-break"></div>${generatePolicyAndTermsPage()}`
+  const creatorDetailsPage = `<div class="page-break"></div>${generateCreatorDetailsPage(proposal)}`
+
   // Combine all pages
   const html = `
 <!DOCTYPE html>
@@ -1184,6 +1485,8 @@ async function generateDynamicProposalPDF(proposalId: string, request: NextReque
     ${coverPage}
     ${itineraryPage}
     ${dayWisePages}
+    ${policyAndTermsPage}
+    ${creatorDetailsPage}
 </body>
 </html>
     `
