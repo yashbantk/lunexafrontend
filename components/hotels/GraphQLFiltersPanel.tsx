@@ -18,27 +18,27 @@ interface GraphQLFiltersPanelProps {
 }
 
 const STAR_RATINGS = [1, 2, 3, 4, 5]
-const COMMON_AMENITIES = [
-  'WiFi',
-  'Pool',
-  'Gym',
-  'Spa',
-  'Restaurant',
-  'Bar',
-  'Parking',
-  'Air Conditioning',
-  'Room Service',
-  'Concierge',
-  'Business Center',
-  'Laundry Service',
-  'Pet Friendly',
-  'Beach Access',
-  'Airport Shuttle'
-]
+// const COMMON_AMENITIES = [
+//   'WiFi',
+//   'Pool',
+//   'Gym',
+//   'Spa',
+//   'Restaurant',
+//   'Bar',
+//   'Parking',
+//   'Air Conditioning',
+//   'Room Service',
+//   'Concierge',
+//   'Business Center',
+//   'Laundry Service',
+//   'Pet Friendly',
+//   'Beach Access',
+//   'Airport Shuttle'
+// ]
 
 export default function GraphQLFiltersPanel({ filters, onFiltersChange, onReset }: GraphQLFiltersPanelProps) {
   const [selectedStars, setSelectedStars] = useState<number[]>([])
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([])
+  // const [selectedAmenities, setSelectedAmenities] = useState<string[]>([])
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000])
 
   // Update local state when filters change
@@ -81,26 +81,26 @@ export default function GraphQLFiltersPanel({ filters, onFiltersChange, onReset 
     }
   }
 
-  const handleAmenityChange = (amenity: string, checked: boolean) => {
-    let newAmenities: string[]
-    if (checked) {
-      newAmenities = [...selectedAmenities, amenity]
-    } else {
-      newAmenities = selectedAmenities.filter(a => a !== amenity)
-    }
-    setSelectedAmenities(newAmenities)
-
-    // Update GraphQL filters
-    if (newAmenities.length > 0) {
-      onFiltersChange({
-        amenities: { contains: newAmenities }
-      })
-    } else {
-      onFiltersChange({
-        amenities: undefined
-      })
-    }
-  }
+  // const handleAmenityChange = (amenity: string, checked: boolean) => {
+  //   let newAmenities: string[]
+  //   if (checked) {
+  //     newAmenities = [...selectedAmenities, amenity]
+  //   } else {
+  //     newAmenities = selectedAmenities.filter(a => a !== amenity)
+  //   }
+  //   setSelectedAmenities(newAmenities)
+  //
+  //   // Update GraphQL filters
+  //   if (newAmenities.length > 0) {
+  //     onFiltersChange({
+  //       amenities: { contains: newAmenities }
+  //     })
+  //   } else {
+  //     onFiltersChange({
+  //       amenities: undefined
+  //     })
+  //   }
+  // }
 
   const handlePriceRangeChange = (value: number[]) => {
     setPriceRange([value[0], value[1]])
@@ -110,7 +110,7 @@ export default function GraphQLFiltersPanel({ filters, onFiltersChange, onReset 
 
   const handleReset = () => {
     setSelectedStars([])
-    setSelectedAmenities([])
+    // setSelectedAmenities([])
     setPriceRange([0, 1000])
     onReset()
   }
@@ -118,7 +118,6 @@ export default function GraphQLFiltersPanel({ filters, onFiltersChange, onReset 
   const getActiveFiltersCount = () => {
     let count = 0
     if (selectedStars.length > 0) count++
-    if (selectedAmenities.length > 0) count++
     if (priceRange[0] > 0 || priceRange[1] < 1000) count++
     return count
   }
@@ -173,8 +172,8 @@ export default function GraphQLFiltersPanel({ filters, onFiltersChange, onReset 
         </div>
       </div>
 
-      {/* Amenities Filter */}
-      <div className="space-y-3">
+      {/* Amenities Filter temporarily disabled */}
+      {/* <div className="space-y-3">
         <Label className="text-sm font-medium text-gray-700">Amenities</Label>
         <div className="space-y-2 max-h-48 overflow-y-auto">
           {COMMON_AMENITIES.map((amenity) => (
@@ -190,7 +189,7 @@ export default function GraphQLFiltersPanel({ filters, onFiltersChange, onReset 
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
 
       {/* Price Range Filter */}
       <div className="space-y-3">

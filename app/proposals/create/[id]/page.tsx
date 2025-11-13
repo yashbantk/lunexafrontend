@@ -2428,7 +2428,7 @@ export default function CreateProposalPage() {
                       day={day}
                       dayIndex={index}
                       blockedTimeSlots={blockedTimeSlots}
-                      hideTimeline={isSplitStayEnabled}
+                      hideTimeline={false}
                       onEdit={() => handleEditItem('day', day)}
                       onRemove={() => {
                         if (!proposal) return

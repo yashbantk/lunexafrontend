@@ -109,8 +109,16 @@ export default function TransferDetailsModal({
   }
 
   const handleVehiclesCountChange = (value: string) => {
-    const newCount = parseInt(value) || 1
-    setSelection(prev => ({ ...prev, vehiclesCount: newCount }))
+    // Allow empty value while typing
+    if (value === '') {
+      setSelection(prev => ({ ...prev, vehiclesCount: undefined }))
+      return
+    }
+    const newCount = parseInt(value)
+    // Only update if it's a valid number and greater than 0
+    if (!isNaN(newCount) && newCount > 0) {
+      setSelection(prev => ({ ...prev, vehiclesCount: newCount }))
+    }
   }
 
   const handleAddToPackage = async () => {
@@ -249,7 +257,7 @@ export default function TransferDetailsModal({
                       </div>
                       <div className="flex items-center">
                         <Users className="h-4 w-4 mr-2 text-gray-400" />
-                        <span>Up to {transferProduct.vehicle.capacityAdults + transferProduct.vehicle.capacityChildren} passengers</span>
+                        <span>{transferProduct.vehicle.capacityAdults} adults + {transferProduct.vehicle.capacityChildren} children</span>
                       </div>
                       <div className="flex items-center">
                         <Car className="h-4 w-4 mr-2 text-gray-400" />
@@ -333,27 +341,18 @@ export default function TransferDetailsModal({
                         id="vehiclesCount"
                         type="number"
                         min={1}
-                        value={selection.vehiclesCount || 1}
+                        value={selection.vehiclesCount ?? ''}
                         onChange={(e) => handleVehiclesCountChange(e.target.value)}
+                        onBlur={(e) => {
+                          // If empty on blur, set to 1
+                          if (e.target.value === '' || parseInt(e.target.value) < 1) {
+                            setSelection(prev => ({ ...prev, vehiclesCount: 1 }))
+                          }
+                        }}
                       />
                       <p className="text-xs text-gray-500">
                         Vehicle capacity: {transferProduct.vehicle.capacityAdults} adults + {transferProduct.vehicle.capacityChildren} children
                       </p>
-                    </div>
-
-                    {/* Confirmation Status */}
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmationStatus">Confirmation Status</Label>
-                      <select
-                        id="confirmationStatus"
-                        value={selection.confirmationStatus || 'pending'}
-                        onChange={(e) => setSelection(prev => ({ ...prev, confirmationStatus: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="confirmed">Confirmed</option>
-                        <option value="cancelled">Cancelled</option>
-                      </select>
                     </div>
 
                     {/* Errors */}

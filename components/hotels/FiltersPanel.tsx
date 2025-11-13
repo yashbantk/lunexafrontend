@@ -10,7 +10,7 @@ import { Slider } from '@/components/ui/slider'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { HotelFilters } from '@/types/hotel'
-import { getPopularDestinations, getAmenities, getPropertyTypes } from '@/lib/api/hotels'
+import { getPopularDestinations, getPropertyTypes } from '@/lib/api/hotels'
 
 interface FiltersPanelProps {
   filters: HotelFilters
@@ -20,19 +20,17 @@ interface FiltersPanelProps {
 
 export default function FiltersPanel({ filters, onFiltersChange, onReset }: FiltersPanelProps) {
   const [destinations, setDestinations] = useState<string[]>([])
-  const [amenities, setAmenities] = useState<string[]>([])
+  // const [amenities, setAmenities] = useState<string[]>([])
   const [propertyTypes, setPropertyTypes] = useState<string[]>([])
 
   useEffect(() => {
     // Load filter options
     const loadFilterOptions = async () => {
-      const [dest, amen, prop] = await Promise.all([
+      const [dest, prop] = await Promise.all([
         getPopularDestinations(),
-        getAmenities(),
         getPropertyTypes()
       ])
       setDestinations(dest)
-      setAmenities(amen)
       setPropertyTypes(prop)
     }
     loadFilterOptions()
@@ -50,17 +48,17 @@ export default function FiltersPanel({ filters, onFiltersChange, onReset }: Filt
     }
   }
 
-  const handleAmenityChange = (amenity: string, checked: boolean) => {
-    if (checked) {
-      onFiltersChange({
-        amenities: [...filters.amenities, amenity]
-      })
-    } else {
-      onFiltersChange({
-        amenities: filters.amenities.filter(a => a !== amenity)
-      })
-    }
-  }
+  // const handleAmenityChange = (amenity: string, checked: boolean) => {
+  //   if (checked) {
+  //     onFiltersChange({
+  //       amenities: [...filters.amenities, amenity]
+  //     })
+  //   } else {
+  //     onFiltersChange({
+  //       amenities: filters.amenities.filter(a => a !== amenity)
+  //     })
+  //   }
+  // }
 
   const handlePropertyTypeChange = (type: string, checked: boolean) => {
     if (checked) {
@@ -294,8 +292,8 @@ export default function FiltersPanel({ filters, onFiltersChange, onReset }: Filt
         )}
       </div>
 
-      {/* Amenities */}
-      <div className="space-y-3">
+      {/* Amenities filter temporarily disabled */}
+      {/* <div className="space-y-3">
         <Label className="text-sm font-medium">Amenities</Label>
         <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-hide">
           {amenities.map((amenity) => (
@@ -321,7 +319,7 @@ export default function FiltersPanel({ filters, onFiltersChange, onReset }: Filt
             Clear amenities
           </Button>
         )}
-      </div>
+      </div> */}
 
       {/* Sort */}
       <div className="space-y-2">

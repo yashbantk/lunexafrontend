@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Car, MapPin, Users, Eye, CheckCircle } from 'lucide-react'
+import { Car, MapPin, Users, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -102,20 +102,6 @@ export default function TransferCard({
                     <Eye className="h-3 w-3 mr-1" />
                     View
                   </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => onSelect(transferProduct)}
-                    className="text-xs bg-brand hover:bg-brand/90"
-                  >
-                    {isSelected ? (
-                      <>
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Selected
-                      </>
-                    ) : (
-                      'Select'
-                    )}
-                  </Button>
                 </div>
               </div>
             </div>
@@ -202,20 +188,6 @@ export default function TransferCard({
                     >
                       <Eye className="h-3 w-3 mr-1" />
                       View
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => onSelect(transferProduct)}
-                      className="text-xs bg-brand hover:bg-brand/90"
-                    >
-                      {isSelected ? (
-                        <>
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Selected
-                        </>
-                      ) : (
-                        'Select'
-                      )}
                     </Button>
                   </div>
                 </div>
