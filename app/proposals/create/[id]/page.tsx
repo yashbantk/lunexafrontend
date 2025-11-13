@@ -482,7 +482,12 @@ export default function CreateProposalPage() {
         included: false
       })),
       accommodation: day.stay && day.stay.room && day.stay.room.hotel ? `${day.stay.roomsCount} room(s) at ${day.stay.room.hotel.name} (${day.stay.room.name}, ${day.stay.mealPlan})` : undefined,
-      transfers: (day as any).transfers || [],
+      transfers: (day.transfers || []).map((transfer: any) => ({
+        ...transfer,
+        name: transfer.transferProduct?.name || transfer.name || 'Transfer',
+        price: transfer.priceTotalCents ? transfer.priceTotalCents / 100 : null,
+        currencyCode: transfer.currency?.code || trip.currency?.code || 'INR',
+      })),
       meals: {
         breakfast: day.stay?.mealPlan?.toLowerCase().includes('breakfast') || false,
         lunch: day.stay?.mealPlan?.toLowerCase().includes('lunch') || false,

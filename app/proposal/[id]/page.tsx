@@ -658,7 +658,7 @@ export default function ProposalDetailPage() {
                             dropoffLocation: transfer.dropoffLocation || '',
                             vehiclesCount: transfer.vehiclesCount || 1,
                             price: (transfer.priceTotalCents || 0) / 100,
-                            currency: transfer.currency?.code || proposal.currency?.code || 'INR',
+                            currency: transfer.currency?.code || (transfer as any).currencyCode || proposal.currency?.code || 'INR',
                             confirmationStatus: transfer.confirmationStatus || 'pending'
                           }
                         } catch (error) {

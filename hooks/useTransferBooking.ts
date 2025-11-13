@@ -46,7 +46,6 @@ export interface TransferBookingResponse {
         capacityChildren: number
       }
       currency: {
-        id: string
         code: string
         name: string
       }
@@ -59,7 +58,6 @@ export interface TransferBookingResponse {
     paxAdults: number
     paxChildren: number
     currency: {
-      id: string
       code: string
       name: string
     }
