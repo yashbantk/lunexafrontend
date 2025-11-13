@@ -7,8 +7,6 @@ import {
   Star, 
   MapPin, 
   Eye, 
-  GitCompare, 
-  Check, 
   ExternalLink,
   Wifi,
   Car,
@@ -53,15 +51,6 @@ export default function HotelCard({
   viewMode
 }: HotelCardProps) {
   const [imageError, setImageError] = useState(false)
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price)
-  }
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -139,17 +128,6 @@ export default function HotelCard({
                 ))}
               </div>
 
-              {/* Compare Button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onCompareToggle}
-                className={`absolute top-3 right-3 h-8 w-8 p-0 ${
-                  isComparing ? 'bg-red-500 text-white' : 'bg-white/90 hover:bg-white'
-                }`}
-              >
-                {isComparing ? <Check className="h-4 w-4" /> : <GitCompare className="h-4 w-4" />}
-              </Button>
             </div>
 
             {/* Content */}
@@ -180,14 +158,8 @@ export default function HotelCard({
                 {renderAmenities()}
               </div>
 
-              {/* Price & Actions */}
-              <div className="flex items-center justify-between pt-2">
-                <div>
-                  <div className="text-lg font-bold text-primary">
-                    {formatPrice(hotel.minPrice)}
-                  </div>
-                  <div className="text-xs text-gray-500">per night</div>
-                </div>
+              {/* Actions */}
+              <div className="flex items-center justify-end pt-2">
                 <div className="flex space-x-2">
                   <Button
                     variant="outline"
@@ -291,13 +263,6 @@ export default function HotelCard({
                 {renderAmenities()}
               </div>
 
-              {/* Price */}
-              <div className="text-right">
-                <div className="text-xl font-bold text-primary">
-                  {formatPrice(hotel.minPrice)}
-                </div>
-                <div className="text-sm text-gray-500">per night</div>
-              </div>
             </div>
 
             {/* Actions */}
@@ -323,25 +288,6 @@ export default function HotelCard({
                 className="text-sm px-4 py-2 h-9"
               >
                 Select Room
-              </Button>
-              <Button
-                variant="outline"
-                onClick={onCompareToggle}
-                className={`text-sm px-4 py-2 h-9 ${
-                  isComparing ? 'bg-red-500 text-white border-red-500' : ''
-                }`}
-              >
-                {isComparing ? (
-                  <>
-                    <Check className="h-4 w-4 mr-2" />
-                    Comparing
-                  </>
-                ) : (
-                  <>
-                    <GitCompare className="h-4 w-4 mr-2" />
-                    Compare
-                  </>
-                )}
               </Button>
             </div>
           </div>

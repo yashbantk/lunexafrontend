@@ -11,7 +11,7 @@ export function transformGraphQLActivityToActivity(graphqlActivity: GraphQLActiv
     id: option.id,
     startTime: option.startTime,
     durationMins: option.durationMinutes,
-    type: getTimeSlotType(option.startTime, option.endTime),
+    type: getTimeSlotType(option.startTime, option.endTime, option.durationMinutes),
     available: option.isAvailable,
     maxPax: option.maxParticipants,
     currentBookings: 0 // Not available in GraphQL response, default to 0
@@ -135,16 +135,26 @@ export function transformGraphQLActivityToActivity(graphqlActivity: GraphQLActiv
     mobileTicket: true, // Default assumption
     freeCancellation: true, // Default assumption
     cancellationHours: 24, // Default assumption
-    slot: firstOption ? getTimeSlotType(firstOption.startTime, firstOption.endTime) as 'morning' | 'afternoon' | 'evening' | 'full_day' : 'morning',
+    slot: firstOption ? getTimeSlotType(firstOption.startTime, firstOption.endTime, firstOption.durationMinutes) as 'morning' | 'afternoon' | 'evening' | 'full_day' : 'morning',
     startTime: firstOption?.startTime || '09:00',
     activityOptions
   }
 }
 
 /**
- * Determine time slot type based on start and end times
+ * Determine time slot type based on start time, end time, and duration in minutes
+ * Uses duration in minutes for more accurate classification
  */
-function getTimeSlotType(startTime: string, endTime: string): 'morning' | 'afternoon' | 'evening' | 'full-day' {
+function getTimeSlotType(startTime: string, endTime: string, durationMinutes?: number): 'morning' | 'afternoon' | 'evening' | 'full-day' {
+  // Use duration in minutes if available (more accurate)
+  if (durationMinutes !== undefined) {
+    // Consider activities >= 8 hours (480 minutes) as full-day
+    if (durationMinutes >= 480) {
+      return 'full-day'
+    }
+  }
+  
+  // Fallback to hour-based calculation if duration not available
   const startHour = parseInt(startTime.split(':')[0])
   const endHour = parseInt(endTime.split(':')[0])
   const duration = endHour - startHour
