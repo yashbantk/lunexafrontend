@@ -127,76 +127,6 @@ export interface TripData {
     }> | null
     stay: {
       id: string
-      room: {
-        id: string
-        hotel: {
-          id: string
-          name: string
-          address: string
-          type: string
-          description: string
-          locationUrl: string
-          star: number
-          totalRatings: number
-          cancellationPolicy: string
-          instantBooking: boolean
-          cleanilessRating: string
-          serviceRating: string
-          comfortRating: string
-          conditionRating: string
-          amenitesRating: string
-          neighborhoodRating: string
-          amenities: string[]
-          instructions: string
-          policy: string
-          inclusions: string
-          exclusions: string
-          tags: string[]
-          commissionRate: string
-          createdAt: string
-          updatedAt: string
-        }
-        name: string
-        priceCents: number
-        bedType: string
-        baseMealPlan: string
-        hotelRoomImages: Array<{
-          id: string
-          hotelRoom: { pk: number }
-          url: string
-          caption: string
-          priorityOrder: number
-          createdAt: string
-          updatedAt: string
-        }>
-        roomAmenities: Array<{
-          id: string
-          name: string
-          description: string
-          createdAt: string
-          updatedAt: string
-        }>
-        rates: Array<{
-          id: string
-          room: { pk: number }
-          validFrom: string
-          validTo: string
-          priceCents: number
-          refundable: boolean
-          createdAt: string
-          updatedAt: string
-        }>
-        maxOccupancy: number
-        size: string
-        sizeUnit: string
-        details: string
-        amenities: string[]
-        tags: string[]
-        inclusions: string
-        exclusions: string
-        createdAt: string
-        updatedAt: string
-      }
       checkIn: string
       checkOut: string
       nights: number
@@ -204,7 +134,22 @@ export interface TripData {
       mealPlan: string
       priceTotalCents: number
       confirmationStatus: string
-    }
+      rate: {
+        room: {
+          amenities: string[]
+          baseMealPlan: string
+          bedType: string
+          maxOccupancy: number
+          id: string
+          hotel: {
+            id: string
+            address: string
+            name: string
+            star: number
+          }
+        }
+      } | null
+    } | null
     activityBookings: Array<{
       id: string
       slot: string

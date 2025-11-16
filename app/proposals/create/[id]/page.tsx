@@ -416,25 +416,25 @@ export default function CreateProposalPage() {
                   return dayDate >= segmentStartDate && dayDate < segmentEndDate
                 })
                 
-                if (matchingDay?.stay?.room?.hotel && segment.hotel.id === matchingDay.stay.room.hotel.id) {
+                if (matchingDay?.stay?.rate?.room?.hotel && segment.hotel.id === matchingDay.stay.rate.room.hotel.id) {
                   // Update segment with actual hotel data from trip
                   return {
                     ...segment,
                     hotel: {
                       ...segment.hotel,
-                      id: matchingDay.stay.room.hotel.id,
-                      name: matchingDay.stay.room.hotel.name,
-                      address: matchingDay.stay.room.hotel.address,
-                      starRating: matchingDay.stay.room.hotel.star || segment.hotel.starRating || 0,
+                      id: matchingDay.stay.rate.room.hotel.id,
+                      name: matchingDay.stay.rate.room.hotel.name,
+                      address: matchingDay.stay.rate.room.hotel.address,
+                      starRating: matchingDay.stay.rate.room.hotel.star || segment.hotel.starRating || 0,
                       images: segment.hotel.images || [],
                       rooms: segment.hotel.rooms || [],
-                      minPrice: segment.hotel.minPrice || (matchingDay.stay.room.priceCents || 0) / 100
+                      minPrice: segment.hotel.minPrice || 0
                     },
                     selectedRoom: segment.selectedRoom || {
-                      id: matchingDay.stay.room.id,
-                      name: matchingDay.stay.room.name,
-                      priceCents: matchingDay.stay.room.priceCents,
-                      baseMealPlan: matchingDay.stay.room.baseMealPlan
+                      id: matchingDay.stay.rate.room.id,
+                      name: matchingDay.stay.rate.room.hotel.name,
+                      priceCents: 0,
+                      baseMealPlan: matchingDay.stay.rate.room.baseMealPlan
                     }
                   }
                 }
@@ -481,7 +481,7 @@ export default function CreateProposalPage() {
         type: activity.slot as 'morning' | 'afternoon' | 'evening' | 'full_day',
         included: false
       })),
-      accommodation: day.stay && day.stay.room && day.stay.room.hotel ? `${day.stay.roomsCount} room(s) at ${day.stay.room.hotel.name} (${day.stay.room.name}, ${day.stay.mealPlan})` : undefined,
+      accommodation: day.stay && day.stay.rate?.room && day.stay.rate.room.hotel ? `${day.stay.roomsCount} room(s) at ${day.stay.rate.room.hotel.name} (${day.stay.rate.room.hotel.name}, ${day.stay.mealPlan})` : undefined,
       transfers: (day.transfers || []).map((transfer: any) => ({
         ...transfer,
         name: transfer.transferProduct?.name || transfer.name || 'Transfer',
@@ -500,9 +500,9 @@ export default function CreateProposalPage() {
     const hotelMap = new Map<string, Hotel>()
     
     trip.days
-      .filter((day: any) => day.stay && day.stay.room && day.stay.room.hotel)
+      .filter((day: any) => day.stay && day.stay.rate?.room && day.stay.rate.room.hotel)
       .forEach((day: any) => {
-        const hotelId = day.stay.room.hotel.id
+        const hotelId = day.stay.rate.room.hotel.id
         const checkIn = day.stay.checkIn
         
         // Create a unique key combining hotel ID and check-in date
@@ -513,16 +513,16 @@ export default function CreateProposalPage() {
         if (!hotelMap.has(hotelKey)) {
           hotelMap.set(hotelKey, {
             id: `${hotelId}-${checkIn}`, // Use composite ID to allow same hotel on different dates
-            name: day.stay.room.hotel.name,
-            address: day.stay.room.hotel.address,
-            rating: day.stay.room.hotel.star,
-            starRating: day.stay.room.hotel.star,
+            name: day.stay.rate.room.hotel.name,
+            address: day.stay.rate.room.hotel.address,
+            rating: day.stay.rate.room.hotel.star,
+            starRating: day.stay.rate.room.hotel.star,
             image: '/api/placeholder/300/200', // Placeholder image
             checkIn: day.stay.checkIn,
             checkOut: day.stay.checkOut,
-            roomType: day.stay.room.name,
+            roomType: day.stay.rate.room.hotel.name,
             boardBasis: day.stay.mealPlan,
-            bedType: day.stay.room.bedType,
+            bedType: day.stay.rate.room.bedType,
             nights: day.stay.nights,
             refundable: true,
             pricePerNight: day.stay.priceTotalCents / 100 / day.stay.nights,
@@ -536,7 +536,7 @@ export default function CreateProposalPage() {
     
     // Debug logging to verify all hotels are collected
     console.log('=== HOTEL CONVERSION DEBUG ===')
-    console.log('Total days with stays:', trip.days.filter((day: any) => day.stay && day.stay.room && day.stay.room.hotel).length)
+    console.log('Total days with stays:', trip.days.filter((day: any) => day.stay && day.stay.rate?.room && day.stay.rate.room.hotel).length)
     console.log('Total converted hotels:', convertedHotels.length)
     console.log('Hotels:', convertedHotels.map(h => ({ 
       id: h.id, 
@@ -780,7 +780,7 @@ export default function CreateProposalPage() {
       // If editing existing hotel, use the tracked day ID or find the day with this hotel
       // If adding new hotel, use the first day that doesn't have a stay
       let targetDay
-      if (editingHotelIndex !== null) {
+        if (editingHotelIndex !== null) {
         // First try to use the tracked day ID if available
         if (editingHotelDayId) {
           targetDay = trip.days.find(day => day.id === editingHotelDayId)
@@ -789,7 +789,7 @@ export default function CreateProposalPage() {
         // If not found by ID, find by hotel ID (for backward compatibility)
         if (!targetDay) {
           targetDay = trip.days.find(day => 
-            day.stay && day.stay.room.hotel.id === proposal.hotels[editingHotelIndex].id
+            day.stay && day.stay.rate?.room && day.stay.rate.room.hotel.id === proposal.hotels[editingHotelIndex].id
           )
         }
       } else {
@@ -844,7 +844,7 @@ export default function CreateProposalPage() {
           if (response.updateTripStays && response.updateTripStays.length > 0 && trip) {
             // Check if the response has complete hotel data
             const hasCompleteHotelData = response.updateTripStays.every((stay: any) => 
-              stay.room && stay.room.hotel && stay.room.hotel.id
+              stay.rate?.room && stay.rate.room.hotel && stay.rate.room.hotel.id
             )
             
             if (hasCompleteHotelData) {
@@ -853,13 +853,13 @@ export default function CreateProposalPage() {
                 ...trip,
                 days: trip.days.map((day: any) => {
                   const updatedStay = response.updateTripStays.find((stay: any) => stay.tripDay.id === day.id)
-                  if (updatedStay && updatedStay.room && updatedStay.room.hotel) {
+                  if (updatedStay && updatedStay.rate?.room && updatedStay.rate.room.hotel) {
                     return {
                       ...day,
                       stay: {
                         ...day.stay,
                         ...updatedStay,
-                        room: updatedStay.room
+                        rate: updatedStay.rate
                       }
                     }
                   }
@@ -939,7 +939,8 @@ export default function CreateProposalPage() {
     // Find day by matching hotel ID and check-in date
     const dayWithHotel = trip.days.find(day => 
       day.stay && 
-      day.stay.room.hotel.id === hotelId &&
+      day.stay.rate?.room &&
+      day.stay.rate.room.hotel.id === hotelId &&
       day.stay.checkIn === hotel.checkIn
     )
     
@@ -957,7 +958,8 @@ export default function CreateProposalPage() {
     // Find day by matching hotel ID and check-in date
     const dayWithHotel = trip.days.find(day => 
       day.stay && 
-      day.stay.room.hotel.id === hotelId &&
+      day.stay.rate?.room &&
+      day.stay.rate.room.hotel.id === hotelId &&
       day.stay.checkIn === hotel.checkIn
     )
     
@@ -1298,7 +1300,7 @@ export default function CreateProposalPage() {
               
               // Check if the response has complete hotel data
               const hasCompleteHotelData = response.updateTripStays.every((stay: any) => 
-                stay.room && stay.room.hotel && stay.room.hotel.id
+                stay.rate?.room && stay.rate.room.hotel && stay.rate.room.hotel.id
               )
               
               if (hasCompleteHotelData) {
@@ -1310,10 +1312,10 @@ export default function CreateProposalPage() {
                     return stay.tripDay.id === day.id || stay.tripDay.dayNumber === day.dayNumber
                   })
                   
-                  if (updatedStay && updatedStay.room && updatedStay.room.hotel) {
+                  if (updatedStay && updatedStay.rate?.room && updatedStay.rate.room.hotel) {
                     console.log(`Updating day ${day.dayNumber} with stay:`, {
-                      hotelName: updatedStay.room.hotel.name,
-                      roomName: updatedStay.room.name,
+                      hotelName: updatedStay.rate.room.hotel.name,
+                      roomName: updatedStay.rate.room.hotel.name,
                       mealPlan: updatedStay.mealPlan,
                       tripDayId: updatedStay.tripDay.id,
                       dayId: day.id
@@ -1325,7 +1327,7 @@ export default function CreateProposalPage() {
                       stay: {
                         id: updatedStay.id,
                         tripDay: updatedStay.tripDay,
-                        room: updatedStay.room,
+                        rate: updatedStay.rate,
                         checkIn: updatedStay.checkIn,
                         checkOut: updatedStay.checkOut,
                         nights: updatedStay.nights,
@@ -1451,9 +1453,9 @@ export default function CreateProposalPage() {
                       })
                       
                       // If we have matching days with hotel data, update segment
-                      if (matchingDays.length > 0 && matchingDays[0].stay?.room?.hotel) {
-                        const hotelData = matchingDays[0].stay.room.hotel
-                        const roomData = matchingDays[0].stay.room
+                      if (matchingDays.length > 0 && matchingDays[0].stay?.rate?.room?.hotel) {
+                        const hotelData = matchingDays[0].stay.rate.room.hotel
+                        const roomData = matchingDays[0].stay.rate.room
                         
                         // Only update if hotel matches (preserve user selection)
                         if (!segment.hotel || segment.hotel.id === hotelData.id) {
@@ -1467,12 +1469,12 @@ export default function CreateProposalPage() {
                               starRating: hotelData.star || segment.hotel?.starRating || 0,
                               images: segment.hotel?.images || [],
                               rooms: segment.hotel?.rooms || [],
-                              minPrice: (roomData.priceCents || 0) / 100
+                              minPrice: segment.hotel?.minPrice || 0
                             },
                             selectedRoom: segment.selectedRoom || {
                               id: roomData.id,
-                              name: roomData.name,
-                              priceCents: roomData.priceCents,
+                              name: hotelData.name,
+                              priceCents: 0,
                               baseMealPlan: roomData.baseMealPlan
                             }
                           }
@@ -1537,7 +1539,7 @@ export default function CreateProposalPage() {
       // Fallback to finding by hotel ID if day ID not found
       if (!tripDay) {
         tripDay = trip.days.find(day => 
-          day.stay && day.stay.room.hotel.id === selectedHotelForDetails.id
+          day.stay && day.stay.rate?.room && day.stay.rate.room.hotel.id === selectedHotelForDetails.id
         )
       }
       
@@ -1576,7 +1578,7 @@ export default function CreateProposalPage() {
         if (response.updateTripStays && response.updateTripStays.length > 0 && trip) {
           // Check if the response has complete hotel data
           const hasCompleteHotelData = response.updateTripStays.every((stay: any) => 
-            stay.room && stay.room.hotel && stay.room.hotel.id
+            stay.rate?.room && stay.rate.room.hotel && stay.rate.room.hotel.id
           )
           
           if (hasCompleteHotelData) {
@@ -1584,17 +1586,17 @@ export default function CreateProposalPage() {
             const updatedTripData = {
               ...trip,
               days: trip.days.map((day: any) => {
-                const updatedStay = response.updateTripStays.find((stay: any) => stay.tripDay.id === day.id)
-                if (updatedStay && updatedStay.room && updatedStay.room.hotel) {
-                  return {
-                    ...day,
-                    stay: {
-                      ...day.stay,
-                      ...updatedStay,
-                      room: updatedStay.room
+                  const updatedStay = response.updateTripStays.find((stay: any) => stay.tripDay.id === day.id)
+                  if (updatedStay && updatedStay.rate?.room && updatedStay.rate.room.hotel) {
+                    return {
+                      ...day,
+                      stay: {
+                        ...day.stay,
+                        ...updatedStay,
+                        rate: updatedStay.rate
+                      }
                     }
                   }
-                }
                 return day
               })
             } as TripData
@@ -1812,7 +1814,7 @@ export default function CreateProposalPage() {
 
     const dayId = day.id
     const tripCurrency = currency || trip.currency.code
-    const hotelId = pickupHotelId || (day.stay ? day.stay.room.hotel.id : null)
+    const hotelId = pickupHotelId || (day.stay?.rate?.room ? day.stay.rate.room.hotel.id : null)
 
     if (!hotelId) {
       throw new Error(`No hotel found for day at index ${dayIndex}`)
@@ -1983,11 +1985,11 @@ export default function CreateProposalPage() {
 
       // Find the day to get the hotel ID from the stay
       const day = trip.days.find(d => d.id === dayId)
-      if (!day || !day.stay) {
+      if (!day || !day.stay || !day.stay.rate?.room?.hotel) {
         throw new Error('No stay found for the selected day')
       }
 
-      const hotelId = day.stay.room.hotel.id
+      const hotelId = day.stay.rate.room.hotel.id
 
       // Ensure hotel ID is a valid number
       if (!hotelId || isNaN(parseInt(hotelId.toString()))) {
@@ -2352,7 +2354,8 @@ export default function CreateProposalPage() {
                           // Find the corresponding trip stay for this hotel by matching hotel ID and check-in date
                           const tripDay = trip.days.find(day => 
                             day.stay && 
-                            day.stay.room.hotel.id === hotelId &&
+                            day.stay.rate?.room &&
+                            day.stay.rate.room.hotel.id === hotelId &&
                             day.stay.checkIn === hotel.checkIn
                           )
                           

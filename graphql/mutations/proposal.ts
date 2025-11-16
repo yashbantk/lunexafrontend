@@ -591,45 +591,6 @@ export const UPDATE_TRIP_STAYS = gql`
         dayNumber
         date
       }
-      room {
-        id
-        hotel {
-          id
-          name
-          address
-          type
-          description
-          locationUrl
-          star
-        }
-        name
-        priceCents
-        bedType
-        baseMealPlan
-        hotelRoomImages {
-          id
-          url
-          caption
-          priorityOrder
-        }
-        roomAmenities {
-          id
-          name
-          description
-          createdAt
-          updatedAt
-        }
-        maxOccupancy
-        size
-        sizeUnit
-        details
-        amenities
-        tags
-        inclusions
-        exclusions
-        createdAt
-        updatedAt
-      }
       checkIn
       checkOut
       nights
@@ -643,6 +604,21 @@ export const UPDATE_TRIP_STAYS = gql`
       }
       priceTotalCents
       confirmationStatus
+      rate {
+        room {
+          amenities
+          baseMealPlan
+          bedType
+          maxOccupancy
+          id
+          hotel {
+            id
+            address
+            name
+            star
+          }
+        }
+      }
     }
   }
 `

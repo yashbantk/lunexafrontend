@@ -24,45 +24,21 @@ export interface UpdateTripStaysResponse {
       dayNumber: number
       date: string
     }
-    room: {
-      id: string
-      hotel: {
+    rate: {
+      room: {
+        amenities: string[]
+        baseMealPlan: string
+        bedType: string
+        maxOccupancy: number
         id: string
-        name: string
-        address: string
-        type: string
-        description: string
-        locationUrl: string
-        star: number
+        hotel: {
+          id: string
+          address: string
+          name: string
+          star: number
+        }
       }
-      name: string
-      priceCents: number
-      bedType: string
-      baseMealPlan: string
-      hotelRoomImages: Array<{
-        id: string
-        url: string
-        caption: string
-        priorityOrder: number
-      }>
-      roomAmenities: Array<{
-        id: string
-        name: string
-        description: string
-        createdAt: string
-        updatedAt: string
-      }>
-      maxOccupancy: number
-      size: string
-      sizeUnit: string
-      details: string
-      amenities: string[]
-      tags: string[]
-      inclusions: string
-      exclusions: string
-      createdAt: string
-      updatedAt: string
-    }
+    } | null
     checkIn: string
     checkOut: string
     nights: number

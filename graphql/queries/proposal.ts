@@ -127,80 +127,6 @@ export const GET_TRIP = gql`
         }
         stay {
           id
-          room {
-            id
-            hotel {
-              id
-              name
-              address
-              type
-              description
-              locationUrl
-              star
-              totalRatings
-              cancellationPolicy
-              instantBooking
-              cleanilessRating
-              serviceRating
-              comfortRating
-              conditionRating
-              amenitesRating
-              neighborhoodRating
-              amenities
-              instructions
-              policy
-              inclusions
-              exclusions
-              tags
-              commissionRate
-              createdAt
-              updatedAt
-            }
-            name
-            priceCents
-            bedType
-            baseMealPlan
-            hotelRoomImages {
-              id
-              hotelRoom {
-                pk
-              }
-              url
-              caption
-              priorityOrder
-              createdAt
-              updatedAt
-            }
-            roomAmenities {
-              id
-              name
-              description
-              createdAt
-              updatedAt
-            }
-            rates {
-              id
-              room {
-                pk
-              }
-              validFrom
-              validTo
-              priceCents
-              refundable
-              createdAt
-              updatedAt
-            }
-            maxOccupancy
-            size
-            sizeUnit
-            details
-            amenities
-            tags
-            inclusions
-            exclusions
-            createdAt
-            updatedAt
-          }
           checkIn
           checkOut
           nights
@@ -208,6 +134,21 @@ export const GET_TRIP = gql`
           mealPlan
           priceTotalCents
           confirmationStatus
+          rate {
+            room {
+              amenities
+              baseMealPlan
+              bedType
+              maxOccupancy
+              id
+              hotel {
+                id
+                address
+                name
+                star
+              }
+            }
+          }
         }
         activityBookings {
           id
@@ -523,57 +464,6 @@ export const GET_PROPOSAL_DETAILS = gql`
           }
           stay {
             id
-            room {
-              id
-              hotel {
-                id
-                name
-                address
-                type
-                description
-                locationUrl
-                star
-                totalRatings
-                cancellationPolicy
-                instantBooking
-                cleanilessRating
-                serviceRating
-                comfortRating
-                conditionRating
-                amenitesRating
-                neighborhoodRating
-                amenities
-                instructions
-                policy
-                inclusions
-                exclusions
-                tags
-                commissionRate
-              }
-              name
-              priceCents
-              bedType
-              baseMealPlan
-              hotelRoomImages {
-                id
-                url
-                caption
-                priorityOrder
-              }
-              roomAmenities {
-                id
-                name
-                description
-              }
-              maxOccupancy
-              size
-              sizeUnit
-              details
-              amenities
-              tags
-              inclusions
-              exclusions
-            }
             checkIn
             checkOut
             nights
@@ -581,6 +471,21 @@ export const GET_PROPOSAL_DETAILS = gql`
             mealPlan
             priceTotalCents
             confirmationStatus
+            rate {
+              room {
+                amenities
+                baseMealPlan
+                bedType
+                maxOccupancy
+                id
+                hotel {
+                  id
+                  address
+                  name
+                  star
+                }
+              }
+            }
           }
           activityBookings {
             id
