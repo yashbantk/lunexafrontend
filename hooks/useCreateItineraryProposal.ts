@@ -92,7 +92,22 @@ export interface CreateItineraryProposalResponse {
         mealPlan: string
         priceTotalCents: number
         confirmationStatus: string
-      }
+        rate: {
+          room: {
+            amenities: string[]
+            baseMealPlan: string
+            bedType: string
+            maxOccupancy: number
+            id: string
+            hotel: {
+              id: string
+              address: string
+              name: string
+              star: number
+            }
+          }
+        } | null
+      } | null
       activityBookings: Array<{
         id: string
         slot: string
@@ -131,19 +146,6 @@ export interface CreateItineraryProposalResponse {
       mealPlan: string
       priceTotalCents: number
       confirmationStatus: string
-      room: {
-        id: string
-        name: string
-        priceCents: number
-        bedType: string
-        maxOccupancy: number
-        hotel: {
-          id: string
-          name: string
-          address: string
-          star: number
-        }
-      }
     }>
   }
 }

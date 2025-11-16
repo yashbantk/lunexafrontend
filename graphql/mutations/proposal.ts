@@ -144,6 +144,21 @@ export const CREATE_ITINERARY_PROPOSAL = gql`
           mealPlan
           priceTotalCents
           confirmationStatus
+          rate {
+            room {
+              amenities
+              baseMealPlan
+              bedType
+              maxOccupancy
+              id
+              hotel {
+                id
+                address
+                name
+                star
+              }
+            }
+          }
         }
         activityBookings {
           id
@@ -180,19 +195,6 @@ export const CREATE_ITINERARY_PROPOSAL = gql`
         mealPlan
         priceTotalCents
         confirmationStatus
-        room {
-          id
-          name
-          priceCents
-          bedType
-          maxOccupancy
-          hotel {
-            id
-            name
-            address
-            star
-          }
-        }
       }
     }
   }
