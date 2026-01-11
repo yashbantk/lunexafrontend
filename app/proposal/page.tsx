@@ -146,7 +146,7 @@ function SortableDestinationItem({
         />
       </div>
       <div className="w-32">
-        <Label htmlFor={`days-${destination.id}`}>Days</Label>
+        <Label htmlFor={`days-${destination.id}`}>Nights</Label>
         <Select
           value={destination.nights}
           onValueChange={onDaysChange}
@@ -157,7 +157,7 @@ function SortableDestinationItem({
           <SelectContent>
             {Array.from({ length: 14 }, (_, i) => i + 1).map(days => (
               <SelectItem key={days} value={days.toString()}>
-                {days} {days === 1 ? 'day' : 'days'}
+                {days} {days === 1 ? 'night' : 'nights'}
               </SelectItem>
             ))}
           </SelectContent>

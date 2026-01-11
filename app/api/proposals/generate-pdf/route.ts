@@ -329,13 +329,17 @@ function formatTimeValue(timeString?: string | null): string {
   })
 }
 
-// Format currency
-function formatCurrency(cents: number, currencyCode: string = 'INR'): string {
-  const amount = cents / 100
-  if (currencyCode === 'INR') {
-    return `₹ ${amount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
-  }
-  return `${currencyCode} ${amount.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
+// Format currency (always converts to INR)
+async function formatCurrency(cents: number, currencyCode: string = 'INR'): Promise<string> {
+  // Import currency converter
+  const { convertCentsToINR } = await import('@/lib/utils/currencyConverter')
+  
+  // Convert to INR
+  const inrCents = await convertCentsToINR(cents, currencyCode)
+  const amount = inrCents / 100
+  
+  // Always format in INR
+  return `₹ ${amount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
 }
 
 // Fetch proposal data
@@ -399,7 +403,7 @@ function getActivitySlotIconForDetails(slot: string): string {
 }
 
 // Generate Day-Wise Details page HTML
-function generateDayWiseDetailsPage(day: any, proposal: any): string {
+async function generateDayWiseDetailsPage(day: any, proposal: any): Promise<string> {
   if (!day.stay || !day.stay.room) {
     return ''
   }
@@ -686,7 +690,7 @@ function generateDayWiseDetailsPage(day: any, proposal: any): string {
                 <h3 class="text-base font-semibold text-gray-800">Transfers</h3>
             </div>
             <div class="space-y-4">
-                ${transfers.map((transfer: any) => {
+                ${(await Promise.all(transfers.map(async (transfer: any) => {
                   const transferName = transfer.transferProduct?.name || transfer.name || 'Transfer'
                   const pickupTimeFormatted = formatTimeValue(transfer.pickupTime)
                   const pickupLocation = transfer.pickupLocation || 'Pickup location TBD'
@@ -694,7 +698,7 @@ function generateDayWiseDetailsPage(day: any, proposal: any): string {
                   const passengers = (transfer.paxAdults || 0) + (transfer.paxChildren || 0)
                   const vehiclesCount = transfer.vehiclesCount || 1
                   const priceText = typeof transfer.priceTotalCents === 'number'
-                    ? formatCurrency(transfer.priceTotalCents, transfer.currency?.code || proposal.currency?.code || 'INR')
+                    ? await formatCurrency(transfer.priceTotalCents, transfer.currency?.code || proposal.currency?.code || 'INR')
                     : null
                   return `
                 <div class="border border-gray-200 rounded-lg p-4">
@@ -735,7 +739,7 @@ function generateDayWiseDetailsPage(day: any, proposal: any): string {
                     </div>
                 </div>
                   `
-                }).join('')}
+                }))).join('')}
             </div>
         </section>
         ` : ''}
@@ -981,7 +985,7 @@ function generateDynamicItineraryPage(proposal: any): string {
 }
 
 // Generate Dynamic Cover Page
-function generateDynamicCoverPage(proposal: any): string {
+async function generateDynamicCoverPage(proposal: any): Promise<string> {
   const trip = proposal.trip
   const days = trip?.days || []
   const customer = trip?.customer
@@ -1018,7 +1022,7 @@ function generateDynamicCoverPage(proposal: any): string {
   
   // Currency formatting
   const currencyCode = proposal.currency?.code || 'INR'
-  const totalPrice = formatCurrency(proposal.totalPriceCents || 0, currencyCode)
+  const totalPrice = await formatCurrency(proposal.totalPriceCents || 0, currencyCode)
   const totalTravelers = trip?.totalTravelers || 2
 
   // Get curator info
@@ -1430,17 +1434,20 @@ async function generateDynamicProposalPDF(proposalId: string, request: NextReque
   const daysWithHotels = days.filter((day: any) => day.stay && day.stay.room)
   
   // Generate cover page
-  const coverPage = generateDynamicCoverPage(proposal)
+  const coverPage = await generateDynamicCoverPage(proposal)
   
   // Generate itinerary page (add page break before)
   const itineraryPage = `<div class="page-break"></div>${generateDynamicItineraryPage(proposal)}`
   
   // Generate all day-wise pages (no page breaks between, let content flow naturally)
-  const dayWisePages = daysWithHotels.map((day: any, index: number) => {
-    const dayPage = generateDayWiseDetailsPage(day, proposal)
-    // Only add page break before first day-wise page, not between days
-    return index === 0 ? `<div class="page-break"></div>${dayPage}` : dayPage
-  }).join('')
+  const dayWisePages = await Promise.all(
+    daysWithHotels.map(async (day: any, index: number) => {
+      const dayPage = await generateDayWiseDetailsPage(day, proposal)
+      // Only add page break before first day-wise page, not between days
+      return index === 0 ? `<div class="page-break"></div>${dayPage}` : dayPage
+    })
+  )
+  const dayWisePagesHtml = dayWisePages.join('')
 
   // Generate combined policy & terms page and creator details page
   const policyAndTermsPage = `<div class="page-break"></div>${generatePolicyAndTermsPage()}`
@@ -1484,7 +1491,7 @@ async function generateDynamicProposalPDF(proposalId: string, request: NextReque
 <body class="bg-gray-100 print:bg-white">
     ${coverPage}
     ${itineraryPage}
-    ${dayWisePages}
+    ${dayWisePagesHtml}
     ${policyAndTermsPage}
     ${creatorDetailsPage}
 </body>

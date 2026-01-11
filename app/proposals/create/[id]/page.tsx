@@ -2813,7 +2813,7 @@ export default function CreateProposalPage() {
         <HotelDetailsModal
           isOpen={isHotelDetailsOpen}
           onClose={handleCloseHotelDetails}
-          hotelId={selectedHotelForDetails.id}
+          hotelId={selectedHotelForDetails.id.includes('-') ? selectedHotelForDetails.id.split('-')[0] : selectedHotelForDetails.id}
           onSelectRoom={handleRoomSelect}
           checkIn={selectedHotelForDetails.checkIn}
           checkOut={selectedHotelForDetails.checkOut}

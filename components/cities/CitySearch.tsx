@@ -32,7 +32,7 @@ export function CitySearch({
   const [inputValue, setInputValue] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   const { cities, loading, error, searchCities, clearResults } = useCitySearch();
 
   // Update input value when external value changes
@@ -45,7 +45,7 @@ export function CitySearch({
     const newValue = e.target.value;
     setInputValue(newValue);
     onChange(newValue);
-    
+
     if (newValue.trim()) {
       searchCities(newValue);
       setIsOpen(true);
@@ -62,7 +62,7 @@ export function CitySearch({
     onChange(cityDisplayName);
     setIsOpen(false);
     clearResults();
-    
+
     if (onSelectCity) {
       onSelectCity(city);
     }

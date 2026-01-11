@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Check, X, Bed, Users, Maximize2, Wifi, Car } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Room } from '@/types/hotel'
+import { convertCentsToINR } from '@/lib/utils/currencyConverter'
+import { formatPrice } from '@/lib/utils/formatUtils'
 
 interface RoomRowProps {
   room: Room
@@ -24,15 +26,36 @@ export default function RoomRow({
   className = '' 
 }: RoomRowProps) {
   const [imageError, setImageError] = useState(false)
+  const [convertedTotalPrice, setConvertedTotalPrice] = useState<number>(room.totalPrice)
+  const [convertedPerNight, setConvertedPerNight] = useState<number>(room.pricePerNight)
+  const [priceLoading, setPriceLoading] = useState(true)
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price)
-  }
+  // Convert prices to INR
+  useEffect(() => {
+    const convertPrices = async () => {
+      setPriceLoading(true)
+      try {
+        const currency = room.currency || 'INR'
+        const totalPriceCents = Math.round(room.totalPrice * 100)
+        const pricePerNightCents = Math.round(room.pricePerNight * 100)
+
+        const convertedTotal = await convertCentsToINR(totalPriceCents, currency)
+        const convertedPerNight = await convertCentsToINR(pricePerNightCents, currency)
+
+        setConvertedTotalPrice(convertedTotal / 100)
+        setConvertedPerNight(convertedPerNight / 100)
+      } catch (error) {
+        console.error('Currency conversion error:', error)
+        // Fallback to original prices
+        setConvertedTotalPrice(room.totalPrice)
+        setConvertedPerNight(room.pricePerNight)
+      } finally {
+        setPriceLoading(false)
+      }
+    }
+
+    convertPrices()
+  }, [room.totalPrice, room.pricePerNight, room.currency])
 
   const getCancellationColor = (refundable: boolean) => {
     return refundable ? 'text-green-600' : 'text-red-600'
@@ -148,12 +171,18 @@ export default function RoomRow({
         <div className="flex flex-col items-end space-y-2 min-w-[120px]">
           {/* Price */}
           <div className="text-right">
-            <div className="text-lg font-bold text-gray-900">
-              {formatPrice(room.totalPrice)}
-            </div>
-            <div className="text-xs text-gray-500">
-              {formatPrice(room.pricePerNight)}/night
-            </div>
+            {priceLoading ? (
+              <div className="text-xs text-gray-500">Loading...</div>
+            ) : (
+              <>
+                <div className="text-lg font-bold text-gray-900">
+                  {formatPrice(convertedTotalPrice * 100, 'INR')}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {formatPrice(convertedPerNight * 100, 'INR')}/night
+                </div>
+              </>
+            )}
           </div>
 
           {/* Cancellation Policy */}

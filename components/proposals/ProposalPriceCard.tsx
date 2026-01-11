@@ -2,12 +2,19 @@
 
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react"
+import { convertCentsToINR } from "@/lib/utils/currencyConverter"
+import { formatPrice } from "@/lib/utils/formatUtils"
 
 interface ProposalPriceCardProps {
   proposal: {
     id: string
     totalPriceCents: number
     estimatedDateOfBooking: string
+    currency?: {
+      code: string
+      name: string
+    }
     trip: {
       totalTravelers: number
       fromCity?: {
@@ -27,14 +34,28 @@ export function ProposalPriceCard({
   onEditProposal, 
   onUpdateMarkup 
 }: ProposalPriceCardProps) {
-  // Format currency
-  const formatCurrency = (cents: number) => {
-    const amount = cents / 100
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-    }).format(amount)
-  }
+  const [convertedTotalPriceCents, setConvertedTotalPriceCents] = useState<number>(proposal.totalPriceCents)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Convert to INR on mount
+    const convertCurrency = async () => {
+      setLoading(true)
+      try {
+        const currencyCode = proposal.currency?.code || 'INR'
+        const inrCents = await convertCentsToINR(proposal.totalPriceCents, currencyCode)
+        setConvertedTotalPriceCents(inrCents)
+      } catch (error) {
+        console.error('Currency conversion error:', error)
+        // Fallback to original amount
+        setConvertedTotalPriceCents(proposal.totalPriceCents)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    convertCurrency()
+  }, [proposal.totalPriceCents, proposal.currency?.code])
 
   // Format date
   const formatDate = (dateString: string) => {
@@ -99,45 +120,51 @@ export function ProposalPriceCard({
         </div>
 
         <div className="space-y-3 border-t pt-4">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Price per adult</span>
-            <span className="font-medium">{formatCurrency(proposal.totalPriceCents / proposal.trip.totalTravelers)}</span>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-1">
-              <span className="text-lg font-bold text-gray-900">Total Price</span>
-              <div className="w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center">
-                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+          {loading ? (
+            <div className="text-center text-gray-500 py-4">Converting currency...</div>
+          ) : (
+            <>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Price per adult</span>
+                <span className="font-medium">{formatPrice(convertedTotalPriceCents / proposal.trip.totalTravelers, 'INR')}</span>
               </div>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-gray-900">{formatCurrency(proposal.totalPriceCents)}</div>
-              <div className="text-xs text-gray-500">INCLUDING ALL TAXES</div>
-            </div>
-          </div>
+              
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-1">
+                  <span className="text-lg font-bold text-gray-900">Total Price</span>
+                  <div className="w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-gray-900">{formatPrice(convertedTotalPriceCents, 'INR')}</div>
+                  <div className="text-xs text-gray-500">INCLUDING ALL TAXES</div>
+                </div>
+              </div>
 
-          <div className="text-xs text-gray-500">
-            5% GST, TCS (5% on upto 10L, 20% for above 10L) extra.
-          </div>
+              <div className="text-xs text-gray-500">
+                5% GST, TCS (5% on upto 10L, 20% for above 10L) extra.
+              </div>
 
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Net Price</span>
-            <span className="font-medium">{formatCurrency(proposal.totalPriceCents * 0.95)}</span>
-          </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Net Price</span>
+                <span className="font-medium">{formatPrice(convertedTotalPriceCents * 0.95, 'INR')}</span>
+              </div>
 
-          <div className="flex justify-between text-sm">
-            <div className="flex items-center space-x-1">
-              <span className="text-gray-600">Total Earnings</span>
-              <div className="w-3 h-3 text-gray-400">→</div>
-            </div>
-            <span className="font-medium">{formatCurrency(proposal.totalPriceCents * 0.015)} (1.5%)</span>
-          </div>
+              <div className="flex justify-between text-sm">
+                <div className="flex items-center space-x-1">
+                  <span className="text-gray-600">Total Earnings</span>
+                  <div className="w-3 h-3 text-gray-400">→</div>
+                </div>
+                <span className="font-medium">{formatPrice(convertedTotalPriceCents * 0.015, 'INR')} (1.5%)</span>
+              </div>
 
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Markup</span>
-            <span className="font-medium">{formatCurrency(proposal.totalPriceCents * 0.015)}</span>
-          </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Markup</span>
+                <span className="font-medium">{formatPrice(convertedTotalPriceCents * 0.015, 'INR')}</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </motion.div>

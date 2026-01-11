@@ -91,7 +91,7 @@ export const GET_HOTEL_DETAILS = gql`
         hotelRoomImages {
           id
           hotelRoom {
-            pk
+            id
           }
           url
           caption
@@ -109,7 +109,7 @@ export const GET_HOTEL_DETAILS = gql`
         rates {
           id
           room {
-            pk
+            id
           }
           validFrom
           validTo

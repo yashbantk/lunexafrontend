@@ -3,6 +3,9 @@
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Download, Mail, MessageCircle, Calendar, CreditCard } from "lucide-react"
+import { useState, useEffect } from "react"
+import { convertCentsToINR } from "@/lib/utils/currencyConverter"
+import { formatPrice } from "@/lib/utils/formatUtils"
 
 interface EnhancedPriceBreakdownProps {
   proposal: {
@@ -10,6 +13,10 @@ interface EnhancedPriceBreakdownProps {
     totalPriceCents: number
     estimatedDateOfBooking: string
     landMarkup: number
+    currency?: {
+      code: string
+      name: string
+    }
     trip: {
       totalTravelers: number
       fromCity?: {
@@ -37,14 +44,28 @@ export function EnhancedPriceBreakdown({
   onMail,
   onWhatsApp
 }: EnhancedPriceBreakdownProps) {
-  // Format currency
-  const formatCurrency = (cents: number) => {
-    const amount = cents / 100
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-    }).format(amount)
-  }
+  const [convertedTotalPriceCents, setConvertedTotalPriceCents] = useState<number>(proposal.totalPriceCents)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Convert to INR on mount
+    const convertCurrency = async () => {
+      setLoading(true)
+      try {
+        const currencyCode = proposal.currency?.code || 'INR'
+        const inrCents = await convertCentsToINR(proposal.totalPriceCents, currencyCode)
+        setConvertedTotalPriceCents(inrCents)
+      } catch (error) {
+        console.error('Currency conversion error:', error)
+        // Fallback to original amount
+        setConvertedTotalPriceCents(proposal.totalPriceCents)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    convertCurrency()
+  }, [proposal.totalPriceCents, proposal.currency?.code])
 
   // Format date
   const formatDate = (dateString: string) => {
@@ -55,9 +76,9 @@ export function EnhancedPriceBreakdown({
     })
   }
 
-  const totalPrice = proposal.totalPriceCents/100
+  const totalPrice = convertedTotalPriceCents / 100
   const pricePerAdult = totalPrice / proposal.trip.totalTravelers
-  const netPrice = totalPrice - ( totalPrice * (proposal.landMarkup / 100))
+  const netPrice = totalPrice - (totalPrice * (proposal.landMarkup / 100))
   const totalEarnings = totalPrice - netPrice 
   // const gstAmount = totalPrice * 0.05
   // const tcsAmount = totalPrice > 1000000 ? totalPrice * 0.20 : totalPrice * 0.05
@@ -119,45 +140,51 @@ export function EnhancedPriceBreakdown({
         </div>
 
         <div className="space-y-3 border-t pt-4">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Price per adult</span>
-            <span className="font-medium">{formatCurrency(pricePerAdult * 100)}</span>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-1">
-              <span className="text-lg font-bold text-gray-900">Total Price</span>
-              <div className="w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center">
-                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+          {loading ? (
+            <div className="text-center text-gray-500 py-4">Converting currency...</div>
+          ) : (
+            <>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Price per adult</span>
+                <span className="font-medium">{formatPrice(pricePerAdult * 100, 'INR')}</span>
               </div>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-gray-900">{formatCurrency(proposal.totalPriceCents)}</div>
-              <div className="text-xs text-gray-500">INCLUDING ALL TAXES</div>
-            </div>
-          </div>
+              
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-1">
+                  <span className="text-lg font-bold text-gray-900">Total Price</span>
+                  <div className="w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-gray-900">{formatPrice(convertedTotalPriceCents, 'INR')}</div>
+                  <div className="text-xs text-gray-500">INCLUDING ALL TAXES</div>
+                </div>
+              </div>
 
-          <div className="text-xs text-gray-500">
-            5% GST, TCS (5% on upto 10L, 20% for above 10L) extra.
-          </div>
+              <div className="text-xs text-gray-500">
+                5% GST, TCS (5% on upto 10L, 20% for above 10L) extra.
+              </div>
 
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Net Price</span>
-            <span className="font-medium">{formatCurrency(netPrice * 100)}</span>
-          </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Net Price</span>
+                <span className="font-medium">{formatPrice(netPrice * 100, 'INR')}</span>
+              </div>
 
-          <div className="flex justify-between text-sm">
-            <div className="flex items-center space-x-1">
-              <span className="text-gray-600">Total Earnings</span>
-              <div className="w-3 h-3 text-gray-400">→</div>
-            </div>
-            <span className="font-medium">{formatCurrency(totalEarnings * 100)} ({proposal.landMarkup}%)</span>
-          </div>
+              <div className="flex justify-between text-sm">
+                <div className="flex items-center space-x-1">
+                  <span className="text-gray-600">Total Earnings</span>
+                  <div className="w-3 h-3 text-gray-400">→</div>
+                </div>
+                <span className="font-medium">{formatPrice(totalEarnings * 100, 'INR')} ({proposal.landMarkup}%)</span>
+              </div>
 
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Markup</span>
-            <span className="font-medium">{formatCurrency(totalEarnings * 100)} ({proposal.landMarkup}%)</span>
-          </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Markup</span>
+                <span className="font-medium">{formatPrice(totalEarnings * 100, 'INR')} ({proposal.landMarkup}%)</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -208,7 +235,7 @@ export function EnhancedPriceBreakdown({
           <CreditCard className="h-4 w-4 text-yellow-600" />
           <div>
             <div className="font-medium text-yellow-800">
-              {formatCurrency(proposal.totalPriceCents)} due on {formatDate(proposal.estimatedDateOfBooking)}
+              {loading ? 'Loading...' : formatPrice(convertedTotalPriceCents, 'INR')} due on {formatDate(proposal.estimatedDateOfBooking)}
             </div>
             <div className="text-sm text-yellow-700">
               Payment required to confirm booking

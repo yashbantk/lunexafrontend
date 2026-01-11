@@ -14,6 +14,8 @@ import FacilitiesPanel from './FacilitiesPanel'
 import PoliciesPanel from './PoliciesPanel'
 import ReviewsPanel from './ReviewsPanel'
 import HotelMapPlaceholder from './HotelMapPlaceholder'
+import { convertCentsToINR } from '@/lib/utils/currencyConverter'
+import { formatPrice } from '@/lib/utils/formatUtils'
 
 export default function HotelDetailsPage({
   hotelId,
@@ -29,6 +31,8 @@ export default function HotelDetailsPage({
   const [showMap, setShowMap] = useState(false)
   const [showPriceConfirmation, setShowPriceConfirmation] = useState(false)
   const [priceDelta, setPriceDelta] = useState(0)
+  const [convertedRoomPrice, setConvertedRoomPrice] = useState<number | null>(null)
+  const [priceLoading, setPriceLoading] = useState(false)
 
   const { hotel, loading, error } = useHotelDetails({
     hotelId,
@@ -75,14 +79,30 @@ export default function HotelDetailsPage({
     setShowPriceConfirmation(false)
   }
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price)
-  }
+  // Convert selected room price to INR
+  useEffect(() => {
+    const convertPrice = async () => {
+      if (!selectedRoom) {
+        setConvertedRoomPrice(null)
+        return
+      }
+
+      setPriceLoading(true)
+      try {
+        const currency = selectedRoom.currency || 'INR'
+        const priceCents = Math.round(selectedRoom.totalPrice * 100)
+        const converted = await convertCentsToINR(priceCents, currency)
+        setConvertedRoomPrice(converted / 100)
+      } catch (error) {
+        console.error('Currency conversion error:', error)
+        setConvertedRoomPrice(selectedRoom.totalPrice)
+      } finally {
+        setPriceLoading(false)
+      }
+    }
+
+    convertPrice()
+  }, [selectedRoom])
 
   const goBack = () => {
     window.history.back()
@@ -262,7 +282,7 @@ export default function HotelDetailsPage({
                 <div>
                   <h3 className="font-medium text-gray-900">{selectedRoom.name}</h3>
                   <p className="text-sm text-gray-600">
-                    {formatPrice(selectedRoom.totalPrice)} for {nights} night{nights !== 1 ? 's' : ''}
+                    {priceLoading ? 'Loading...' : convertedRoomPrice !== null ? formatPrice(convertedRoomPrice * 100, 'INR') : formatPrice(selectedRoom.totalPrice * 100, 'INR')} for {nights} night{nights !== 1 ? 's' : ''}
                   </p>
                 </div>
                 <div className="flex items-center space-x-3">
@@ -320,7 +340,7 @@ export default function HotelDetailsPage({
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">New Total:</span>
                   <span className="font-semibold text-gray-900">
-                    {formatPrice(selectedRoom.totalPrice)}
+                    {priceLoading ? 'Loading...' : convertedRoomPrice !== null ? formatPrice(convertedRoomPrice * 100, 'INR') : formatPrice(selectedRoom.totalPrice * 100, 'INR')}
                   </span>
                 </div>
               </div>

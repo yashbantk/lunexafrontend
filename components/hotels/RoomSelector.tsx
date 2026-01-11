@@ -22,6 +22,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { RoomSelectorProps } from '@/types/hotel'
 import { useHotelDetails } from '@/hooks/useHotelDetails'
+import { convertCentsToINR } from '@/lib/utils/currencyConverter'
+import { formatPrice } from '@/lib/utils/formatUtils'
 
 const amenityIcons: Record<string, any> = {
   'WiFi': Wifi,
@@ -70,14 +72,40 @@ export default function RoomSelector({
     }
   }, [isOpen])
 
-  const formatPrice = (price: number, currency: string = 'INR') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(price)
-  }
+  // State for converted room prices
+  const [convertedPrices, setConvertedPrices] = useState<Map<string, { totalPrice: number; pricePerNight: number }>>(new Map())
+  const [priceLoading, setPriceLoading] = useState(false)
+
+  // Convert all room prices to INR
+  useEffect(() => {
+    const convertRoomPrices = async () => {
+      if (rooms.length === 0) return
+
+      setPriceLoading(true)
+      const priceMap = new Map<string, { totalPrice: number; pricePerNight: number }>()
+
+      await Promise.all(
+        rooms.map(async (room) => {
+          const currency = room.currency || 'INR'
+          const totalPriceCents = Math.round(room.totalPrice * 100)
+          const pricePerNightCents = Math.round(room.pricePerNight * 100)
+
+          const convertedTotal = await convertCentsToINR(totalPriceCents, currency)
+          const convertedPerNight = await convertCentsToINR(pricePerNightCents, currency)
+
+          priceMap.set(room.id, {
+            totalPrice: convertedTotal / 100,
+            pricePerNight: convertedPerNight / 100
+          })
+        })
+      )
+
+      setConvertedPrices(priceMap)
+      setPriceLoading(false)
+    }
+
+    convertRoomPrices()
+  }, [rooms])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -199,12 +227,18 @@ export default function RoomSelector({
                               </div>
                               
                               <div className="text-right">
-                                <div className="text-2xl font-bold text-primary">
-                                  {formatPrice(room.totalPrice, room.currency)}
-                                </div>
-                                <div className="text-sm text-gray-500">
-                                  {formatPrice(room.pricePerNight, room.currency)} per night
-                                </div>
+                                {priceLoading ? (
+                                  <div className="text-sm text-gray-500">Loading...</div>
+                                ) : (
+                                  <>
+                                    <div className="text-2xl font-bold text-primary">
+                                      {formatPrice((convertedPrices.get(room.id)?.totalPrice || room.totalPrice) * 100, 'INR')}
+                                    </div>
+                                    <div className="text-sm text-gray-500">
+                                      {formatPrice((convertedPrices.get(room.id)?.pricePerNight || room.pricePerNight) * 100, 'INR')} per night
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             </div>
 
@@ -255,7 +289,7 @@ export default function RoomSelector({
                   <span className="font-medium">Selected: </span>
                   <span>{selectedRoom.name}</span>
                   <span className="ml-2 font-bold text-primary">
-                    {formatPrice(selectedRoom.totalPrice, selectedRoom.currency)}
+                    {priceLoading ? 'Loading...' : formatPrice((convertedPrices.get(selectedRoom.id)?.totalPrice || selectedRoom.totalPrice) * 100, 'INR')}
                   </span>
                 </div>
               )}

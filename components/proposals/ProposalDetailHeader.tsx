@@ -14,6 +14,9 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/useToast"
+import { useState, useEffect } from "react"
+import { convertCentsToINR } from "@/lib/utils/currencyConverter"
+import { formatPrice } from "@/lib/utils/formatUtils"
 
 interface ProposalDetailHeaderProps {
   proposal: {
@@ -54,15 +57,27 @@ export function ProposalDetailHeader({
 }: ProposalDetailHeaderProps) {
   const router = useRouter()
   const { toast } = useToast()
+  const [convertedTotalPriceCents, setConvertedTotalPriceCents] = useState<number>(proposal.totalPriceCents)
+  const [loading, setLoading] = useState(true)
 
-  // Format currency
-  const formatCurrency = (cents: number, currencyCode: string = 'INR') => {
-    const amount = cents / 100
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currencyCode,
-    }).format(amount)
-  }
+  useEffect(() => {
+    // Convert to INR on mount
+    const convertCurrency = async () => {
+      setLoading(true)
+      try {
+        const inrCents = await convertCentsToINR(proposal.totalPriceCents, proposal.currency.code)
+        setConvertedTotalPriceCents(inrCents)
+      } catch (error) {
+        console.error('Currency conversion error:', error)
+        // Fallback to original amount
+        setConvertedTotalPriceCents(proposal.totalPriceCents)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    convertCurrency()
+  }, [proposal.totalPriceCents, proposal.currency.code])
 
   // Format date
   const formatDate = (dateString: string) => {
@@ -128,9 +143,9 @@ export function ProposalDetailHeader({
         
         <div className="text-right">
           <div className="text-3xl font-bold text-primary">
-            {formatCurrency(proposal.totalPriceCents, proposal.currency.code)}
+            {loading ? 'Loading...' : formatPrice(convertedTotalPriceCents, 'INR')}
           </div>
-          <div className="text-sm text-gray-500">Total Price</div>
+          <div className="text-sm text-gray-500">Total Price (INR)</div>
         </div>
       </div>
 

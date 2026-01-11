@@ -417,7 +417,7 @@ export default function ProposalDetailPage() {
                     </div>
                     <div className="flex items-center space-x-1">
                       <Calendar className="h-4 w-4" />
-                      <span>{proposal.trip?.startDate ? formatDate(proposal.trip.startDate) : "Start Date"} - {proposal.trip?.durationDays || 0} days</span>
+                      <span>{proposal.trip?.startDate ? formatDate(proposal.trip.startDate) : "Start Date"} - {proposal.trip?.durationDays || 0} nights</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Users className="h-4 w-4" />
@@ -607,48 +607,7 @@ export default function ProposalDetailPage() {
                     
                     // Map transfers
                     const transfers = (day.transfers || [])
-                      .map((transfer: {
-                        id: string
-                        pickupTime: string
-                        pickupLocation: string | null
-                        dropoffLocation: string | null
-                        vehiclesCount: number | null
-                        paxAdults: number
-                        paxChildren: number
-                        priceTotalCents: number | null
-                        confirmationStatus: string
-                        transferProduct: {
-                          id: string
-                          name: string
-                          description: string | null
-                          city: {
-                            id: string
-                            name: string
-                            country: {
-                              iso2: string
-                              name: string
-                            }
-                          }
-                          vehicle: {
-                            id: string
-                            type: string
-                            name: string
-                            capacityAdults: number
-                            capacityChildren: number
-                          }
-                          currency: {
-                            code: string
-                            name: string
-                          }
-                          priceCents: number
-                          cancellationPolicy: string | null
-                          commissionRate: number
-                        }
-                        currency: {
-                          code: string
-                          name: string
-                        }
-                      }) => {
+                      .map((transfer: any) => {
                         try {
                           return {
                             id: transfer.id,
@@ -839,7 +798,7 @@ export default function ProposalDetailPage() {
         <HotelDetailsModal
           isOpen={isHotelDetailsOpen}
           onClose={handleCloseHotelDetails}
-          hotelId={selectedHotelForDetails.id}
+          hotelId={selectedHotelForDetails.id.includes('-') ? selectedHotelForDetails.id.split('-')[0] : selectedHotelForDetails.id}
           onSelectRoom={() => {
             // This is view-only mode, so we don't need room selection
             handleCloseHotelDetails()

@@ -53,14 +53,31 @@ export const formatTime = (timeString: string): string => {
 
 /**
  * Format price in cents to currency format
- * @param priceCents - Price in cents
- * @param currency - Currency code (default: 'INR')
- * @returns Formatted price string
+ * Always formats in INR (conversion should be done before calling this)
+ * @param priceCents - Price in cents (should already be converted to INR)
+ * @param currency - Currency code (ignored, always uses INR)
+ * @returns Formatted price string in INR
  */
 export const formatPrice = (priceCents: number, currency: string = 'INR'): string => {
+  // Always format in INR - conversion should happen before calling this function
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: currency,
+    currency: 'INR',
     minimumFractionDigits: 0
   }).format(priceCents / 100)
+}
+
+/**
+ * Format price in cents to INR currency format (async version with conversion)
+ * @param priceCents - Price in cents (source currency)
+ * @param fromCurrency - Source currency code
+ * @returns Promise of formatted price string in INR
+ */
+export const formatPriceWithConversion = async (
+  priceCents: number,
+  fromCurrency: string = 'INR'
+): Promise<string> => {
+  const { convertCentsToINR } = await import('./currencyConverter')
+  const inrCents = await convertCentsToINR(priceCents, fromCurrency)
+  return formatPrice(inrCents, 'INR')
 }
