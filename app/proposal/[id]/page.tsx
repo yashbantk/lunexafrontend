@@ -609,7 +609,7 @@ export default function ProposalDetailPage() {
                     const transfers = (day.transfers || [])
                       .map((transfer: {
                         id: string
-                        pickupTime: string
+                        pickupTime: string | null
                         pickupLocation: string | null
                         dropoffLocation: string | null
                         vehiclesCount: number | null
@@ -631,22 +631,22 @@ export default function ProposalDetailPage() {
                           }
                           vehicle: {
                             id: string
-                            type: string
+                            type: string | null
                             name: string
-                            capacityAdults: number
-                            capacityChildren: number
+                            capacityAdults: number | null
+                            capacityChildren: number | null
                           }
                           currency: {
                             code: string
-                            name: string
+                            name: string | null
                           }
-                          priceCents: number
+                          priceCents: number | null
                           cancellationPolicy: string | null
-                          commissionRate: number
+                          commissionRate: number | null
                         }
                         currency: {
                           code: string
-                          name: string
+                          name: string | null
                         }
                       }) => {
                         try {

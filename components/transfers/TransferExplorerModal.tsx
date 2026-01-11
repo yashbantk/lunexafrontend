@@ -29,6 +29,7 @@ export default function TransferExplorerModal({
   const [showTransferDetails, setShowTransferDetails] = useState(false)
   const [selectedTransfer, setSelectedTransfer] = useState<TransferProduct | null>(null)
   const [selectedCityId, setSelectedCityId] = useState<string | undefined>(undefined)
+  const [selectedCityName, setSelectedCityName] = useState('')
 
   const [filters, setFilters] = useState<TransferFilters>({
     query: '',
@@ -105,10 +106,12 @@ export default function TransferExplorerModal({
     }
     setFilters(defaultFilters)
     setSelectedCityId(undefined)
+    setSelectedCityName('')
     resetFilters()
   }
 
-  const handleCityChange = (cityId: string | undefined) => {
+  const handleCityChange = (name: string, cityId?: string) => {
+    setSelectedCityName(name)
     setSelectedCityId(cityId)
     const newFilters = { ...filters, cityId }
     setFilters(newFilters)
@@ -235,8 +238,8 @@ export default function TransferExplorerModal({
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">City</label>
                   <CitySearchDropdown
-                    selectedCityId={selectedCityId}
-                    onCityChange={handleCityChange}
+                    value={selectedCityName}
+                    onChange={handleCityChange}
                     placeholder="Select city..."
                   />
                 </div>

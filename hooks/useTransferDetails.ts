@@ -120,8 +120,9 @@ export function useTransferDetails({ transferProductId, adults, childrenCount }:
       errors.push('At least 1 adult is required')
     }
 
-    if (selection.paxAdults + (selection.paxChildren || 0) > transferProduct?.vehicle.capacityAdults + (transferProduct?.vehicle.capacityChildren || 0)) {
-      const totalCapacity = (transferProduct?.vehicle.capacityAdults || 0) + (transferProduct?.vehicle.capacityChildren || 0)
+    const vehicleCapacity = (transferProduct?.vehicle.capacityAdults || 0) + (transferProduct?.vehicle.capacityChildren || 0)
+    if (selection.paxAdults + (selection.paxChildren || 0) > vehicleCapacity) {
+      const totalCapacity = vehicleCapacity
       errors.push(`Total passengers (${selection.paxAdults + (selection.paxChildren || 0)}) exceeds vehicle capacity (${totalCapacity}). You may need multiple vehicles.`)
     }
 
