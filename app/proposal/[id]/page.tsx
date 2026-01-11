@@ -607,7 +607,48 @@ export default function ProposalDetailPage() {
                     
                     // Map transfers
                     const transfers = (day.transfers || [])
-                      .map((transfer: any) => {
+                      .map((transfer: {
+                        id: string
+                        pickupTime: string | null
+                        pickupLocation: string | null
+                        dropoffLocation: string | null
+                        vehiclesCount: number | null
+                        paxAdults: number
+                        paxChildren: number
+                        priceTotalCents: number | null
+                        confirmationStatus: string
+                        transferProduct: {
+                          id: string
+                          name: string
+                          description: string | null
+                          city: {
+                            id: string
+                            name: string
+                            country: {
+                              iso2: string
+                              name: string
+                            }
+                          }
+                          vehicle: {
+                            id: string
+                            type: string | null
+                            name: string
+                            capacityAdults: number | null
+                            capacityChildren: number | null
+                          }
+                          currency: {
+                            code: string
+                            name: string | null
+                          }
+                          priceCents: number | null
+                          cancellationPolicy: string | null
+                          commissionRate: number | null
+                        }
+                        currency: {
+                          code: string
+                          name: string | null
+                        }
+                      }) => {
                         try {
                           return {
                             id: transfer.id,

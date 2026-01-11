@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { TransferProduct, TransferSearchParams, TransferFilters } from '@/types/transfer'
 import { apolloClient } from '@/lib/graphql/client'
-import { TRANSFER_PRODUCTS_QUERY, TransferProductFilter, TransferProductOrder } from '@/graphql/queries/transfers'
+import { TRANSFER_PRODUCTS_QUERY, TransferProductFilter, TransferProductOrder, TransferProductsResponse } from '@/graphql/queries/transfers'
 
 interface UseTransferSearchProps {
   params: TransferSearchParams
@@ -83,7 +83,7 @@ export function useTransferSearch({ params, enabled = true }: UseTransferSearchP
       }
 
       // Make GraphQL request
-      const result = await apolloClient.query({
+      const result = await apolloClient.query<TransferProductsResponse>({
         query: TRANSFER_PRODUCTS_QUERY,
         variables: { filters, order },
         fetchPolicy: 'no-cache'
