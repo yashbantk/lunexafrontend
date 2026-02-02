@@ -672,7 +672,6 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               currentTime: new Date().toISOString(),
             };
             
-            console.log('🔍 Authentication Debug Info:', debugInfo);
             return debugInfo;
           },
         }))
@@ -709,7 +708,6 @@ export const initializeAuth = (): void => {
       lockoutUntil: securityData.lockoutUntil || null,
     });
     
-    console.log('Auth initialized from cookies:', { isAuthenticated, hasUser: !!user, hasTokens: !!tokens });
   } catch (error) {
     console.error('Failed to initialize auth from cookies:', error);
     useAuthStore.setState({ isInitialized: true });

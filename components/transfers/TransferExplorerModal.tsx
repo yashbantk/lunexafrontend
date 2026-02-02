@@ -49,7 +49,7 @@ export default function TransferExplorerModal({
     vehicleType: filters.vehicleType,
     priceRange: filters.priceRange,
     sort: filters.sort
-  }), [filters.query, filters.cityId, vehicleTypeKey, priceRangeKey, filters.sort])
+  }), [filters.query, filters.cityId, filters.vehicleType, filters.priceRange, filters.sort])
 
   const {
     results,

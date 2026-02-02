@@ -119,39 +119,29 @@ const GET_PROPOSAL_DETAILS_QUERY = gql`
               }
             }
           }
-          stay {
-            id
+        stay {
+          id
+          checkIn
+          checkOut
+          nights
+          roomsCount
+          mealPlan
+          priceTotalCents
+          confirmationStatus
+          rate {
             room {
               id
               hotel {
                 id
                 name
                 address
-                type
-                description
-                locationUrl
                 star
-                totalRatings
-                cancellationPolicy
-                instantBooking
-                cleanilessRating
-                serviceRating
-                comfortRating
-                conditionRating
-                amenitesRating
-                neighborhoodRating
-                amenities
-                instructions
-                policy
-                inclusions
-                exclusions
-                tags
-                commissionRate
               }
               name
-              priceCents
+              amenities
               bedType
               baseMealPlan
+              maxOccupancy
               hotelRoomImages {
                 id
                 url
@@ -163,23 +153,13 @@ const GET_PROPOSAL_DETAILS_QUERY = gql`
                 name
                 description
               }
-              maxOccupancy
               size
               sizeUnit
-              details
-              amenities
-              tags
               inclusions
               exclusions
             }
-            checkIn
-            checkOut
-            nights
-            roomsCount
-            mealPlan
-            priceTotalCents
-            confirmationStatus
           }
+        }
           activityBookings {
             id
             slot
@@ -345,7 +325,6 @@ async function formatCurrency(cents: number, currencyCode: string = 'INR'): Prom
 // Fetch proposal data
 async function fetchProposalData(proposalId: string, authToken?: string) {
   try {
-    console.log('Fetching proposal data:', { proposalId, hasToken: !!authToken, graphqlUrl: GRAPHQL_URL })
     
     const client = new GraphQLClient(GRAPHQL_URL, {
       headers: authToken ? {
@@ -357,7 +336,6 @@ async function fetchProposalData(proposalId: string, authToken?: string) {
     })
 
     const query = print(GET_PROPOSAL_DETAILS_QUERY)
-    console.log('Executing GraphQL query for proposal:', proposalId)
     
     const data = await client.request<{ proposal: any }>(query, { proposalId })
     
@@ -365,13 +343,6 @@ async function fetchProposalData(proposalId: string, authToken?: string) {
       console.error('❌ GraphQL returned null or no proposal')
       return null
     }
-    
-    console.log('✅ Proposal fetched successfully:', {
-      id: data.proposal.id,
-      name: data.proposal.name,
-      hasTrip: !!data.proposal.trip,
-      daysCount: data.proposal.trip?.days?.length || 0
-    })
     
     return data.proposal
   } catch (error: any) {
@@ -404,12 +375,12 @@ function getActivitySlotIconForDetails(slot: string): string {
 
 // Generate Day-Wise Details page HTML
 async function generateDayWiseDetailsPage(day: any, proposal: any): Promise<string> {
-  if (!day.stay || !day.stay.room) {
+  if (!day.stay || !day.stay.rate?.room) {
     return ''
   }
 
   const stay = day.stay
-  const room = stay.room
+  const room = stay.rate.room
   const hotel = room.hotel
   const transfers: any[] = Array.isArray(day.transfers) ? day.transfers : []
   
@@ -860,7 +831,7 @@ function generateDynamicItineraryPage(proposal: any): string {
                                     </div>
                                     <div class="flex-1">
                                         <div class="text-xs text-gray-800">
-                                            <span class="font-semibold">Check in to:</span> ${escapeHtml(stay.room?.hotel?.name || 'Hotel')}
+                                            <span class="font-semibold">Check in to:</span> ${escapeHtml(stay.rate?.room?.hotel?.name || 'Hotel')}
                                         </div>
                                         <div class="text-xs text-gray-500 mt-0.5">${formatTime(stay.checkIn)}</div>
                                     </div>
@@ -1003,7 +974,7 @@ async function generateDynamicCoverPage(proposal: any): Promise<string> {
   const firstHotel = days.find((d: any) => d.stay?.room?.hotel?.name)?.stay?.room?.hotel?.name || ''
   
   // Get highlights (hotels, activities count)
-  const hotelsCount = new Set(days.filter((d: any) => d.stay?.room?.hotel?.id).map((d: any) => d.stay.room.hotel.id)).size
+  const hotelsCount = new Set(days.filter((d: any) => d.stay?.rate?.room?.hotel?.id).map((d: any) => d.stay.rate.room.hotel.id)).size
   const activitiesCount = days.reduce((acc: number, day: any) => acc + (day.activityBookings?.length || 0), 0)
   const transfersCount = days.reduce((acc: number, day: any) => acc + ((Array.isArray(day.transfers) ? day.transfers.length : 0)), 0)
   
@@ -1353,11 +1324,6 @@ async function generateDynamicProposalPDF(proposalId: string, request: NextReque
   const authStatus = ServerCookieStorage.getAuthStatus(cookies)
   const authToken = authStatus.tokens?.access || undefined
   
-  console.log('Fetching proposal for PDF:', {
-    proposalId,
-    hasAuthToken: !!authToken
-  })
-  
   // Fetch proposal data
   const proposal = await fetchProposalData(proposalId, authToken)
   
@@ -1420,18 +1386,12 @@ async function generateDynamicProposalPDF(proposalId: string, request: NextReque
       status: 500
     })
   }
-  
-  console.log('✅ Using dynamic proposal data:', {
-    proposalId: proposal.id,
-    proposalName: proposal.name,
-    daysCount: proposal.trip?.days?.length || 0
-  })
 
   const trip = proposal.trip
   const days = trip.days || []
   
   // Filter days with hotels
-  const daysWithHotels = days.filter((day: any) => day.stay && day.stay.room)
+  const daysWithHotels = days.filter((day: any) => day.stay && day.stay.rate?.room)
   
   // Generate cover page
   const coverPage = await generateDynamicCoverPage(proposal)

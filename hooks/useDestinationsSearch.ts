@@ -38,13 +38,9 @@ export function useDestinationsSearch(): UseDestinationsSearchReturn {
 
   // Handle data when it changes
   useEffect(() => {
-    console.log('useDestinationsSearch - data changed:', data);
     if (data && typeof data === 'object' && data !== null && 'destinations' in data) {
-      console.log('Destinations search response:', data);
-      console.log('Setting destinations:', (data as any).destinations);
       setDestinations((data as any).destinations);
     } else {
-      console.log('No destinations in data or data is null');
     }
   }, [data]);
 

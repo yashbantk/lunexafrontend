@@ -180,13 +180,11 @@ export function useCreateItineraryProposal() {
 
   const createItineraryProposal = async (input: CreateItineraryProposalInput): Promise<CreateItineraryProposalResponse | null> => {
     try {
-      console.log('Creating itinerary proposal with input:', input)
       
       const response = await createItineraryProposalMutation({
         variables: { input }
       })
 
-      console.log('Itinerary proposal created successfully:', response.data)
       return response.data as CreateItineraryProposalResponse
 
     } catch (err: any) {

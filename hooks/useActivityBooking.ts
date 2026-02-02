@@ -75,14 +75,12 @@ export function useActivityBooking() {
     onError?: (error: string) => void
   ): Promise<ActivityBookingResponse | null> => {
     try {
-      console.log('Creating activity booking with data:', data)
       
       const response = await createActivityBookingMutation({
         variables: { data }
       })
 
       if (response.data && (response.data as any).createActivityBooking) {
-        console.log('Activity booking created successfully:', response.data)
         toast({ description: 'Activity booking added successfully!', type: 'success' })
         
         if (onSuccess) {
@@ -113,7 +111,6 @@ export function useActivityBooking() {
     onError?: (error: string) => void
   ): Promise<{ id: string } | null> => {
     try {
-      console.log('Deleting activity booking with ID:', bookingId)
       
       const response = await deleteActivityBookingMutation({
         variables: { 
@@ -122,7 +119,6 @@ export function useActivityBooking() {
       })
 
       if (response.data && (response.data as any).deleteActivityBooking) {
-        console.log('Activity booking deleted successfully:', response.data)
         toast({ description: 'Activity booking removed successfully!', type: 'success' })
         
         if (onSuccess) {

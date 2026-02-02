@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { Clock, Star, MapPin, Users, Eye, CheckCircle } from 'lucide-react'
@@ -18,7 +19,7 @@ interface ActivityCardProps {
   className?: string
 }
 
-export default function ActivityCard({
+const ActivityCard = memo(function ActivityCard({
   activity,
   onSelect,
   onViewDetails,
@@ -272,11 +273,9 @@ export default function ActivityCard({
       </Card>
     </motion.div>
   )
-}
+})
 
-
-
-
+export default ActivityCard
 
 
 

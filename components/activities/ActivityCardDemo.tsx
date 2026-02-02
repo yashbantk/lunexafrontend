@@ -17,11 +17,9 @@ export default function ActivityCardDemo() {
 
   const handleSelectActivity = (activity: Activity) => {
     setSelectedActivityId(activity.id)
-    console.log('Activity selected:', activity)
   }
 
   const handleViewDetails = (activity: Activity) => {
-    console.log('View details for:', activity)
     // In a real app, this would open the details modal
   }
 

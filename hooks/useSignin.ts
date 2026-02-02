@@ -34,7 +34,6 @@ export const useSignin = (options?: UseSigninOptions): UseSigninReturn => {
   // Memoize the success callback to prevent infinite loops
   const onSuccessCallback = useCallback((result: { user: User; tokens: Tokens }) => {
     if (options?.onSuccess) {
-      console.log('useSignin: Triggering onSuccess callback', { currentUser, tokens });
       options.onSuccess(result);
     }
   }, [options?.onSuccess]);
@@ -89,7 +88,6 @@ export const useSignin = (options?: UseSigninOptions): UseSigninReturn => {
     
     // Check for errors after signin attempt
     if (errors.length > 0 && options?.onError) {
-      console.log('useSignin: Triggering onError callback', { errors });
       options.onError(legacyErrors);
     }
     

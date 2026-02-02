@@ -436,7 +436,6 @@ export default function ProposalPage() {
         destinations: formData.destinations
       }
       
-      console.log('Submitting proposal:', apiInput)
       
       // Execute the GraphQL mutation
       const response = await createItineraryProposal(apiInput)

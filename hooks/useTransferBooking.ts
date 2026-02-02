@@ -87,7 +87,6 @@ export function useTransferBooking() {
     onError?: (error: string) => void
   ): Promise<TransferBookingResponse | null> => {
     try {
-      console.log('Creating transfer with data:', data)
       
       const response = await createTransferMutation({
         variables: { data }
@@ -102,7 +101,6 @@ export function useTransferBooking() {
           throw new Error(errorMessage)
         }
 
-        console.log('Transfer created successfully:', response.data)
         toast({ description: 'Transfer booking added successfully!', type: 'success' })
         
         if (onSuccess) {
@@ -133,7 +131,6 @@ export function useTransferBooking() {
     onError?: (error: string) => void
   ): Promise<{ id: string } | null> => {
     try {
-      console.log('Deleting transfer with ID:', bookingId)
       
       const response = await deleteTransferMutation({
         variables: { 
@@ -150,7 +147,6 @@ export function useTransferBooking() {
           throw new Error(errorMessage)
         }
 
-        console.log('Transfer deleted successfully:', response.data)
         toast({ description: 'Transfer booking removed successfully!', type: 'success' })
         
         if (onSuccess) {
@@ -181,7 +177,6 @@ export function useTransferBooking() {
     onError?: (error: string) => void
   ): Promise<any | null> => {
     try {
-      console.log('Updating transfer with data:', data)
       
       const response = await updateTransferMutation({
         variables: { data }
@@ -196,7 +191,6 @@ export function useTransferBooking() {
           throw new Error(errorMessage)
         }
 
-        console.log('Transfer updated successfully:', response.data)
         toast({ description: 'Transfer booking updated successfully!', type: 'success' })
         
         if (onSuccess) {

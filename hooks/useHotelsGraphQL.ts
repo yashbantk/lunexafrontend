@@ -135,7 +135,6 @@ export const useHotelsGraphQL = ({
   // Handle data when it changes
   React.useEffect(() => {
     if ((data as any)?.hotels) {
-      console.log('Hotels GraphQL response:', data)
       const convertedHotels = (data as any).hotels.map(convertGraphQLHotel)
       setHotels(convertedHotels)
       setTotal(convertedHotels.length)

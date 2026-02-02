@@ -33,7 +33,6 @@ export const useSignup = (options?: UseSignupOptions): UseSignupReturn => {
   // Memoize the success callback to prevent infinite loops
   const onSuccessCallback = useCallback((user: User) => {
     if (options?.onSuccess) {
-      console.log('useSignup: Triggering onSuccess callback', { user, isAuthenticated });
       options.onSuccess(user);
     }
   }, [options?.onSuccess, isAuthenticated]);
@@ -78,7 +77,6 @@ export const useSignup = (options?: UseSignupOptions): UseSignupReturn => {
     
     // Check for errors after signup attempt
     if (errors.length > 0 && options?.onError) {
-      console.log('useSignup: Triggering onError callback', { errors });
       options.onError(legacyErrors);
     }
     

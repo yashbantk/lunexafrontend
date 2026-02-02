@@ -37,7 +37,6 @@ export default function SignInPage() {
 
   const { signin, loading, errors, clearErrors } = useSignin({
     onSuccess: (result) => {
-      console.log('Signin success callback triggered', { result });
       
       // Mark that we've just completed a login
       setHasJustLoggedIn(true);
@@ -51,7 +50,6 @@ export default function SignInPage() {
       
       // Use the redirect handler to preserve intended destination
       setTimeout(() => {
-        console.log('Attempting redirect to proposal page...');
         handlePostLoginRedirect('/proposal')
       }, 1000)
     },
@@ -72,7 +70,6 @@ export default function SignInPage() {
   // Redirect if already authenticated (only on initial load, not after login)
   useEffect(() => {
     if (isAuthenticated && currentUser && !loading && !hasJustLoggedIn) {
-      console.log('User is already authenticated, redirecting to proposal page', { currentUser });
       router.push('/proposal');
     }
   }, [isAuthenticated, currentUser, loading, hasJustLoggedIn, router]);

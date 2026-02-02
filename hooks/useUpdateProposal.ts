@@ -56,20 +56,17 @@ export function useUpdateProposal() {
     onError?: (error: string) => void
   ): Promise<ProposalUpdateResponse | null> => {
     try {
-      console.log('Updating proposal with data:', data)
       
       const response = await updateProposalMutation({
         variables: { data }
       })
 
-      console.log('Full response data:', response.data)
       
       if (response.data && (response.data as any).updateProposal) {
         const updateProposalResponse = (response.data as any).updateProposal
         
         // Check if it's a successful update (has id) or an error (has messages)
         if (updateProposalResponse.id) {
-          console.log('Proposal updated successfully:', updateProposalResponse)
           toast({ description: 'Proposal updated successfully!', type: 'success' })
           
           if (onSuccess) {
@@ -117,15 +114,12 @@ export function useUpdateProposal() {
   ): Promise<ProposalUpdateResponse | null> => {
     const result = await updateProposal(data)
     
-    console.log('updateProposalAndRedirect result:', result)
     
     if (result && result.updateProposal) {
       const proposalId = result.updateProposal.id
-      console.log('Proposal ID from result:', proposalId)
       
       if (proposalId) {
         const redirectTo = redirectPath || `/proposal/${proposalId}`
-        console.log('Redirecting to:', redirectTo)
         router.push(redirectTo)
       } else {
         console.error('No proposal ID found in result:', result)

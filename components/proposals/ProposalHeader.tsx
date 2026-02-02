@@ -15,11 +15,6 @@ interface ProposalHeaderProps {
 export function ProposalHeader({ proposal, onUpdate }: ProposalHeaderProps) {
   if (!proposal) return null
 
-  console.log('=== PROPOSAL HEADER DEBUG ===')
-  console.log('Proposal received:', proposal)
-  console.log('Proposal origin:', proposal.origin)
-  console.log('Proposal nationality:', proposal.nationality)
-  console.log('Proposal starRating:', proposal.starRating)
 
   return (
     <div className="bg-white rounded-2xl p-6">

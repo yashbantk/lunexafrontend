@@ -43,9 +43,7 @@ export function useRedirectHandler() {
 
   // Handle post-login redirect
   const handlePostLoginRedirect = (fallbackUrl: string = '/proposal') => {
-    console.log('handlePostLoginRedirect called with fallback:', fallbackUrl);
     const redirectUrl = getCookie(COOKIE_NAMES.REDIRECT_AFTER_LOGIN);
-    console.log('Redirect URL from cookie:', redirectUrl);
     
     if (redirectUrl) {
       // Clear the redirect cookie
@@ -53,16 +51,13 @@ export function useRedirectHandler() {
       
       // Validate the redirect URL to prevent open redirects
       if (isValidRedirectUrl(redirectUrl)) {
-        console.log('Redirecting to saved URL:', redirectUrl);
         router.push(redirectUrl);
         return;
       } else {
-        console.log('Invalid redirect URL, using fallback');
       }
     }
     
     // Use fallback URL
-    console.log('Redirecting to fallback URL:', fallbackUrl);
     router.push(fallbackUrl);
   };
 

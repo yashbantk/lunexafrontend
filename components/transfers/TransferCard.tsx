@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { Car, MapPin, Users, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -17,7 +18,7 @@ interface TransferCardProps {
   className?: string
 }
 
-export default function TransferCard({
+const TransferCard = memo(function TransferCard({
   transferProduct,
   onSelect,
   onViewDetails,
@@ -198,11 +199,9 @@ export default function TransferCard({
       </Card>
     </motion.div>
   )
-}
+})
 
-
-
-
+export default TransferCard
 
 
 

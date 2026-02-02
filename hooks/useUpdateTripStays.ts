@@ -68,13 +68,11 @@ export function useUpdateTripStays() {
     onError?: (error: string) => void
   ): Promise<UpdateTripStaysResponse | null> => {
     try {
-      console.log('Updating trip stays with data:', data)
       
       const response = await updateTripStaysMutation({
         variables: { data }
       })
 
-      console.log('Update trip stays response:', response.data)
 
       // Check for GraphQL errors in the response
       // Apollo Client returns errors in response.data.errors or response.errors
@@ -106,7 +104,6 @@ export function useUpdateTripStays() {
           
           // All items in the array should be successful TripStayType objects
           // (since the backend returns array directly, not union types)
-          console.log('Trip stays updated successfully:', updateTripStaysResponse)
           toast({ 
             description: `Successfully updated ${updateTripStaysResponse.length} hotel stay${updateTripStaysResponse.length > 1 ? 's' : ''}!`, 
             type: 'success' 

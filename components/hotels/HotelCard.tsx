@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { 
@@ -40,7 +40,20 @@ const amenityIcons: Record<string, any> = {
   'Spa': Shield
 }
 
-export default function HotelCard({
+// Hoisted static placeholder for fallback image
+const hotelPlaceholderGrid = (
+  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+    <span className="text-4xl">🏨</span>
+  </div>
+)
+
+const hotelPlaceholderList = (
+  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+    <span className="text-2xl">🏨</span>
+  </div>
+)
+
+const HotelCard = memo(function HotelCard({
   hotel,
   onSelect,
   onQuickView,
@@ -110,11 +123,7 @@ export default function HotelCard({
                   className="object-cover"
                   onError={() => setImageError(true)}
                 />
-              ) : (
-                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                  <span className="text-4xl">🏨</span>
-                </div>
-              )}
+              ) : hotelPlaceholderGrid}
               
               {/* Badges */}
               <div className="absolute top-3 left-3 flex flex-col space-y-1">
@@ -216,11 +225,7 @@ export default function HotelCard({
                   className="object-cover"
                   onError={() => setImageError(true)}
                 />
-              ) : (
-                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                  <span className="text-2xl">🏨</span>
-                </div>
-              )}
+              ) : hotelPlaceholderList}
               
               {/* Badges */}
               <div className="absolute top-2 left-2 flex flex-col space-y-1">
@@ -295,4 +300,6 @@ export default function HotelCard({
       </Card>
     </motion.div>
   )
-}
+})
+
+export default HotelCard

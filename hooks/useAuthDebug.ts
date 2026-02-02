@@ -23,13 +23,11 @@ export function useAuthDebug() {
       storageAuthenticated: storageTokens.isAuthenticated,
     };
     
-    console.log('🔍 Token Consistency Check:', isConsistent);
     return isConsistent;
   };
 
   const simulateApiRequest = async () => {
     try {
-      console.log('🧪 Simulating API request to test token usage...');
       
       // Import the apolloClient dynamically to avoid circular dependencies
       const { apolloClient } = await import('@/lib/graphql/client');
@@ -45,7 +43,6 @@ export function useAuthDebug() {
         fetchPolicy: 'no-cache'
       });
       
-      console.log('✅ API request successful:', result);
       return { success: true, result };
     } catch (error) {
       console.error('❌ API request failed:', error);
@@ -54,7 +51,6 @@ export function useAuthDebug() {
   };
 
   const clearAllAuth = () => {
-    console.log('🧹 Clearing all authentication data...');
     authStore.reset();
     // Also clear cookies manually
     if (typeof document !== 'undefined') {

@@ -206,7 +206,6 @@ export default function CreateProposalPage() {
   }
 
   const saveProposal = useCallback(async (proposalToSave: Proposal | null) => {
-    console.log('saveProposal called - this should only happen when user clicks "Save as Proposal"')
     
     if (!proposalToSave || !trip) {
       console.error('No proposal or trip data available')
@@ -226,7 +225,6 @@ export default function CreateProposalPage() {
     // First, try to update existing proposal
     let updateSuccess = false
     try {
-      console.log('Attempting to update proposal first...')
       
       // Check if a proposal already exists for this trip
       const { data } = await fetchTripProposals({
@@ -245,7 +243,6 @@ export default function CreateProposalPage() {
       
       if (existingProposal?.id) {
         // Try to update existing proposal
-        console.log('Found existing proposal, attempting to update:', existingProposal.id)
         
         const updateData: ProposalPartialInput = {
           id: existingProposal.id,
@@ -260,27 +257,22 @@ export default function CreateProposalPage() {
           landMarkupType: 'percentage'
         }
         
-        console.log('Updating proposal with data:', updateData)
         const updateResult = await updateProposalAndRedirect(updateData)
         
         // If update was successful, we're done
         if (updateResult) {
-          console.log('Proposal updated successfully')
           updateSuccess = true
           return
         }
       } else {
-        console.log('No existing proposal found, will create new one')
       }
     } catch (updateError: any) {
-      console.log('Update failed, will create new proposal:', updateError?.message)
       // Continue to create new proposal below
     }
     
     // If update failed or no proposal exists, create a new one
     if (!updateSuccess) {
       try {
-        console.log('Creating new proposal...')
         
         const proposalData: ProposalInput = {
           trip: trip.id, // Required - Trip ID
@@ -296,7 +288,6 @@ export default function CreateProposalPage() {
           // version will be automatically determined by the hook
         }
         
-        console.log('Creating proposal with data:', proposalData)
         await createProposalAndRedirect(proposalData)
       } catch (createError: any) {
         console.error('Error creating proposal:', createError)
@@ -306,7 +297,6 @@ export default function CreateProposalPage() {
   }, [trip, createProposalAndRedirect, updateProposalAndRedirect, fetchTripProposals])
 
   const handlePreviewProposal = useCallback(async (proposalToPreview: Proposal | null) => {
-    console.log('handlePreviewProposal called')
     
     if (!proposalToPreview || !trip) {
       console.error('No proposal or trip data available')
@@ -327,12 +317,10 @@ export default function CreateProposalPage() {
           return dateB - dateA
         })[0]
         
-        console.log('Found existing proposal, redirecting to:', existingProposal.id)
         // Redirect to the existing proposal
         router.push(`/proposal/${existingProposal.id}`)
       } else {
         // No existing proposal, create one first and then redirect
-        console.log('No existing proposal found, creating one for preview...')
         
         // Calculate total price from proposal
         const totalPriceCents = proposalToPreview.priceBreakdown?.total 
@@ -457,11 +445,6 @@ export default function CreateProposalPage() {
   const convertTripToProposalFormat = useCallback((tripData: TripData): Proposal => {
     const trip = tripData
     
-    console.log('=== CONVERSION DEBUG ===')
-    console.log('Input trip data:', trip)
-    console.log('trip.fromCity:', trip.fromCity)
-    console.log('trip.nationality:', trip.nationality)
-    console.log('trip.starRating:', trip.starRating)
     
     // Convert days to the existing Day format
     const convertedDays: Day[] = trip.days.map((day: any) => ({
@@ -534,23 +517,7 @@ export default function CreateProposalPage() {
     
     const convertedHotels: Hotel[] = Array.from(hotelMap.values())
     
-    // Debug logging to verify all hotels are collected
-    console.log('=== HOTEL CONVERSION DEBUG ===')
-    console.log('Total days with stays:', trip.days.filter((day: any) => day.stay && day.stay.rate?.room && day.stay.rate.room.hotel).length)
-    console.log('Total converted hotels:', convertedHotels.length)
-    console.log('Hotels:', convertedHotels.map(h => ({ 
-      id: h.id, 
-      name: h.name, 
-      checkIn: h.checkIn, 
-      checkOut: h.checkOut, 
-      nights: h.nights 
-    })))
-    
     // Create initial proposal without price breakdown (will be calculated later)
-    console.log('=== PROPOSAL CREATION DEBUG ===')
-    console.log('trip.fromCity?.name:', trip.fromCity?.name)
-    console.log('trip.nationality?.name:', trip.nationality?.name)
-    console.log('trip.starRating?.toString():', trip.starRating?.toString())
     
     const initialProposal: Proposal = {
       id: trip.id,
@@ -639,15 +606,6 @@ export default function CreateProposalPage() {
     const loadTripAndProposalData = async () => {
       if (trip && !tripLoading) {
         try {
-          console.log('=== TRIP DATA DEBUG ===')
-          console.log('Full trip object:', JSON.stringify(trip, null, 2))
-          console.log('Trip nationality:', trip.nationality)
-          console.log('Trip starRating:', trip.starRating)
-          console.log('Trip fromCity:', trip.fromCity)
-          console.log('Trip fromCity name:', trip.fromCity?.name)
-          console.log('Trip nationality name:', trip.nationality?.name)
-          console.log('Trip starRating type:', typeof trip.starRating)
-          console.log('Trip starRating value:', trip.starRating)
           
           // Convert the trip data to proposal format
           let convertedProposal = convertTripToProposalFormat(trip)
@@ -666,7 +624,6 @@ export default function CreateProposalPage() {
                 return dateB - dateA
               })[0]
               
-              console.log('Found existing proposal, merging data:', existingProposal)
               
               // Merge existing proposal data with converted proposal
               if (existingProposal.landMarkup != null) {
@@ -676,21 +633,17 @@ export default function CreateProposalPage() {
                 convertedProposal.markupFlightPercent = existingProposal.flightsMarkup
               }
               
-              console.log('Updated proposal with existing data:', convertedProposal)
             }
           } catch (proposalError) {
-            console.log('No existing proposal found or error fetching:', proposalError)
             // Continue with trip-based data
           }
           
-          console.log('Converted proposal:', convertedProposal)
           updateProposalWithPrices(convertedProposal)
           setIsLoading(false)
           
           // Update blocked time slots from existing activities
           updateBlockedTimeSlots(trip)
           
-          console.log('Loaded and converted trip data to proposal:', convertedProposal)
         } catch (error) {
           console.error('Error converting trip data:', error)
           setIsLoading(false)
@@ -821,7 +774,6 @@ export default function CreateProposalPage() {
       // Check if we're updating an existing trip stay or creating a new one
       if (targetDay.stay?.id) {
         // Update existing trip stay using updateTripStays mutation
-        console.log('Updating existing trip stay:', targetDay.stay.id)
         
         const tripStayInput: TripStayPartialInput = {
           id: targetDay.stay.id,
@@ -837,7 +789,6 @@ export default function CreateProposalPage() {
         }
 
         await updateTripStays([tripStayInput], async (response) => {
-          console.log('Trip stay updated successfully:', response)
           
           // Update proposal with new trip data
           // Note: If the response doesn't have complete hotel data, we'll refetch the trip
@@ -871,7 +822,6 @@ export default function CreateProposalPage() {
               updateProposalWithPrices(updatedProposal)
             } else {
               // If hotel data is missing, refetch trip to get complete data
-              console.log('Hotel data missing in response, refetching trip...')
               if (refetchTrip) {
                 const refetchResult = await refetchTrip()
                 const updatedTripData = refetchResult?.data?.trip
@@ -900,7 +850,6 @@ export default function CreateProposalPage() {
         }, 500)
       } else {
         // Create new trip stay (only if day doesn't have a stay)
-        console.log('Creating new trip stay for day:', targetDay.id)
         
         const tripStayData = {
           tripDay: targetDay.id,
@@ -976,13 +925,11 @@ export default function CreateProposalPage() {
 
   // Split Stay handlers
   const handleSplitStayChange = useCallback(async (segments: any[]) => {
-    console.log('CreateProposalPage: handleSplitStayChange called', segments)
     
     // Check if segments have actually changed to prevent infinite loops
     const segmentsChanged = JSON.stringify(segments) !== JSON.stringify(splitStaySegments)
     
     if (!segmentsChanged) {
-      console.log('CreateProposalPage: Segments unchanged, skipping update')
       return
     }
     
@@ -1016,24 +963,8 @@ export default function CreateProposalPage() {
           return new Date(a.date).getTime() - new Date(b.date).getTime()
         })
         
-        console.log('Sorted trip days:', sortedTripDays.map(d => ({
-          dayNumber: d.dayNumber,
-          date: d.date,
-          tripStayId: d.stay?.id,
-          stayCheckIn: d.stay?.checkIn,
-          stayCheckOut: d.stay?.checkOut
-        })))
-        
         // Sort segments by segmentIndex to ensure correct order
         const sortedSegments = [...segments].sort((a, b) => a.segmentIndex - b.segmentIndex)
-        
-        console.log('Sorted segments:', sortedSegments.map(s => ({
-          segmentIndex: s.segmentIndex,
-          startDate: s.startDate,
-          endDate: s.endDate,
-          duration: s.duration,
-          hotel: s.hotel?.name
-        })))
         
         // Track which days have already been assigned to prevent duplicates
         const assignedDayIds = new Set<string>()
@@ -1051,13 +982,6 @@ export default function CreateProposalPage() {
             cumulativeOffset += segment.duration
           }
         })
-        
-        console.log('Segment day offsets:', segmentDayOffsets.map((offset, idx) => ({
-          segmentIndex: sortedSegments[idx].segmentIndex,
-          offset,
-          duration: sortedSegments[idx].duration,
-          hasHotel: !!sortedSegments[idx].hotel
-        })))
         
         sortedSegments.forEach((segment, segmentArrayIndex) => {
           // Skip segments without hotels
@@ -1112,14 +1036,6 @@ export default function CreateProposalPage() {
             const expectedDayStart = dayOffset + 1
             const expectedDayEnd = expectedDayStart + segment.duration
             
-            console.log(`Segment ${segment.segmentIndex} matching:`, {
-              dayOffset,
-              expectedDayStart,
-              expectedDayEnd,
-              duration: segment.duration,
-              shouldMatchDays: `${expectedDayStart} to ${expectedDayEnd - 1}`
-            })
-            
             const dayNumberBasedDays = sortedTripDays.filter((day) => {
               if (day.dayNumber === undefined) return false
               // Match days based on cumulative offset
@@ -1142,18 +1058,12 @@ export default function CreateProposalPage() {
             })
             
             if (dayNumberBasedDays.length > 0) {
-              console.log(`Using dayNumber-based matching for segment ${segment.segmentIndex}:`, dayNumberBasedDays.map(d => ({
-                dayNumber: d.dayNumber,
-                tripStayId: d.stay?.id,
-                date: d.date
-              })))
               segmentDays = dayNumberBasedDays
             }
           }
           
           // If dayNumber matching didn't work, fallback to date-based matching
           if (segmentDays.length === 0) {
-            console.log(`DayNumber matching failed for segment ${segment.segmentIndex}, trying date-based matching`)
             segmentDays = sortedTripDays.filter((day) => {
               const dayDate = new Date(day.date)
               dayDate.setHours(0, 0, 0, 0)
@@ -1177,13 +1087,7 @@ export default function CreateProposalPage() {
               return new Date(a.date).getTime() - new Date(b.date).getTime()
             })
             
-            if (segmentDays.length > 0) {
-              console.log(`Using date-based matching for segment ${segment.segmentIndex}:`, segmentDays.map(d => ({
-                dayNumber: d.dayNumber,
-                tripStayId: d.stay?.id,
-                date: d.date
-              })))
-            }
+            // Use segmentDays if found
           }
           
           if (segmentDays.length === 0) {
@@ -1200,18 +1104,6 @@ export default function CreateProposalPage() {
             })
             return
           }
-          
-          console.log(`Segment ${segment.segmentIndex} (${segment.duration} nights):`, {
-            startDate: segmentStartDate.toISOString().split('T')[0],
-            endDate: segmentEndDate.toISOString().split('T')[0],
-            matchedDays: segmentDays.map(d => ({ 
-              dayNumber: d.dayNumber, 
-              date: d.date,
-              tripStayId: d.stay?.id
-            })),
-            expectedDayCount: segment.duration,
-            actualDayCount: segmentDays.length
-          })
           
           // Verify we matched the correct number of days
           if (segmentDays.length !== segment.duration) {
@@ -1239,15 +1131,6 @@ export default function CreateProposalPage() {
               return
             }
             
-            console.log(`Creating tripStay input for segment ${segment.segmentIndex}, day ${day.dayNumber}:`, {
-              tripStayId: day.stay.id,
-              dayNumber: day.dayNumber,
-              date: day.date,
-              segmentIndex: segment.segmentIndex,
-              segmentStartDate: segmentStartDate.toISOString().split('T')[0],
-              segmentEndDate: segmentEndDate.toISOString().split('T')[0]
-            })
-            
             const tripStayInput: TripStayPartialInput = {
               id: day.stay.id,
               room: { set: selectedRoom.id },
@@ -1270,16 +1153,7 @@ export default function CreateProposalPage() {
         
         // Only call mutation if we have inputs (only for segments with hotels)
         if (tripStayInputs.length > 0) {
-          console.log(`Updating trip stays for ${tripStayInputs.length} day(s) with inputs:`, tripStayInputs.map(input => ({
-            tripStayId: input.id,
-            roomId: input.room?.set,
-            checkIn: input.checkIn,
-            checkOut: input.checkOut,
-            nights: input.nights
-          })))
-          
           const result = await updateTripStays(tripStayInputs, async (response) => {
-            console.log('Trip stays updated successfully:', response)
             
             // Update segments with the hotel data that was just saved
             // This ensures the UI reflects the selection immediately
@@ -1296,7 +1170,6 @@ export default function CreateProposalPage() {
             
             // Immediately update the proposal with the response data to show updated hotels in itinerary
             if (response.updateTripStays && response.updateTripStays.length > 0 && trip) {
-              console.log('Updating proposal with response data:', response.updateTripStays)
               
               // Check if the response has complete hotel data
               const hasCompleteHotelData = response.updateTripStays.every((stay: any) => 
@@ -1313,14 +1186,6 @@ export default function CreateProposalPage() {
                   })
                   
                   if (updatedStay && updatedStay.rate?.room && updatedStay.rate.room.hotel) {
-                    console.log(`Updating day ${day.dayNumber} with stay:`, {
-                      hotelName: updatedStay.rate.room.hotel.name,
-                      roomName: updatedStay.rate.room.hotel.name,
-                      mealPlan: updatedStay.mealPlan,
-                      tripDayId: updatedStay.tripDay.id,
-                      dayId: day.id
-                    })
-                    
                     // Completely replace the stay with the updated one from response
                     return {
                       ...day,
@@ -1348,18 +1213,12 @@ export default function CreateProposalPage() {
                   days: updatedTripDays
                 } as TripData
                 
-                console.log('Converting updated trip data to proposal format...')
                 // Convert to proposal format and update immediately
                 const updatedProposal = convertTripToProposalFormat(updatedTripData)
-                console.log('Updated proposal accommodation data:', updatedProposal.days.map(d => ({
-                  dayNumber: d.dayNumber,
-                  accommodation: d.accommodation
-                })))
                 
                 updateProposalWithPrices(updatedProposal)
               } else {
                 // If hotel data is missing, refetch trip to get complete data
-                console.log('Hotel data missing in response, refetching trip...')
                 if (refetchTrip) {
                   const refetchResult = await refetchTrip()
                   const updatedTripData = refetchResult?.data?.trip
@@ -1411,20 +1270,9 @@ export default function CreateProposalPage() {
                   // After refetch, update the proposal with new trip data
                   if (refreshedTrip?.data?.trip) {
                     const updatedTripData = refreshedTrip.data.trip as TripData
-                    console.log('Refreshed trip data after mutation:', updatedTripData)
-                    console.log('Trip days with stays:', updatedTripData.days.map((d: any) => ({
-                      dayNumber: d.dayNumber,
-                      hotelName: d.stay?.room?.hotel?.name,
-                      roomName: d.stay?.room?.name,
-                      mealPlan: d.stay?.mealPlan
-                    })))
                     
                     // Convert updated trip data to proposal format to refresh itinerary
                     const updatedProposal = convertTripToProposalFormat(updatedTripData)
-                    console.log('Updated proposal after refetch - accommodation:', updatedProposal.days.map(d => ({
-                      dayNumber: d.dayNumber,
-                      accommodation: d.accommodation
-                    })))
                     updateProposalWithPrices(updatedProposal)
                     
                     // Update blocked time slots
@@ -1555,7 +1403,6 @@ export default function CreateProposalPage() {
       }
 
       // Update existing trip stay using updateTripStays mutation (instead of delete + create)
-      console.log('Updating existing trip stay:', tripDay.stay.id, 'with new room:', room.id)
       
       const tripStayInput: TripStayPartialInput = {
         id: tripDay.stay.id,
@@ -1571,7 +1418,6 @@ export default function CreateProposalPage() {
       }
 
       await updateTripStays([tripStayInput], async (response) => {
-        console.log('Trip stay updated successfully:', response)
         
         // Update proposal with new trip data
         // Note: If the response doesn't have complete hotel data, we'll refetch the trip
@@ -1605,7 +1451,6 @@ export default function CreateProposalPage() {
             updateProposalWithPrices(updatedProposal)
           } else {
             // If hotel data is missing, refetch trip to get complete data
-            console.log('Hotel data missing in response, refetching trip...')
             if (refetchTrip) {
               const refetchResult = await refetchTrip()
               const updatedTripData = refetchResult?.data?.trip
@@ -1642,15 +1487,7 @@ export default function CreateProposalPage() {
   }
 
   const handleActivitySelect = async (activity: ActivityType, selection: ActivitySelection, bookingIdToDelete?: string) => {
-    console.log('handleActivitySelect called', {
-      activityId: activity.id,
-      bookingIdToDelete,
-      proposal: !!proposal,
-      trip: !!trip
-    })
-
     if (!proposal || !trip) {
-      console.log('Missing proposal or trip data')
       return
     }
 
@@ -1661,11 +1498,9 @@ export default function CreateProposalPage() {
       if (editingDayIndex !== null && trip) {
         // Use the actual day ID from the trip data
         targetDayId = trip.days[editingDayIndex].id
-        console.log('Using editing day ID:', targetDayId)
       } else if (trip && trip.days.length > 0) {
         // Use the first day's ID
         targetDayId = trip.days[0].id
-        console.log('Using first day ID:', targetDayId)
       } else {
         // Fallback to creating a new day (this shouldn't happen in normal flow)
         console.warn('No valid day found for activity booking')
@@ -1687,15 +1522,11 @@ export default function CreateProposalPage() {
 
       // If we're editing, delete the old booking first
       if (bookingIdToDelete) {
-        console.log('Deleting old activity booking:', bookingIdToDelete)
         const deleteResult = await deleteActivityBooking(bookingIdToDelete)
-        console.log('Delete result:', deleteResult)
       }
 
       // Use the new activity booking function
-      console.log('Calling handleActivityBookingFromSelection')
       await handleActivityBookingFromSelection(targetDayId, activity, selection)
-      console.log('handleActivityBookingFromSelection completed')
 
       // Close the modal
       setIsActivityExplorerOpen(false)
@@ -1715,15 +1546,7 @@ export default function CreateProposalPage() {
   }
 
   const handleTransferSelect = async (transferProduct: TransferProduct, selection: TransferSelection, bookingIdToDelete?: string) => {
-    console.log('handleTransferSelect called', {
-      transferProductId: transferProduct.id,
-      bookingIdToDelete,
-      proposal: !!proposal,
-      trip: !!trip
-    })
-
     if (!proposal || !trip) {
-      console.log('Missing proposal or trip data')
       return
     }
 
@@ -1733,10 +1556,8 @@ export default function CreateProposalPage() {
       
       if (editingDayIndex !== null && trip) {
         targetDayId = trip.days[editingDayIndex].id
-        console.log('Using editing day ID:', targetDayId)
       } else if (trip && trip.days.length > 0) {
         targetDayId = trip.days[0].id
-        console.log('Using first day ID:', targetDayId)
       } else {
         console.warn('No valid day found for transfer booking')
         return
@@ -1744,9 +1565,7 @@ export default function CreateProposalPage() {
 
       // If we're editing, delete the old booking first
       if (bookingIdToDelete) {
-        console.log('Deleting old transfer booking:', bookingIdToDelete)
         const deleteResult = await deleteTransfer(bookingIdToDelete)
-        console.log('Delete result:', deleteResult)
       }
 
       // Create transfer booking
@@ -1764,9 +1583,7 @@ export default function CreateProposalPage() {
         priceTotalCents: selection.priceTotalCents
       }
 
-      console.log('Creating transfer with input:', transferInput)
       const result = await createTransfer(transferInput, (response) => {
-        console.log('Transfer created successfully:', response)
         // Refetch trip data to update UI
         refetchTrip()
       })
@@ -1888,15 +1705,12 @@ export default function CreateProposalPage() {
         pickupRequired: activityData.pickupRequired
       }
 
-      console.log('Adding activity booking to day:', dayId, 'with data:', bookingInput)
-      console.log('PAYLOAD BEING SENT - Slot type:', bookingInput.slot, 'from scheduleSlot.type:', bookingInput.slot)
 
       // Call the GraphQL mutation
       const response = await createActivityBooking(
         bookingInput,
         // Success callback - update UI immediately
         async (response: ActivityBookingResponse) => {
-          console.log('Activity booking created successfully:', response)
           
           // Immediately update blocked time slots from the response if it has the necessary data
           if (response.createActivityBooking && response.createActivityBooking.option) {
@@ -1938,7 +1752,6 @@ export default function CreateProposalPage() {
           }
           
           // Update the trip data and refetch to get the latest data
-          console.log('Activity booking created successfully, refetching trip data...')
           try {
             // Add a small delay to ensure backend has processed the booking
             await new Promise(resolve => setTimeout(resolve, 300))
@@ -1996,30 +1809,12 @@ export default function CreateProposalPage() {
         throw new Error(`Invalid hotel ID from trip data: ${hotelId}. Hotel ID must be a valid number.`)
       }
 
-      console.log('Activity booking data:', {
-        dayId,
-        hotelId,
-        hotelIdType: typeof hotelId,
-        activityId: activity.id,
-        optionId: selection.scheduleSlot.id,
-        slot: selection.scheduleSlot.type,
-        slotDurationMins: selection.scheduleSlot.durationMins,
-        currency: 'INR',
-        pickupOption: selection.pickupOption
-      })
-
       // Normalize slot type: convert "full-day" to "full_day" for backend compatibility
       const normalizeSlotType = (slot: string): string => {
         return slot === 'full-day' ? 'full_day' : slot
       }
 
-      // Log the slot type transformation
       const normalizedSlot = normalizeSlotType(selection.scheduleSlot.type)
-      console.log('Slot type transformation:', {
-        original: selection.scheduleSlot.type,
-        normalized: normalizedSlot,
-        durationMins: selection.scheduleSlot.durationMins
-      })
 
       // Convert activity selection to booking data according to schema
       const bookingData = {
@@ -2470,13 +2265,11 @@ export default function CreateProposalPage() {
                           setIsActivityDetailsOpen(true)
                           setEditingDayIndex(dayIndex)
                           setEditingActivityBookingId(activity.id) // Store the booking ID for deletion
-                          console.log('Edit activity:', activityData, 'in day:', dayIndex)
                         } else {
                           console.error('Activity data not found for booking:', activity.id)
                         }
                       }}
                       onRemoveActivity={async (activityId, dayIndex) => {
-                        console.log('onRemoveActivity called with:', { activityId, dayIndex, proposal: !!proposal })
                         
                         if (!proposal) {
                           console.error('No proposal available')
@@ -2484,13 +2277,10 @@ export default function CreateProposalPage() {
                         }
                         
                         try {
-                          console.log('Calling deleteActivityBooking with ID:', activityId)
                           // Call the delete mutation
                           const result = await deleteActivityBooking(activityId)
-                          console.log('Delete result:', result)
                           
                           if (result) {
-                            console.log('Activity deleted successfully, updating local state')
                             // Update local state to remove the activity
                             const updatedDays = [...proposal.days]
                             updatedDays[dayIndex] = {
@@ -2504,7 +2294,6 @@ export default function CreateProposalPage() {
                             
                             // Refresh trip data to get updated activity bookings
                           if (refetchTrip) {
-                            console.log('Refreshing trip data')
                             refetchTrip().then((refetchResult) => {
                               const updatedTripData = refetchResult?.data?.trip
                               if (updatedTripData) {
@@ -2569,7 +2358,6 @@ export default function CreateProposalPage() {
                         }
                       }}
                       onRemoveTransfer={async (transferId, dayIndex) => {
-                        console.log('onRemoveTransfer called with:', { transferId, dayIndex })
                         
                         if (!proposal) {
                           console.error('No proposal available')
@@ -2577,10 +2365,8 @@ export default function CreateProposalPage() {
                         }
                         
                         try {
-                          console.log('Calling deleteTransfer with ID:', transferId)
                           const result = await deleteTransfer(transferId)
                           if (result) {
-                            console.log('Transfer deleted successfully, refetching trip data')
                             await refetchTrip()
                           }
                         } catch (error) {
@@ -2771,7 +2557,7 @@ export default function CreateProposalPage() {
               <PriceSummary
                 proposal={proposal}
                 onSaveProposal={() => saveProposal(proposal)}
-                onPreview={() => console.log('Preview proposal')}
+                onPreview={() => {}}
               />
             </motion.div>
           </div>

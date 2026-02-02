@@ -47,11 +47,9 @@ export function useHotelDetails({
   // Handle data when it changes
   React.useEffect(() => {
     if (data?.hotel) {
-      console.log('GraphQL response:', data)
       try {
         const transformedHotel = transformGraphQLHotelToHotel(data.hotel)
         setHotel(transformedHotel)
-        console.log('Transformed hotel:', transformedHotel)
       } catch (transformError) {
         console.error('Error transforming hotel data:', transformError)
         setHotel(null)
@@ -69,17 +67,6 @@ export function useHotelDetails({
       setHotel(null)
     }
   }, [error])
-
-  // Debug logging
-  React.useEffect(() => {
-    console.log('useHotelDetails state:', {
-      hotelId,
-      loading,
-      error: error?.message,
-      hasData: !!data,
-      hasHotel: !!data?.hotel
-    })
-  }, [hotelId, loading, error, data])
 
   const updateRoomPrices = useCallback((roomId: string, prices: { pricePerNight: number; totalPrice: number; refundable: boolean }) => {
     if (!hotel) return
@@ -116,7 +103,6 @@ export function useHotelDetails({
     if (!hotelId) return
     
     try {
-      console.log('Manual fetch for hotel:', hotelId)
       const fetchedHotel = await fetchHotelDetailsFromGraphQL({ hotelId })
       setHotel(fetchedHotel)
     } catch (fetchError) {

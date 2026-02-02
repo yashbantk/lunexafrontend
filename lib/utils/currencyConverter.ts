@@ -148,7 +148,7 @@ export async function batchConvertToINR(
   apiKey?: string
 ): Promise<number[]> {
   // Get unique currencies
-  const uniqueCurrencies = [...new Set(amounts.map(a => a.currency.toUpperCase()))]
+  const uniqueCurrencies = Array.from(new Set(amounts.map(a => a.currency.toUpperCase())))
   
   // Fetch all exchange rates in parallel
   const ratePromises = uniqueCurrencies.map(currency =>

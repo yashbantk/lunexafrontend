@@ -114,11 +114,6 @@ export function useActivityDetails({
     
     // Only require option selection if there are multiple options
     if (activity.activityOptions.length > 1 && !selection.selectedOption) {
-      console.log('Validation: Multiple options but no selectedOption', {
-        activityOptionsLength: activity.activityOptions.length,
-        selectedOption: selection.selectedOption,
-        activityOptions: activity.activityOptions
-      })
       errors.push('Please select an activity option')
     }
     

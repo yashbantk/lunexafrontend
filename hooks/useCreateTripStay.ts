@@ -92,13 +92,11 @@ export function useCreateTripStay() {
     onError?: (error: string) => void
   ): Promise<CreateTripStayResponse | null> => {
     try {
-      console.log('Creating trip stay with data:', data)
       
       const response = await createTripStayMutation({
         variables: { data }
       })
 
-      console.log('Create trip stay response:', response.data)
 
       if (response.data && (response.data as any).createTripStay) {
         const createTripStayResponse = (response.data as any).createTripStay
@@ -106,7 +104,6 @@ export function useCreateTripStay() {
         // Check if it's a successful creation (has id) or an error (has messages)
         // If id exists = Success, if messages exist = Error
         if (createTripStayResponse.id) {
-          console.log('Trip stay created successfully:', createTripStayResponse)
           toast({ description: 'Hotel stay added successfully!', type: 'success' })
           
           if (onSuccess) {
@@ -116,7 +113,6 @@ export function useCreateTripStay() {
           return { createTripStay: createTripStayResponse } as CreateTripStayResponse
         } else if (createTripStayResponse.messages) {
           // Messages present = Error occurred
-          console.log('Trip stay creation returned error messages:', createTripStayResponse.messages)
           const errorMessage = createTripStayResponse.messages[0]?.message || 'Failed to create trip stay'
           console.error('GraphQL error:', errorMessage)
           toast({ description: errorMessage, type: 'error' })

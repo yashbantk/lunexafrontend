@@ -32,14 +32,12 @@ export class ErrorBoundary extends Component<Props, State> {
     
     // Check if it's a chunk loading error
     if (error.message.includes('Loading chunk') || error.message.includes('Loading CSS chunk')) {
-      console.log('Chunk loading error detected, attempting retry...')
       this.handleRetry()
     }
   }
 
   handleRetry = () => {
     if (this.state.retryCount < this.maxRetries) {
-      console.log(`Retrying chunk load (attempt ${this.state.retryCount + 1}/${this.maxRetries})`)
       
       // Clear the error state and retry
       this.setState(prevState => ({
@@ -50,7 +48,6 @@ export class ErrorBoundary extends Component<Props, State> {
       
       // Force a page reload if retries are exhausted
       if (this.state.retryCount + 1 >= this.maxRetries) {
-        console.log('Max retries reached, reloading page...')
         window.location.reload()
       }
     }
@@ -130,7 +127,6 @@ export class ErrorBoundary extends Component<Props, State> {
 export function useChunkErrorHandler() {
   const handleChunkError = React.useCallback((error: Error) => {
     if (error.message.includes('Loading chunk') || error.message.includes('Loading CSS chunk')) {
-      console.log('Chunk loading error detected, reloading page...')
       window.location.reload()
     }
   }, [])

@@ -39,49 +39,34 @@ class MemoryAuditLogger implements AuditLogger {
     if (this.events.length > this.maxEvents) {
       this.events = this.events.slice(0, this.maxEvents);
     }
-    
-    // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 Audit Event:', {
-        type: event.type,
-        userId: event.userId,
-        timestamp: new Date(event.timestamp).toISOString(),
-        severity: event.severity,
-        details: event.details,
-      });
-    }
   }
 
   getEvents(filters?: AuditFilters): AuthAuditEvent[] {
-    let filteredEvents = [...this.events];
-    
-    if (filters) {
-      if (filters.userId) {
-        filteredEvents = filteredEvents.filter(event => event.userId === filters.userId);
-      }
-      
-      if (filters.type) {
-        filteredEvents = filteredEvents.filter(event => event.type === filters.type);
-      }
-      
-      if (filters.severity) {
-        filteredEvents = filteredEvents.filter(event => event.severity === filters.severity);
-      }
-      
-      if (filters.startDate) {
-        filteredEvents = filteredEvents.filter(event => event.timestamp >= filters.startDate!);
-      }
-      
-      if (filters.endDate) {
-        filteredEvents = filteredEvents.filter(event => event.timestamp <= filters.endDate!);
-      }
-      
-      if (filters.limit) {
-        filteredEvents = filteredEvents.slice(0, filters.limit);
-      }
+    // If no filters, return copy of all events
+    if (!filters) {
+      return [...this.events];
     }
     
-    return filteredEvents;
+    // Apply all filters in a single pass for efficiency
+    const result: AuthAuditEvent[] = [];
+    let count = 0;
+    const limit = filters.limit || this.events.length;
+    
+    for (const event of this.events) {
+      if (count >= limit) break;
+      
+      // Check all filter conditions
+      if (filters.userId && event.userId !== filters.userId) continue;
+      if (filters.type && event.type !== filters.type) continue;
+      if (filters.severity && event.severity !== filters.severity) continue;
+      if (filters.startDate && event.timestamp < filters.startDate) continue;
+      if (filters.endDate && event.timestamp > filters.endDate) continue;
+      
+      result.push(event);
+      count++;
+    }
+    
+    return result;
   }
 
   clearEvents(): void {
@@ -90,25 +75,36 @@ class MemoryAuditLogger implements AuditLogger {
 }
 
 /**
- * Local storage audit logger for persistence
+ * Local storage audit logger for persistence with in-memory caching
  */
 class LocalStorageAuditLogger implements AuditLogger {
   private storageKey = 'deyor_audit_events';
   private maxEvents: number = 500; // Keep last 500 events in localStorage
+  private cache: AuthAuditEvent[] | null = null; // In-memory cache
 
   private getStoredEvents(): AuthAuditEvent[] {
+    // Return cached events if available
+    if (this.cache !== null) {
+      return this.cache;
+    }
+    
     try {
       const events = localStorage.getItem(this.storageKey);
-      return events ? JSON.parse(events) : [];
+      const parsedEvents: AuthAuditEvent[] = events ? JSON.parse(events) : [];
+      this.cache = parsedEvents;
+      return parsedEvents;
     } catch (error) {
       console.error('Failed to retrieve audit events:', error);
-      return [];
+      const emptyEvents: AuthAuditEvent[] = [];
+      this.cache = emptyEvents;
+      return emptyEvents;
     }
   }
 
   private saveEvents(events: AuthAuditEvent[]): void {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(events));
+      this.cache = events; // Update cache
     } catch (error) {
       console.error('Failed to save audit events:', error);
     }
@@ -124,54 +120,42 @@ class LocalStorageAuditLogger implements AuditLogger {
     }
     
     this.saveEvents(events);
-    
-    // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 Audit Event:', {
-        type: event.type,
-        userId: event.userId,
-        timestamp: new Date(event.timestamp).toISOString(),
-        severity: event.severity,
-        details: event.details,
-      });
-    }
   }
 
   getEvents(filters?: AuditFilters): AuthAuditEvent[] {
-    let filteredEvents = this.getStoredEvents();
+    const events = this.getStoredEvents();
     
-    if (filters) {
-      if (filters.userId) {
-        filteredEvents = filteredEvents.filter(event => event.userId === filters.userId);
-      }
-      
-      if (filters.type) {
-        filteredEvents = filteredEvents.filter(event => event.type === filters.type);
-      }
-      
-      if (filters.severity) {
-        filteredEvents = filteredEvents.filter(event => event.severity === filters.severity);
-      }
-      
-      if (filters.startDate) {
-        filteredEvents = filteredEvents.filter(event => event.timestamp >= filters.startDate!);
-      }
-      
-      if (filters.endDate) {
-        filteredEvents = filteredEvents.filter(event => event.timestamp <= filters.endDate!);
-      }
-      
-      if (filters.limit) {
-        filteredEvents = filteredEvents.slice(0, filters.limit);
-      }
+    // If no filters, return all events
+    if (!filters) {
+      return [...events];
     }
     
-    return filteredEvents;
+    // Apply all filters in a single pass
+    let result: AuthAuditEvent[] = [];
+    let count = 0;
+    const limit = filters.limit || events.length;
+    
+    for (const event of events) {
+      if (count >= limit) break;
+      
+      // Check all filter conditions
+      if (filters.userId && event.userId !== filters.userId) continue;
+      if (filters.type && event.type !== filters.type) continue;
+      if (filters.severity && event.severity !== filters.severity) continue;
+      if (filters.startDate && event.timestamp < filters.startDate) continue;
+      if (filters.endDate && event.timestamp > filters.endDate) continue;
+      
+      result.push(event);
+      count++;
+    }
+    
+    return result;
   }
 
   clearEvents(): void {
     try {
       localStorage.removeItem(this.storageKey);
+      this.cache = null; // Clear cache
     } catch (error) {
       console.error('Failed to clear audit events:', error);
     }

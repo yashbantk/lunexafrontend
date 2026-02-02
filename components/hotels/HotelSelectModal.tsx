@@ -50,18 +50,6 @@ export default function HotelSelectModal({
   const resolvedCityName = cityName || 'Miami'
   const currentHotelName = currentHotel?.name
 
-  // Debug logging
-  useEffect(() => {
-    if (isOpen) {
-      console.log('HotelSelectModal opened with:', {
-        currentHotel,
-        cityId,
-        currentHotelName,
-        isChangeRoom: !!currentHotelName
-      })
-    }
-  }, [isOpen, currentHotel, cityId, currentHotelName])
-
   const {
     hotels,
     loading,
@@ -96,15 +84,12 @@ export default function HotelSelectModal({
   const debouncedSearch = useMemo(
     () => debounce((query: string) => {
       setIsSearching(false)
-      console.log('Debounced search triggered with query:', query, 'length:', query.length)
       // Only search if query is empty or has at least 2 characters
       if (query.length === 0 || query.length >= 2) {
-        console.log('Applying search filter for query:', query)
         setFilters({
           searchHotels: query || undefined
         })
       } else {
-        console.log('Query too short, not searching')
       }
     }, 500), // 500ms debounce delay
     [setFilters]
@@ -112,14 +97,11 @@ export default function HotelSelectModal({
 
   // Handle search input change - memoized to prevent re-creation
   const handleSearchChange = useCallback((value: string) => {
-    console.log('Search input changed to:', value, 'length:', value.length)
     setSearchQuery(value)
     if (value.length > 0 && value.length < 2) {
       setIsSearching(false) // Don't show searching for short queries
-      console.log('Query too short, not showing searching state')
     } else {
       setIsSearching(true) // Show searching state
-      console.log('Query valid, showing searching state')
     }
   }, [])
 

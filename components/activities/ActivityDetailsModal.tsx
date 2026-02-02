@@ -114,21 +114,7 @@ export default function ActivityDetailsModal({
   }
 
   const handleAddToPackage = async () => {
-    console.log('handleAddToPackage called', {
-      activity: !!activity,
-      scheduleSlot: !!selection.scheduleSlot,
-      pickupOption: !!selection.pickupOption,
-      isEditMode,
-      currentBookingId,
-      selection
-    })
-
     if (!activity || !selection.scheduleSlot || !selection.pickupOption) {
-      console.log('Missing required fields:', {
-        activity: !!activity,
-        scheduleSlot: !!selection.scheduleSlot,
-        pickupOption: !!selection.pickupOption
-      })
       return
     }
 
@@ -144,31 +130,23 @@ export default function ActivityDetailsModal({
       totalPrice: calculatePrice(selection)
     }
 
-    console.log('Full selection created:', fullSelection)
 
     const validationErrors = validateSelection(fullSelection)
     if (validationErrors.length > 0) {
-      console.log('Validation errors:', validationErrors)
-      console.log('Full selection:', fullSelection)
-      console.log('Selection state:', selection)
       setErrors(validationErrors)
       return
     }
 
-    console.log('Validation passed, proceeding with API calls')
 
     setIsSubmitting(true)
     try {
       if (isEditMode && currentBookingId) {
-        console.log('Edit mode: calling onAddToPackage with bookingId:', currentBookingId)
         // In edit mode, pass the booking ID for deletion
         await onAddToPackage(activity, fullSelection, currentBookingId)
       } else {
-        console.log('Add mode: calling onAddToPackage without bookingId')
         // Normal add mode
         await onAddToPackage(activity, fullSelection)
       }
-      console.log('onAddToPackage completed successfully')
       onClose()
     } catch (err) {
       console.error('Error in handleAddToPackage:', err)

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Hotel, HotelSearchParams, HotelSearchResult, HotelFilters } from '@/types/hotel'
 import { searchHotels } from '@/lib/api/hotels'
+import { debounce } from '@/lib/utils'
 
 interface UseHotelSearchReturn {
   results: Hotel[]
@@ -140,24 +141,5 @@ export const useHotelSearch = (initialParams?: Partial<HotelSearchParams>): UseH
   }
 }
 
-// Debounce utility function
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout | null = null
-  
-  return (...args: Parameters<T>) => {
-    if (timeout) {
-      clearTimeout(timeout)
-    }
-    
-    timeout = setTimeout(() => {
-      func(...args)
-    }, wait)
-  }
-}
-
 export default useHotelSearch
-
 

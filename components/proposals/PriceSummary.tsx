@@ -197,7 +197,7 @@ export function PriceSummary({ proposal, onSaveProposal, onPreview }: PriceSumma
                 variant="outline"
                 size="sm"
                 className="w-full text-xs"
-                onClick={() => console.log('Quick add')}
+                onClick={() => {}}
               >
                 <Plus className="h-3 w-3 mr-1" />
                 Quick Add

@@ -63,7 +63,6 @@ export function useCountriesSearch(): UseCountriesSearchReturn {
   // Handle data when it changes
   useEffect(() => {
     if (data && typeof data === 'object' && data !== null && 'countries' in data) {
-      console.log('Countries search response:', data);
       const countriesData = (data as any).countries;
       setCountries(countriesData?.data || []);
       setPagination(countriesData?.pagination || null);
@@ -192,7 +191,6 @@ export function useCountriesSimple(): {
   // Handle data when it changes
   useEffect(() => {
     if (data && typeof data === 'object' && data !== null && 'countries' in data) {
-      console.log('Countries simple response:', data);
       setCountries((data as any).countries);
     }
   }, [data]);

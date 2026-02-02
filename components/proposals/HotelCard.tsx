@@ -1,5 +1,6 @@
 "use client"
 
+import { memo } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -16,7 +17,7 @@ interface HotelCardProps {
   onChangeHotel?: () => void
 }
 
-export function HotelCard({ hotel, onEdit, onRemove, onChangeRoom, onChangeHotel }: HotelCardProps) {
+export const HotelCard = memo(function HotelCard({ hotel, onEdit, onRemove, onChangeRoom, onChangeHotel }: HotelCardProps) {
   const formatPrice = (price: number, currency: string = 'INR') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -183,4 +184,4 @@ export function HotelCard({ hotel, onEdit, onRemove, onChangeRoom, onChangeHotel
       </Card>
     </motion.div>
   )
-}
+})

@@ -57,11 +57,9 @@ export function useCreateProposal() {
     onError?: (error: string) => void
   ): Promise<ProposalResponse | null> => {
     try {
-      console.log('Creating proposal with data:', data)
       
       // Get the next version number for this trip
       let nextVersion = await getNextVersionNumber(data.trip)
-      console.log('Next version number:', nextVersion)
       
       // Update the data with the correct version
       let proposalData = {
@@ -75,13 +73,11 @@ export function useCreateProposal() {
       const maxAttempts = 5
       
       while (attempts < maxAttempts) {
-        console.log(`Attempt ${attempts + 1} with version ${nextVersion}`)
         
         response = await createProposalMutation({
           variables: { data: proposalData }
         })
 
-        console.log('Full response data:', response.data)
         
         if (response.data && (response.data as any).createProposal) {
           const createProposalResponse = (response.data as any).createProposal
@@ -89,7 +85,6 @@ export function useCreateProposal() {
           // Check if it's a successful creation (has id) or an error (has messages)
           // If id exists = Success, if messages exist = Error
           if (createProposalResponse.id) {
-            console.log('Proposal created successfully:', createProposalResponse)
             toast({ description: `Proposal v${nextVersion} created successfully!`, type: 'success' })
             
             if (onSuccess) {
@@ -99,7 +94,6 @@ export function useCreateProposal() {
             return { createProposal: createProposalResponse } as ProposalResponse
           } else if (createProposalResponse.messages) {
             // Messages present = Error occurred
-            console.log('Proposal creation returned error messages:', createProposalResponse.messages)
             
             // Check if it's a unique constraint error that we can retry
             const uniqueError = createProposalResponse.messages.find((msg: any) => 
@@ -107,7 +101,6 @@ export function useCreateProposal() {
             )
             
             if (uniqueError && attempts < maxAttempts - 1) {
-              console.log('Unique constraint error detected, trying next version...')
               nextVersion++
               proposalData = { ...proposalData, version: nextVersion }
               attempts++
@@ -159,15 +152,12 @@ export function useCreateProposal() {
   ): Promise<ProposalResponse | null> => {
     const result = await createProposal(data)
     
-    console.log('createProposalAndRedirect result:', result)
     
     if (result && result.createProposal) {
       const proposalId = result.createProposal.id
-      console.log('Proposal ID from result:', proposalId)
       
       if (proposalId) {
         const redirectTo = redirectPath || `/proposal/${proposalId}`
-        console.log('Redirecting to:', redirectTo)
         router.push(redirectTo)
       } else {
         console.error('No proposal ID found in result:', result)

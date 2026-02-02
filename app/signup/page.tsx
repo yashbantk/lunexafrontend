@@ -40,9 +40,7 @@ export default function SignUpPage() {
   const { handlePostLoginRedirect } = useRedirectHandler();
 
   const { signup, loading, errors, clearErrors } = useSignup({
-    onSuccess: (result) => {
-      console.log('Signup success callback triggered', { result, isAuthenticated, currentUser });
-      
+    onSuccess: () => {
       // Mark that we've just completed a signup
       setHasJustSignedUp(true);
       
@@ -55,7 +53,6 @@ export default function SignUpPage() {
       
       // Use the redirect handler to preserve intended destination
       setTimeout(() => {
-        console.log('Attempting redirect to proposal page...');
         handlePostLoginRedirect('/proposal')
       }, 1000)
     },
@@ -76,7 +73,6 @@ export default function SignUpPage() {
   // Redirect if already authenticated (only on initial load, not after signup)
   useEffect(() => {
     if (isAuthenticated && currentUser && !loading && !hasJustSignedUp) {
-      console.log('User is already authenticated, redirecting to proposal page', { currentUser });
       router.push('/proposal');
     }
   }, [isAuthenticated, currentUser, loading, hasJustSignedUp, router]);

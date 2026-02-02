@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useReducer, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { 
@@ -42,6 +42,56 @@ import { InclusionsSection } from "@/components/proposals/InclusionsSection"
 import HotelDetailsModal from "@/components/hotels/HotelDetailsModal"
 import ActivityDetailsModal from "@/components/activities/ActivityDetailsModal"
 
+// Modal state types
+interface HotelDetails {
+  id: string
+  checkIn: string
+  checkOut: string
+  nights: number
+}
+
+interface ActivityDetails {
+  activityId: string
+  bookingId: string
+  dayId: string
+  dayIndex: number
+}
+
+interface ModalState {
+  hotelDetails: HotelDetails | null
+  activityDetails: ActivityDetails | null
+  isHotelOpen: boolean
+  isActivityOpen: boolean
+}
+
+type ModalAction =
+  | { type: 'OPEN_HOTEL'; payload: HotelDetails }
+  | { type: 'CLOSE_HOTEL' }
+  | { type: 'OPEN_ACTIVITY'; payload: ActivityDetails }
+  | { type: 'CLOSE_ACTIVITY' }
+
+const initialModalState: ModalState = {
+  hotelDetails: null,
+  activityDetails: null,
+  isHotelOpen: false,
+  isActivityOpen: false,
+}
+
+function modalReducer(state: ModalState, action: ModalAction): ModalState {
+  switch (action.type) {
+    case 'OPEN_HOTEL':
+      return { ...state, hotelDetails: action.payload, isHotelOpen: true }
+    case 'CLOSE_HOTEL':
+      return { ...state, hotelDetails: null, isHotelOpen: false }
+    case 'OPEN_ACTIVITY':
+      return { ...state, activityDetails: action.payload, isActivityOpen: true }
+    case 'CLOSE_ACTIVITY':
+      return { ...state, activityDetails: null, isActivityOpen: false }
+    default:
+      return state
+  }
+}
+
 export default function ProposalDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -53,85 +103,41 @@ export default function ProposalDetailPage() {
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false)
   const [activeTab, setActiveTab] = useState<'itinerary' | 'inclusions' | 'terms' | 'help'>('itinerary')
   
-  // Modal state management
-  const [selectedHotelForDetails, setSelectedHotelForDetails] = useState<{
-    id: string
-    checkIn: string
-    checkOut: string
-    nights: number
-  } | null>(null)
-  const [isHotelDetailsOpen, setIsHotelDetailsOpen] = useState(false)
-  
-  const [selectedActivityForDetails, setSelectedActivityForDetails] = useState<{
-    activityId: string
-    bookingId: string
-    dayId: string
-    dayIndex: number
-  } | null>(null)
-  const [isActivityDetailsOpen, setIsActivityDetailsOpen] = useState(false)
+  // Consolidated modal state management with useReducer
+  const [modalState, dispatch] = useReducer(modalReducer, initialModalState)
 
   // Calculate nights between check-in and check-out
-  const calculateNights = (checkIn: string, checkOut: string): number => {
+  const calculateNights = useCallback((checkIn: string, checkOut: string): number => {
     const checkInDate = new Date(checkIn)
     const checkOutDate = new Date(checkOut)
     const diffTime = checkOutDate.getTime() - checkInDate.getTime()
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
     return diffDays > 0 ? diffDays : 1
-  }
+  }, [])
 
   // Handle hotel view
-  const handleViewHotel = (hotelId: string, checkIn: string, checkOut: string) => {
+  const handleViewHotel = useCallback((hotelId: string, checkIn: string, checkOut: string) => {
     const nights = calculateNights(checkIn, checkOut)
-    setSelectedHotelForDetails({ id: hotelId, checkIn, checkOut, nights })
-    setIsHotelDetailsOpen(true)
-  }
+    dispatch({ type: 'OPEN_HOTEL', payload: { id: hotelId, checkIn, checkOut, nights } })
+  }, [calculateNights])
 
-  const handleCloseHotelDetails = () => {
-    setIsHotelDetailsOpen(false)
-    setSelectedHotelForDetails(null)
-  }
+  const handleCloseHotelDetails = useCallback(() => {
+    dispatch({ type: 'CLOSE_HOTEL' })
+  }, [])
 
   // Handle activity view
-  const handleViewActivity = (activityId: string, bookingId: string, dayId: string, dayIndex: number) => {
-    setSelectedActivityForDetails({ activityId, bookingId, dayId, dayIndex })
-    setIsActivityDetailsOpen(true)
-  }
+  const handleViewActivity = useCallback((activityId: string, bookingId: string, dayId: string, dayIndex: number) => {
+    dispatch({ type: 'OPEN_ACTIVITY', payload: { activityId, bookingId, dayId, dayIndex } })
+  }, [])
 
-  const handleCloseActivityDetails = () => {
-    setIsActivityDetailsOpen(false)
-    setSelectedActivityForDetails(null)
-  }
+  const handleCloseActivityDetails = useCallback(() => {
+    dispatch({ type: 'CLOSE_ACTIVITY' })
+  }, [])
 
   // Handle transfer view (could show transfer details modal in future)
-  const handleViewTransfer = () => {
+  const handleViewTransfer = useCallback(() => {
     toast({ description: "Transfer details will be available soon", type: "info" })
-  }
-
-  // Debug proposal data
-  useEffect(() => {
-    if (proposal) {
-      console.log('Proposal data:', proposal)
-      console.log('Trip data:', proposal.trip)
-      console.log('Days:', proposal.trip?.days)
-      console.log('Days length:', proposal.trip?.days?.length)
-      
-      // Debug activities for each day
-      proposal.trip?.days?.forEach((day: any, index: number) => {
-        console.log(`Day ${index + 1} (${day.dayNumber}):`, {
-          date: day.date,
-          activityBookings: day.activityBookings,
-          activityBookingsLength: day.activityBookings?.length || 0,
-          activityBookingsData: day.activityBookings?.map((booking: any) => ({
-            id: booking.id,
-            slot: booking.slot,
-            activityTitle: booking.option?.activity?.title,
-            startTime: booking.option?.startTime,
-            optionName: booking.option?.name
-          }))
-        })
-      })
-    }
-  }, [proposal])
+  }, [toast])
 
   // Format date
   const formatDate = (dateString: string) => {
@@ -187,7 +193,6 @@ export default function ProposalDetailPage() {
             // but the page should have print styles and user can use Ctrl+P or Cmd+P
           }
         } catch (e) {
-          console.log('Cannot access new window for print (security restriction)')
         }
       }, 1000)
       
@@ -204,7 +209,6 @@ export default function ProposalDetailPage() {
 
   // Handle download PDF
   const handleDownloadPDF = async () => {
-    console.log('Download PDF clicked, proposalId:', proposalId)
     
     setIsDownloadingPDF(true)
     
@@ -603,7 +607,6 @@ export default function ProposalDetailPage() {
                       })
                       .filter((activity): activity is NonNullable<typeof activity> => activity !== null)
                     
-                    console.log(`Mapped Day ${day.dayNumber} activities:`, activities.length, activities)
                     
                     // Map transfers
                     const transfers = (day.transfers || [])
@@ -821,7 +824,7 @@ export default function ProposalDetailPage() {
                   }}
                   onEditProposal={() => proposal && handleEditProposal(proposal)}
                   onUpdateMarkup={() => proposal && handleEditProposal(proposal)}
-                  onBookNow={() => console.log('Book now')}
+                  onBookNow={() => {}}
                   onDownloadPDF={handleDownloadPDF}
                   onMail={handleMail}
                   onWhatsApp={handleWhatsApp}
@@ -835,18 +838,18 @@ export default function ProposalDetailPage() {
       </div>
 
       {/* Hotel Details Modal */}
-      {selectedHotelForDetails && (
+      {modalState.hotelDetails && (
         <HotelDetailsModal
-          isOpen={isHotelDetailsOpen}
+          isOpen={modalState.isHotelOpen}
           onClose={handleCloseHotelDetails}
-          hotelId={selectedHotelForDetails.id.includes('-') ? selectedHotelForDetails.id.split('-')[0] : selectedHotelForDetails.id}
+          hotelId={modalState.hotelDetails.id.includes('-') ? modalState.hotelDetails.id.split('-')[0] : modalState.hotelDetails.id}
           onSelectRoom={() => {
             // This is view-only mode, so we don't need room selection
             handleCloseHotelDetails()
           }}
-          checkIn={selectedHotelForDetails.checkIn}
-          checkOut={selectedHotelForDetails.checkOut}
-          nights={selectedHotelForDetails.nights}
+          checkIn={modalState.hotelDetails.checkIn}
+          checkOut={modalState.hotelDetails.checkOut}
+          nights={modalState.hotelDetails.nights}
           adults={proposal?.trip?.travelerDetails?.adults || 2}
           childrenCount={proposal?.trip?.travelerDetails?.children || 0}
           mode="modal"
@@ -854,22 +857,22 @@ export default function ProposalDetailPage() {
       )}
 
       {/* Activity Details Modal */}
-      {selectedActivityForDetails && (
+      {modalState.activityDetails && (
         <ActivityDetailsModal
-          isOpen={isActivityDetailsOpen}
+          isOpen={modalState.isActivityOpen}
           onClose={handleCloseActivityDetails}
-          activityId={selectedActivityForDetails.activityId}
+          activityId={modalState.activityDetails.activityId}
           onAddToPackage={() => {
             // This is view-only mode, so we don't need to add to package
             toast({ description: "This is view-only mode", type: "info" })
           }}
-          dayId={selectedActivityForDetails.dayId}
-          checkIn={proposal?.trip?.days?.[selectedActivityForDetails.dayIndex]?.stay?.checkIn || new Date().toISOString()}
-          checkOut={proposal?.trip?.days?.[selectedActivityForDetails.dayIndex]?.stay?.checkOut || new Date().toISOString()}
+          dayId={modalState.activityDetails.dayId}
+          checkIn={proposal?.trip?.days?.[modalState.activityDetails.dayIndex]?.stay?.checkIn || new Date().toISOString()}
+          checkOut={proposal?.trip?.days?.[modalState.activityDetails.dayIndex]?.stay?.checkOut || new Date().toISOString()}
           adults={proposal?.trip?.travelerDetails?.adults || 2}
           childrenCount={proposal?.trip?.travelerDetails?.children || 0}
           isEditMode={false}
-          currentBookingId={selectedActivityForDetails.bookingId}
+          currentBookingId={modalState.activityDetails.bookingId}
         />
       )}
 

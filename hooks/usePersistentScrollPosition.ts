@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 
 interface ScrollPosition {
@@ -10,52 +10,77 @@ interface ScrollPosition {
 const STORAGE_KEY = 'scroll-positions'
 const MAX_AGE = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
 
+// Module-level cache for scroll positions (avoids repeated localStorage reads)
+let scrollPositionsCache: Record<string, ScrollPosition> | null = null
+let lastCleanupTime = 0
+
+// Get scroll positions with caching
+function getScrollPositions(): Record<string, ScrollPosition> {
+  if (typeof window === 'undefined') return {}
+  
+  // Return cached if available and recent (cleaned within last minute)
+  const now = Date.now()
+  if (scrollPositionsCache !== null && now - lastCleanupTime < 60000) {
+    return scrollPositionsCache
+  }
+  
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (!stored) {
+      scrollPositionsCache = {}
+      lastCleanupTime = now
+      return scrollPositionsCache
+    }
+    
+    const positions = JSON.parse(stored)
+    
+    // Clean up old positions
+    const cleanedPositions: Record<string, ScrollPosition> = {}
+    let hasExpired = false
+    
+    for (const [key, position] of Object.entries(positions)) {
+      if (now - (position as ScrollPosition).timestamp < MAX_AGE) {
+        cleanedPositions[key] = position as ScrollPosition
+      } else {
+        hasExpired = true
+      }
+    }
+    
+    // Save cleaned positions back to localStorage only if something was removed
+    if (hasExpired) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanedPositions))
+    }
+    
+    scrollPositionsCache = cleanedPositions
+    lastCleanupTime = now
+    return scrollPositionsCache
+  } catch {
+    scrollPositionsCache = {}
+    lastCleanupTime = now
+    return scrollPositionsCache
+  }
+}
+
+// Save scroll positions with cache update
+function saveScrollPositions(positions: Record<string, ScrollPosition>): void {
+  if (typeof window === 'undefined') return
+  
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(positions))
+    scrollPositionsCache = positions // Update cache
+  } catch {
+    // Silently fail - localStorage might be full or unavailable
+  }
+}
+
+// Clear cache (useful when localStorage is modified externally)
+function invalidateCache(): void {
+  scrollPositionsCache = null
+}
+
 export function usePersistentScrollPosition() {
   const pathname = usePathname()
   const isRestored = useRef(false)
-
-  // Get scroll positions from localStorage
-  const getScrollPositions = (): Record<string, ScrollPosition> => {
-    if (typeof window === 'undefined') return {}
-    
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (!stored) return {}
-      
-      const positions = JSON.parse(stored)
-      
-      // Clean up old positions
-      const now = Date.now()
-      const cleanedPositions: Record<string, ScrollPosition> = {}
-      
-      Object.entries(positions).forEach(([key, position]) => {
-        if (now - (position as ScrollPosition).timestamp < MAX_AGE) {
-          cleanedPositions[key] = position as ScrollPosition
-        }
-      })
-      
-      // Save cleaned positions back to localStorage
-      if (Object.keys(cleanedPositions).length !== Object.keys(positions).length) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanedPositions))
-      }
-      
-      return cleanedPositions
-    } catch (error) {
-      console.warn('Failed to load scroll positions from localStorage:', error)
-      return {}
-    }
-  }
-
-  // Save scroll positions to localStorage
-  const saveScrollPositions = (positions: Record<string, ScrollPosition>) => {
-    if (typeof window === 'undefined') return
-    
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(positions))
-    } catch (error) {
-      console.warn('Failed to save scroll positions to localStorage:', error)
-    }
-  }
 
   useEffect(() => {
     // Save scroll position before page unload
@@ -160,6 +185,7 @@ export function usePersistentScrollPosition() {
     clearAllScrollPositions: () => {
       if (typeof window !== 'undefined') {
         localStorage.removeItem(STORAGE_KEY)
+        invalidateCache()
       }
     }
   }

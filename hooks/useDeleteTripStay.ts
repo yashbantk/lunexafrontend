@@ -26,7 +26,6 @@ export function useDeleteTripStay() {
     onError?: (error: string) => void
   ): Promise<DeleteTripStayResponse | null> => {
     try {
-      console.log('Deleting trip stay with ID:', stayId)
       
       const response = await deleteTripStayMutation({
         variables: { 
@@ -34,7 +33,6 @@ export function useDeleteTripStay() {
         }
       })
 
-      console.log('Delete trip stay response:', response.data)
 
       if (response.data && (response.data as any).deleteTripStay) {
         const deleteTripStayResponse = (response.data as any).deleteTripStay
@@ -42,7 +40,6 @@ export function useDeleteTripStay() {
         // Check if it's a successful deletion (has id) or an error (has messages)
         // If id exists = Success, if messages exist = Error
         if (deleteTripStayResponse.id) {
-          console.log('Trip stay deleted successfully:', deleteTripStayResponse)
           toast({ description: 'Hotel stay removed successfully!', type: 'success' })
           
           if (onSuccess) {
@@ -52,7 +49,6 @@ export function useDeleteTripStay() {
           return { deleteTripStay: deleteTripStayResponse } as DeleteTripStayResponse
         } else if (deleteTripStayResponse.messages) {
           // Messages present = Error occurred
-          console.log('Trip stay deletion returned error messages:', deleteTripStayResponse.messages)
           const errorMessage = deleteTripStayResponse.messages[0]?.message || 'Failed to delete trip stay'
           console.error('GraphQL error:', errorMessage)
           toast({ description: errorMessage, type: 'error' })

@@ -51,7 +51,6 @@ function handleGraphQLError(error: any): AuthError {
     // Try to parse the error message which contains the actual error details
     try {
       const errorDetails = JSON.parse(error.message);
-      console.log('Parsed error details:', errorDetails);
       
       // Extract field-specific errors
       if (errorDetails.email && Array.isArray(errorDetails.email)) {

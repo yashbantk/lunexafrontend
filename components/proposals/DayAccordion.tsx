@@ -370,7 +370,6 @@ export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, o
                               onClick={(e) => {
                                 e.preventDefault()
                                 e.stopPropagation()
-                                console.log('Remove activity clicked:', activity.id, dayIndex)
                                 
                                 // Add confirmation dialog
                                 if (window.confirm(`Are you sure you want to remove "${activity.title}"?`)) {
