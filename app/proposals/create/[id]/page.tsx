@@ -41,9 +41,12 @@ import {
   getBlockedTimeSlots,
   getAvailableTimeSlots,
   calculateEndTime,
+  formatTime,
   DaySlot,
   ActivityTimeBlock
 } from "@/lib/utils/activitySlotFilter"
+
+import ConfirmationModal from "@/components/ui/ConfirmationModal"
 
 export default function CreateProposalPage() {
   const params = useParams()
@@ -71,6 +74,16 @@ export default function CreateProposalPage() {
   const [isTransferDetailsOpen, setIsTransferDetailsOpen] = useState(false)
   const [selectedTransferForDetails, setSelectedTransferForDetails] = useState<TransferProduct | null>(null)
   const [editingTransferBookingId, setEditingTransferBookingId] = useState<string | null>(null)
+  
+  // Conflict Confirmation Modal State
+  const [conflictModalOpen, setConflictModalOpen] = useState(false)
+  const [conflictData, setConflictData] = useState<{
+    activity: ActivityType
+    selection: ActivitySelection
+    bookingIdToDelete?: string
+    conflictingBookings: any[]
+    targetDayId: string
+  } | null>(null)
   
   // Split Stay state - with persistence
   const [isSplitStayEnabled, setIsSplitStayEnabled] = useState(() => {
@@ -445,6 +458,14 @@ export default function CreateProposalPage() {
   const convertTripToProposalFormat = useCallback((tripData: TripData): Proposal => {
     const trip = tripData
     
+    // Helper to determine time slot from start time if slot is missing
+    const getTimeSlotFromStartTime = (startTime?: string): string => {
+      if (!startTime) return 'morning'
+      const hour = parseInt(startTime.split(':')[0])
+      if (hour < 12) return 'morning'
+      if (hour < 17) return 'afternoon'
+      return 'evening'
+    }
     
     // Convert days to the existing Day format
     const convertedDays: Day[] = trip.days.map((day: any) => ({
@@ -456,12 +477,12 @@ export default function CreateProposalPage() {
       activities: day.activityBookings.map((activity: any) => ({
         id: activity.id,
         title: activity.option.name,
-        description: `Duration: ${activity.option.durationMinutes} minutes`,
-        time: activity.option.startTime || 'TBD',
-        duration: `${activity.option.durationMinutes} minutes`,
+        description: activity.option.durationMinutes ? `Duration: ${activity.option.durationMinutes} minutes` : 'Duration: N/A',
+        time: activity.option.startTime ? formatTime(activity.option.startTime) : 'TBD',
+        duration: activity.option.durationMinutes ? `${activity.option.durationMinutes} minutes` : 'N/A',
         price: (activity.priceBaseCents + activity.priceAddonsCents) / 100,
         currency: 'INR',
-        type: activity.slot as 'morning' | 'afternoon' | 'evening' | 'full_day',
+        type: (activity.slot || getTimeSlotFromStartTime(activity.option.startTime) || 'morning') as 'morning' | 'afternoon' | 'evening' | 'full_day',
         included: false
       })),
       accommodation: day.stay && day.stay.rate?.room && day.stay.rate.room.hotel ? `${day.stay.roomsCount} room(s) at ${day.stay.rate.room.hotel.name} (${day.stay.rate.room.hotel.name}, ${day.stay.mealPlan})` : undefined,
@@ -1507,19 +1528,102 @@ export default function CreateProposalPage() {
         return
       }
 
-      // Check for time conflicts only if the activity has a startTime
-      if (activity.startTime) {
-        // Get blocked slots for the specific day
-        const dayBlockedSlots = blockedTimeSlots.filter(slot => {
-          const day = trip.days.find(day => day.id === targetDayId)
-          return day?.activityBookings.some(booking => booking.id === slot.id)
-        })
+      // Slot Conflict Check and Resolution
+      const targetDay = trip.days.find(d => d.id === targetDayId)
+      const deletedBookingIds: string[] = []
+      
+      if (targetDay) {
+        // Normalize slot types (replace hyphens with underscores for consistency)
+        const newSlotType = selection.scheduleSlot.type.replace('-', '_')
         
-        if (hasTimeConflict(activity, dayBlockedSlots)) {
-          throw new Error('This activity conflicts with existing activities in the same time slot. Please choose a different time or remove conflicting activities.')
+        // Find conflicting bookings
+        const conflictingBookings = targetDay.activityBookings.filter(booking => {
+           const bookingSlot = booking.slot.replace('-', '_')
+           
+           // Check for direct slot conflict or full-day conflict
+           const isConflict = (bookingSlot === newSlotType) || 
+                              (newSlotType === 'full_day') || 
+                              (bookingSlot === 'full_day')
+           
+           // Exclude the booking we are currently editing/replacing (if any)
+           const isNotSelf = booking.id !== bookingIdToDelete
+           
+           return isConflict && isNotSelf
+        })
+
+        if (conflictingBookings.length > 0) {
+           const activityNames = conflictingBookings.map(b => b.option.name).join(', ')
+           const confirmed = window.confirm(
+             `This time slot is already booked with: ${activityNames}.\n\nDo you want to replace existing activit${conflictingBookings.length > 1 ? 'ies' : 'y'} with "${activity.title}"?`
+           )
+
+           if (!confirmed) {
+             return // Stop if user cancels
+           }
+
+           // Delete conflicting bookings
+           for (const booking of conflictingBookings) {
+             const result = await deleteActivityBooking(booking.id)
+             if (result) {
+                deletedBookingIds.push(booking.id)
+             } else {
+                // If deletion fails, stop process to avoid valid conflict
+                return
+             }
+           }
         }
       }
 
+      // Determine effective start and end times from selected option
+      let startTime = activity.startTime
+      let endTime = calculateEndTime(activity.startTime, activity.durationMins)
+      
+      if (selection.selectedOption) {
+        startTime = selection.selectedOption.startTime
+        // Use provided end time if available, otherwise calculate from duration
+        if (selection.selectedOption.endTime) {
+           endTime = selection.selectedOption.endTime
+        } else {
+           endTime = calculateEndTime(startTime, selection.selectedOption.durationMinutes)
+        }
+      }
+
+      // Check for time conflicts
+      if (startTime) {
+        // Use real trip data for checking conflicts instead of blockedTimeSlots state
+        // This ensures we are comparing against the actual previous slot booked activity times
+        const day = trip.days.find(d => d.id === targetDayId)
+        
+        if (day) {
+          const conflictingBookings = day.activityBookings.filter(booking => {
+            // Exclude bookings we just deleted or are currently editing
+            if (deletedBookingIds.includes(booking.id) || booking.id === bookingIdToDelete) {
+              return false
+            }
+            
+            // Get precise start and end times from the booked option
+            const existingStart = booking.option.startTime
+            const existingEnd = booking.option.endTime
+            
+            return isTimeOverlap(startTime, endTime, existingStart, existingEnd)
+          })
+          
+          if (conflictingBookings.length > 0) {
+            // Set conflict data and open modal instead of window.confirm
+            setConflictData({
+              activity,
+              selection,
+              bookingIdToDelete,
+              conflictingBookings,
+              targetDayId
+            })
+            setConflictModalOpen(true)
+            return
+          }
+        }
+      }
+
+      // If no conflict (or time check skipped), proceed directly
       // If we're editing, delete the old booking first
       if (bookingIdToDelete) {
         const deleteResult = await deleteActivityBooking(bookingIdToDelete)
@@ -1537,6 +1641,41 @@ export default function CreateProposalPage() {
       console.error('Error in handleActivitySelect:', error)
       // The error handling is already done in the activity booking function
       // The user will see the error toast from the useActivityBooking hook
+    }
+  }
+
+  // Handle confirmation of conflict resolution
+  const handleConfirmConflict = async () => {
+    if (!conflictData) return
+
+    try {
+      const { activity, selection, bookingIdToDelete, conflictingBookings, targetDayId } = conflictData
+
+      // Delete conflicting bookings
+      for (const booking of conflictingBookings) {
+        // Don't delete if it's the one we are editing (though logic should have excluded it)
+        if (booking.id !== bookingIdToDelete) {
+           await deleteActivityBooking(booking.id)
+        }
+      }
+
+      // If we're editing, delete the old booking too
+      if (bookingIdToDelete) {
+        await deleteActivityBooking(bookingIdToDelete)
+      }
+
+      // Add the new booking
+      await handleActivityBookingFromSelection(targetDayId, activity, selection)
+
+      // Close everything
+      setConflictModalOpen(false)
+      setConflictData(null)
+      setIsActivityExplorerOpen(false)
+      setEditingDayIndex(null)
+      setEditingActivityBookingId(null)
+
+    } catch (error) {
+      console.error('Error resolving conflict:', error)
     }
   }
 
@@ -1707,75 +1846,55 @@ export default function CreateProposalPage() {
 
 
       // Call the GraphQL mutation
-      const response = await createActivityBooking(
-        bookingInput,
-        // Success callback - update UI immediately
-        async (response: ActivityBookingResponse) => {
+      const response = await createActivityBooking(bookingInput)
+      
+      if (response?.createActivityBooking) {
+        // Immediately update blocked time slots from the response if it has the necessary data
+        if (response.createActivityBooking.option) {
+          const booking = response.createActivityBooking
+          const option = booking.option
           
-          // Immediately update blocked time slots from the response if it has the necessary data
-          if (response.createActivityBooking && response.createActivityBooking.option) {
-            const booking = response.createActivityBooking
-            const option = booking.option
-            
-            // Calculate start and end time
-            const startTime = option.startTime || '09:00'
-            const endTime = calculateEndTime(startTime, option.durationMinutes)
-            
-            // Add the new blocked time slot immediately
-            setBlockedTimeSlots(prev => {
-              // Check if this booking already exists (avoid duplicates)
-              const existingIndex = prev.findIndex(slot => slot.id === booking.id)
-              if (existingIndex >= 0) {
-                // Update existing slot
-                const updated = [...prev]
-                updated[existingIndex] = {
-                  id: booking.id,
-                  startTime,
-                  endTime,
-                  title: option.name,
-                  slot: booking.slot as DaySlot,
-                  dayId: dayId // Use the dayId parameter from the function
-                }
-                return updated
-              } else {
-                // Add new slot
-                return [...prev, {
-                  id: booking.id,
-                  startTime,
-                  endTime,
-                  title: option.name,
-                  slot: booking.slot as DaySlot,
-                  dayId: dayId // Use the dayId parameter from the function
-                }]
+          // Calculate start and end time
+          const startTime = option.startTime || '09:00'
+          const endTime = calculateEndTime(startTime, option.durationMinutes)
+          
+          // Add the new blocked time slot immediately
+          setBlockedTimeSlots(prev => {
+            // Check if this booking already exists (avoid duplicates)
+            const existingIndex = prev.findIndex(slot => slot.id === booking.id)
+            if (existingIndex >= 0) {
+              // Update existing slot
+              const updated = [...prev]
+              updated[existingIndex] = {
+                id: booking.id,
+                startTime,
+                endTime,
+                title: option.name,
+                slot: booking.slot as DaySlot,
+                dayId: dayId // Use the dayId parameter from the function
               }
-            })
-          }
-          
-          // Update the trip data and refetch to get the latest data
-          try {
-            // Add a small delay to ensure backend has processed the booking
-            await new Promise(resolve => setTimeout(resolve, 300))
-            
-            const refetchResult = await refetchTrip()
-            const updatedTripData = refetchResult?.data?.trip
-            
-            if (updatedTripData) {
-              // Update blocked time slots with the newly refetched trip data (this will sync everything)
-              updateBlockedTimeSlots(updatedTripData)
-              
-              // Convert and update proposal with new trip data
-              const updatedProposal = convertTripToProposalFormat(updatedTripData)
-              updateProposalWithPrices(updatedProposal)
+              return updated
+            } else {
+              // Add new slot
+              return [...prev, {
+                id: booking.id,
+                startTime,
+                endTime,
+                title: option.name,
+                slot: booking.slot as DaySlot,
+                dayId: dayId // Use the dayId parameter from the function
+              }]
             }
-          } catch (refetchError) {
-            console.error('Error refetching trip data:', refetchError)
-          }
-        },
-        // Error callback
-        (error: string) => {
-          console.error('Failed to create activity booking:', error)
+          })
         }
-      )
+        
+        // Refresh trip data to reflect the new booking in the UI
+        try {
+          await refetchTrip()
+        } catch (refetchError) {
+          console.error('Error refetching trip data:', refetchError)
+        }
+      }
 
       return response
 
@@ -2744,6 +2863,20 @@ export default function CreateProposalPage() {
           currentBookingId={editingTransferBookingId || undefined}
         />
       )}
+
+      {/* Conflict Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={conflictModalOpen}
+        onClose={() => {
+          setConflictModalOpen(false)
+          setConflictData(null)
+        }}
+        onConfirm={handleConfirmConflict}
+        title="Time Slot Conflict"
+        message={conflictData ? `This time slot is already booked with:\n\n${conflictData.conflictingBookings.map(b => `• ${b.option.name} (${formatTime(b.option.startTime)} - ${formatTime(b.option.endTime)})`).join('\n')}\n\nDo you want to replace existing activit${conflictData.conflictingBookings.length > 1 ? 'ies' : 'y'} with "${conflictData.activity.title}"?` : ''}
+        confirmText="Replace & Add"
+        variant="warning"
+      />
     </div>
   )
 }

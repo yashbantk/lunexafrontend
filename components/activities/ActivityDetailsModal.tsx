@@ -114,26 +114,30 @@ export default function ActivityDetailsModal({
   }
 
   const handleAddToPackage = async () => {
-    if (!activity || !selection.scheduleSlot || !selection.pickupOption) {
+    // Basic validation - just ensure we have an activity
+    if (!activity) {
       return
     }
 
     const fullSelection: ActivitySelection = {
       activity,
       selectedOption: selection.selectedOption || (activity.activityOptions.length === 1 ? activity.activityOptions[0] : undefined),
-      scheduleSlot: selection.scheduleSlot,
+      scheduleSlot: selection.scheduleSlot || activity.availability[0], // Use default if not selected
       adults: selection.adults || 0,
       childrenCount: selection.childrenCount || 0,
       extras: selection.extras || [],
-      pickupOption: selection.pickupOption,
+      pickupOption: selection.pickupOption || activity.pickupOptions[0], // Use default if not selected
       notes: selection.notes || '',
       totalPrice: calculatePrice(selection)
     }
 
 
     const validationErrors = validateSelection(fullSelection)
-    if (validationErrors.length > 0) {
-      setErrors(validationErrors)
+    // Relaxed validation: only block if critical info is missing
+    const criticalErrors = validationErrors.filter(err => err.includes('Activity not loaded'))
+    
+    if (criticalErrors.length > 0) {
+      setErrors(criticalErrors)
       return
     }
 
@@ -381,29 +385,36 @@ export default function ActivityDetailsModal({
                     {/* Schedule Selection */}
                     <div className="space-y-3">
                       <Label className="text-base font-medium">Select Time Slot</Label>
-                      <RadioGroup
-                        value={selection.scheduleSlot?.id}
-                        onValueChange={handleScheduleSlotChange}
-                      >
-                        {activity.availability.map((slot) => (
-                          <div key={slot.id} className="flex items-center space-x-2">
-                            <RadioGroupItem value={slot.id} id={slot.id} />
-                            <Label htmlFor={slot.id} className="flex-1 cursor-pointer">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <span className="font-medium">{formatTime(slot.startTime)}</span>
-                                  <span className="text-gray-500 ml-2">
-                                    ({formatDuration(slot.durationMins)})
-                                  </span>
+                      {activity.availability.length > 0 ? (
+                        <RadioGroup
+                          value={selection.scheduleSlot?.id}
+                          onValueChange={handleScheduleSlotChange}
+                        >
+                          {activity.availability.map((slot) => (
+                            <div key={slot.id} className="flex items-center space-x-2">
+                              <RadioGroupItem value={slot.id} id={slot.id} />
+                              <Label htmlFor={slot.id} className="flex-1 cursor-pointer">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <span className="font-medium">{formatTime(slot.startTime)}</span>
+                                    <span className="text-gray-500 ml-2">
+                                      ({formatDuration(slot.durationMins)})
+                                    </span>
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    {slot.maxPax - slot.currentBookings} spots left
+                                  </div>
                                 </div>
-                                <div className="text-sm text-gray-500">
-                                  {slot.maxPax - slot.currentBookings} spots left
-                                </div>
-                              </div>
-                            </Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
+                              </Label>
+                            </div>
+                          ))}
+                        </RadioGroup>
+                      ) : (
+                        <div className="p-4 bg-yellow-50 text-yellow-800 rounded-lg text-sm flex items-start">
+                          <AlertCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                          No specific time slots. Your activity will be scheduled based on availability.
+                        </div>
+                      )}
                     </div>
 
                     {/* Participants */}
@@ -457,13 +468,19 @@ export default function ActivityDetailsModal({
                     </div>
 
                     {/* Extras */}
-                    <ExtrasList
-                      extras={activity.extras}
-                      selectedExtras={selection.extras || []}
-                      onExtrasChange={handleExtrasChange}
-                      adults={selection.adults || 0}
-                      childrenCount={selection.childrenCount || 0}
-                    />
+                    {activity.extras && activity.extras.length > 0 ? (
+                      <ExtrasList
+                        extras={activity.extras}
+                        selectedExtras={selection.extras || []}
+                        onExtrasChange={handleExtrasChange}
+                        adults={selection.adults || 0}
+                        childrenCount={selection.childrenCount || 0}
+                      />
+                    ) : (
+                      <div className="text-sm text-gray-500 italic">
+                        No additional extras available for this activity.
+                      </div>
+                    )}
 
                     {/* Notes */}
                     <div className="space-y-2">
@@ -512,7 +529,7 @@ export default function ActivityDetailsModal({
                 </div>
                 <Button
                   onClick={handleAddToPackage}
-                  disabled={isSubmitting || !selection.scheduleSlot}
+                  disabled={isSubmitting}
                   className="bg-brand hover:bg-brand/90 text-white px-8 py-3"
                 >
                   {isSubmitting ? (

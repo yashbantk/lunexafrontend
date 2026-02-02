@@ -1,9 +1,9 @@
 'use client'
 
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
-import { Clock, Star, MapPin, Users, Eye, CheckCircle } from 'lucide-react'
+import { Clock, Star, MapPin, Users, Eye, CheckCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -12,7 +12,7 @@ import { formatDuration, formatPrice } from '@/lib/utils/formatUtils'
 
 interface ActivityCardProps {
   activity: Activity
-  onSelect: (activity: Activity) => void
+  onSelect: (activity: Activity) => Promise<void> | void
   onViewDetails: (activity: Activity) => void
   isSelected?: boolean
   viewMode: 'list' | 'grid'
@@ -27,6 +27,16 @@ const ActivityCard = memo(function ActivityCard({
   viewMode,
   className = ''
 }: ActivityCardProps) {
+  const [isAdding, setIsAdding] = useState(false)
+
+  const handleSelect = async () => {
+    setIsAdding(true)
+    try {
+      await onSelect(activity)
+    } finally {
+      setIsAdding(false)
+    }
+  }
 
   const getTimeOfDayBadge = (type: string) => {
     const badges = {
@@ -136,10 +146,13 @@ const ActivityCard = memo(function ActivityCard({
                   </Button>
                   <Button
                     size="sm"
-                    onClick={() => onSelect(activity)}
+                    onClick={handleSelect}
+                    disabled={isAdding}
                     className="text-xs bg-brand hover:bg-brand/90"
                   >
-                    {isSelected ? (
+                    {isAdding ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : isSelected ? (
                       <>
                         <CheckCircle className="h-3 w-3 mr-1" />
                         Selected
@@ -252,10 +265,13 @@ const ActivityCard = memo(function ActivityCard({
                     </Button>
                     <Button
                       size="sm"
-                      onClick={() => onSelect(activity)}
+                      onClick={handleSelect}
+                      disabled={isAdding}
                       className="text-xs bg-brand hover:bg-brand/90"
                     >
-                      {isSelected ? (
+                      {isAdding ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : isSelected ? (
                         <>
                           <CheckCircle className="h-3 w-3 mr-1" />
                           Selected

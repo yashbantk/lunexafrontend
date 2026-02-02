@@ -130,8 +130,14 @@ export default function FiltersPanel({
         {/* Location */}
         <CitySearchDropdown
           value={localFilters.location}
-          onChange={(_, cityId) => {
-            handleFilterChange('cityId', cityId || '')
+          onChange={(cityName, cityId) => {
+            const newFilters = {
+              ...localFilters,
+              location: cityName,
+              cityId: cityId || ''
+            }
+            setLocalFilters(newFilters)
+            onFiltersChange(newFilters)
           }}
           placeholder="Search for a city..."
           label="Location"
@@ -241,8 +247,8 @@ export default function FiltersPanel({
             <Slider
               value={localFilters.duration}
               onValueChange={handleDurationChange}
-              max={600}
-              min={60}
+              max={1440}
+              min={1}
               step={30}
               className="w-full"
             />

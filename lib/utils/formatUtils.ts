@@ -59,6 +59,10 @@ export const formatTime = (timeString: string): string => {
  * @returns Formatted price string in INR
  */
 export const formatPrice = (priceCents: number, currency: string = 'INR'): string => {
+  if (priceCents === undefined || priceCents === null || priceCents === 0) {
+    return 'N/A'
+  }
+
   // Always format in INR - conversion should happen before calling this function
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',

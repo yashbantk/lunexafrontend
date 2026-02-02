@@ -132,8 +132,16 @@ export default function ActivityList({
               onClick={handleLoadMore}
               variant="outline"
               className="px-8"
+              disabled={loading}
             >
-              Load More Activities
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Loading...
+                </>
+              ) : (
+                'Load More Activities'
+              )}
             </Button>
           </div>
         )}

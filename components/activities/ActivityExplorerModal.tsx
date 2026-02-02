@@ -11,6 +11,11 @@ import FiltersPanel from './FiltersPanel'
 import ActivityList from './ActivityList'
 import ActivityDetailsModal from './ActivityDetailsModal'
 
+// Constants for default values
+const DEFAULT_DURATION: [number, number] = [1, 1440]; // 1 minute to 24 hours
+const DEFAULT_PRICE_RANGE: [number, number] = [0, 1000000];
+const DEFAULT_RATING = 0;
+
 export default function ActivityExplorerModal({
   isOpen,
   onClose,
@@ -31,10 +36,10 @@ export default function ActivityExplorerModal({
     query: '',
     category: [],
     timeOfDay: [],
-    duration: [60, 600],
-    priceRange: [0, 1000000],
+    duration: DEFAULT_DURATION,
+    priceRange: DEFAULT_PRICE_RANGE,
     difficulty: [],
-    rating: 0,
+    rating: DEFAULT_RATING,
     location: '',
     sort: 'recommended'
   })
@@ -84,10 +89,10 @@ export default function ActivityExplorerModal({
       query: '',
       category: [],
       timeOfDay: [],
-      duration: [60, 600],
-      priceRange: [0, 1000000],
+      duration: DEFAULT_DURATION,
+      priceRange: DEFAULT_PRICE_RANGE,
       difficulty: [],
-      rating: 0,
+      rating: DEFAULT_RATING,
       location: '',
       sort: 'recommended'
     }
@@ -95,18 +100,66 @@ export default function ActivityExplorerModal({
     resetFilters()
   }
 
-  const activeFiltersCount = Object.values(filters).reduce((count, value) => {
-    if (Array.isArray(value)) {
-      return count + value.length
+  const handleRemoveFilter = (key: keyof ActivityFilters, value?: any) => {
+    const newFilters = { ...filters }
+    
+    if (key === 'category' || key === 'timeOfDay' || key === 'difficulty') {
+      newFilters[key] = (newFilters[key] as string[]).filter(item => item !== value)
+    } else if (key === 'duration') {
+      newFilters.duration = DEFAULT_DURATION
+    } else if (key === 'priceRange') {
+      newFilters.priceRange = DEFAULT_PRICE_RANGE
+    } else if (key === 'rating') {
+      newFilters.rating = DEFAULT_RATING
+    } else if (key === 'query') {
+      newFilters.query = ''
+    } else if (key === 'location') {
+      newFilters.location = ''
+      newFilters.cityId = ''
     }
-    if (typeof value === 'string' && value !== '') {
-      return count + 1
+
+    setFilters(newFilters)
+    updateFilters(newFilters)
+  }
+
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(price)
+  }
+
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
+  }
+
+  const formatTimeOfDay = (value: string) => {
+    switch(value) {
+        case 'morning': return 'Morning'
+        case 'afternoon': return 'Afternoon'
+        case 'evening': return 'Evening'
+        case 'full-day': return 'Full Day'
+        default: return value
     }
-    if (typeof value === 'number' && value > 0) {
-      return count + 1
-    }
-    return count
-  }, 0)
+  }
+
+  const activeFiltersList = [
+    ...(filters.query ? [{ key: 'query', label: `Search: "${filters.query}"` }] : []),
+    ...(filters.location ? [{ key: 'location', label: filters.location }] : []),
+    ...filters.category.map(cat => ({ key: 'category', label: cat, value: cat })),
+    ...filters.timeOfDay.map(t => ({ key: 'timeOfDay', label: formatTimeOfDay(t), value: t })),
+    ...filters.difficulty.map(d => ({ key: 'difficulty', label: d, value: d })),
+    ...(filters.rating > 0 ? [{ key: 'rating', label: `${filters.rating}+ Stars` }] : []),
+    { key: 'duration', label: `${formatDuration(filters.duration[0])} - ${formatDuration(filters.duration[1])}` },
+    { key: 'priceRange', label: `${formatPrice(filters.priceRange[0])} - ${formatPrice(filters.priceRange[1])}` },
+  ]
+
+  const activeFiltersCount = activeFiltersList.length
 
   if (!isOpen) return null
 
@@ -191,6 +244,37 @@ export default function ActivityExplorerModal({
               </Button>
             </div>
           </div>
+
+          {/* Active Filters Bar */}
+          {activeFiltersList.length > 0 && (
+            <div className="bg-gray-50 border-b px-6 py-3 flex items-center flex-wrap gap-2 transition-all duration-200 ease-in-out">
+              <span className="text-sm font-medium text-gray-500 mr-2">Selected Filters:</span>
+              {activeFiltersList.map((filter, index) => (
+                <Badge
+                  key={`${filter.key}-${index}`}
+                  variant="secondary"
+                  className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-3 py-1 text-sm font-normal flex items-center gap-2"
+                >
+                  {filter.label}
+                  <button
+                    onClick={() => handleRemoveFilter(filter.key as keyof ActivityFilters, filter.value)}
+                    className="hover:bg-gray-100 rounded-full p-0.5 transition-colors focus:outline-none"
+                    aria-label={`Remove filter ${filter.label}`}
+                  >
+                    <X className="h-3 w-3 text-gray-400 hover:text-gray-600" />
+                  </button>
+                </Badge>
+              ))}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleResetFilters}
+                className="text-xs text-brand hover:text-brand/80 ml-auto h-7 px-2"
+              >
+                Clear All
+              </Button>
+            </div>
+          )}
 
           {/* Main Content */}
           <div className="flex flex-1 min-h-0">

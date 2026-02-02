@@ -171,22 +171,25 @@ export function DayAccordion({ day, dayIndex, onEdit, onRemove, onAddActivity, o
                   
                   <div className="grid grid-cols-3 gap-4">
                     {['morning', 'afternoon', 'evening'].map((timeSlot) => {
+                      // Also get activities for this day and slot to display in timeline
+                      const dayActivities = day.activities.filter(activity => activity.type === timeSlot)
+                      
                       // Filter blocked slots by day ID if available, otherwise filter by slot type
+                      // Exclude slots that match IDs of activities already being displayed to avoid duplication
                       const slotBlockedSlots = blockedTimeSlots.filter(slot => {
                         const slotMatches = slot.slot === timeSlot
                         const dayMatches = !slot.dayId || slot.dayId === day.id
-                        return slotMatches && dayMatches
+                        const isAlreadyDisplayed = dayActivities.some(activity => activity.id === slot.id)
+                        return slotMatches && dayMatches && !isAlreadyDisplayed
                       })
                       
-                      // Also get activities for this day and slot to display in timeline
-                      const dayActivities = day.activities.filter(activity => activity.type === timeSlot)
                       const isBlocked = slotBlockedSlots.length > 0 || dayActivities.length > 0
                       
                       return (
                         <div key={timeSlot} className="text-center">
                           <div className={`px-3 py-2 rounded-lg text-xs font-medium mb-2 ${getTimeSlotColor(timeSlot)}`}>
                             {timeSlot.charAt(0).toUpperCase() + timeSlot.slice(1)}
-                            {isBlocked && (
+                            {slotBlockedSlots.length > 0 && (
                               <span className="ml-2 text-red-600">({slotBlockedSlots.length} blocked)</span>
                             )}
                           </div>

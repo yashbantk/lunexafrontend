@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Activity, ActivitySelection, ScheduleSlot, Extra, PickupOption } from '@/types/activity'
-import { mockActivities, GET_ACTIVITY_DETAILS } from '@/lib/mocks/activities'
+// import { mockActivities, GET_ACTIVITY_DETAILS } from '@/lib/mocks/activities'
 import { apolloClient } from '@/lib/graphql/client'
 import { ACTIVITY_QUERY, ActivityResponse } from '@/graphql/queries/activities'
 import { transformGraphQLActivityToActivity } from '@/lib/transformers/activity'

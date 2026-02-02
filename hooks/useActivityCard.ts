@@ -3,7 +3,7 @@ import { Activity } from '@/types/activity'
 import { apolloClient } from '@/lib/graphql/client'
 import { ACTIVITY_QUERY } from '@/graphql/queries/activities'
 import { transformGraphQLActivityToActivity } from '@/lib/transformers/activity'
-import { mockActivities } from '@/lib/mocks/activities'
+// import { mockActivities } from '@/lib/mocks/activities'
 
 interface UseActivityCardProps {
   activityId: string

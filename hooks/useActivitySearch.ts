@@ -38,7 +38,7 @@ export function useActivitySearch({ params }: UseActivitySearchProps): UseActivi
     query: '',
     category: [],
     timeOfDay: [],
-    duration: [60, 600],
+    duration: [1, 1440],
     priceRange: [0, 1000000],
     difficulty: [],
     rating: 0,
@@ -70,17 +70,80 @@ export function useActivitySearch({ params }: UseActivitySearchProps): UseActivi
       const filters: ActivityFilter = {
         searchActivities: searchParams.query || null,
         AND: {
-          city: {
+          city: searchParams.cityId ? {
             id: {
               exact: searchParams.cityId
             }
-          },
-          durationMinutes: searchParams.duration ? {
+          } : undefined,
+          durationMinutes: (searchParams.duration && (searchParams.duration[0] > 1 || searchParams.duration[1] < 1440)) ? {
             range: {
               start: searchParams.duration[0] || null,
               end: searchParams.duration[1] || null
             }
           } : undefined
+        }
+      }
+
+      // Handle time of day filtering using Start Time field with ranges
+      if (searchParams.timeOfDay && searchParams.timeOfDay.length > 0) {
+        // Map time of day labels to start time ranges
+        const timeRanges: Record<string, { start: string, end: string }> = {
+          'morning': { start: '00:00:00', end: '11:59:59' },
+          'afternoon': { start: '12:00:00', end: '16:59:59' },
+          'evening': { start: '17:00:00', end: '23:59:59' },
+          'full-day': { start: '00:00:00', end: '11:00:00' } // Full day activities usually start in the morning
+        }
+
+        // Helper to create a range filter object
+        const createRangeFilter = (range: { start: string, end: string }) => ({
+          startTime: {
+            range: {
+              start: range.start,
+              end: range.end
+            }
+          }
+        })
+
+        // Filter valid ranges based on selection
+        const selectedRanges = searchParams.timeOfDay
+          .map(t => timeRanges[t])
+          .filter(Boolean)
+
+        if (selectedRanges.length > 0) {
+          if (!filters.AND) filters.AND = {}
+          
+          // If only one range is selected, apply it directly
+          if (selectedRanges.length === 1) {
+             Object.assign(filters.AND, createRangeFilter(selectedRanges[0]))
+          } else {
+            // If multiple ranges, we need to construct an OR chain
+            // Since the schema defines OR as a single ActivityFilter object (not a list),
+            // we chain them: Filter1 OR (Filter2 OR (Filter3...))
+            
+            // Start with the first range
+            let orChain: ActivityFilter = createRangeFilter(selectedRanges[0])
+            
+            // Chain the rest
+            for (let i = 1; i < selectedRanges.length; i++) {
+              orChain = {
+                ...createRangeFilter(selectedRanges[i]),
+                OR: orChain
+              }
+            }
+            
+            // Assign the final chain to the main filter's AND condition
+            // Note: This assumes we want (Other Filters) AND (TimeRange1 OR TimeRange2 OR ...)
+            // But filters.AND expects fields, not a nested OR directly at the top level of AND?
+            // Actually ActivityFilter structure is: { startTime: ..., OR: ... }
+            // So to say "City AND (Time1 OR Time2)", we might need:
+            // { city: ..., AND: { OR: { ... } } } ? No, AND is also ActivityFilter.
+            
+            // Let's try to inject the OR structure into the filters object.
+            // But we already have 'city' and 'duration' in filters.AND.
+            // If we put the OR chain inside filters.AND, it works if ActivityFilter has OR.
+            
+            filters.AND.AND = orChain
+          }
         }
       }
 
@@ -118,14 +181,6 @@ export function useActivitySearch({ params }: UseActivitySearchProps): UseActivi
       if (searchParams.category && searchParams.category.length > 0) {
         filteredActivities = filteredActivities.filter(activity =>
           searchParams.category!.some(cat => activity.category.includes(cat))
-        )
-      }
-      
-      if (searchParams.timeOfDay && searchParams.timeOfDay.length > 0) {
-        filteredActivities = filteredActivities.filter(activity =>
-          activity.availability.some(slot =>
-            searchParams.timeOfDay!.includes(slot.type)
-          )
         )
       }
       
@@ -260,7 +315,7 @@ export function useActivitySearch({ params }: UseActivitySearchProps): UseActivi
       query: '',
       category: [],
       timeOfDay: [],
-      duration: [60, 600],
+      duration: [1, 1440],
       priceRange: [0, 1000000],
       difficulty: [],
       rating: 0,
