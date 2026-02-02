@@ -37,6 +37,9 @@ export interface Proposal {
     id: string
     status: string
     tripType: string
+    org?: {
+      id: string
+    }
     totalTravelers: number
     starRating: number
     transferOnly: boolean
@@ -57,6 +60,9 @@ export interface Proposal {
       countryCode: string
       phone: string
       profileImageUrl: string
+      org?: {
+        id: string
+      }
     }
     customer: {
       id: string

@@ -17,6 +17,7 @@ export interface TripPartialInput {
   markupFlightPercent?: number
   markupLandPercent?: number
   bookingReference?: string
+  customer?: { set?: string }
 }
 
 export interface UpdateTripResponse {

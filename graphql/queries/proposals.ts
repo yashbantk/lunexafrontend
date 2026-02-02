@@ -21,6 +21,9 @@ export const GET_PROPOSALS = gql`
       }
       trip {
         id
+        org {
+          id
+        }
         status
         tripType
         totalTravelers
@@ -44,6 +47,9 @@ export const GET_PROPOSALS = gql`
           countryCode
           phone
           profileImageUrl
+          org {
+            id
+          }
         }
         customer {
           id

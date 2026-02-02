@@ -41,9 +41,20 @@ import {
   DropdownMenuSubContent
 } from '@/components/ui/dropdown-menu'
 import { useToast } from '@/hooks/useToast'
+import { useMutation, useQuery } from '@apollo/client/react'
+import { UPDATE_CONTACT, CREATE_CONTACT } from '@/graphql/mutations/proposal'
+import { GET_USER_ORG } from '@/graphql/queries/users'
 import { useProposals, Proposal, ProposalFilters, ProposalOrder } from '@/hooks/useProposals'
 import { useUpdateProposal } from '@/hooks/useUpdateProposal'
 import { useUpdateTrip } from '@/hooks/useUpdateTrip'
+import { useCurrentUser } from '@/hooks/useAuth'
+import { Label } from '@/components/ui/label'
+
+interface ClientFormData {
+  name: string
+  phone: string
+  email: string
+}
 
 export default function MyProposalsPage() {
   const router = useRouter()
@@ -55,13 +66,26 @@ export default function MyProposalsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null)
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false)
+  const [clientFormData, setClientFormData] = useState<ClientFormData>({ name: '', phone: '', email: '' })
   const [sortField, setSortField] = useState<string>('updatedAt')
   const [sortDirection, setSortDirection] = useState<'ASC' | 'DESC'>('DESC')
 
+  // Auth & User Org Data
+  const currentUser = useCurrentUser()
+  const { data: userData } = useQuery(GET_USER_ORG, {
+    variables: { id: currentUser?.id },
+    skip: !currentUser?.id
+  })
+
+  // Mutations
+  const [updateContact, { loading: isUpdatingContact }] = useMutation(UPDATE_CONTACT)
+  const [createContact, { loading: isCreatingContact }] = useMutation(CREATE_CONTACT)
+
   // Fetch proposals with filters and sorting
   const { proposals, loading, error, refetch } = useProposals(filters, order)
-  const { updateProposal } = useUpdateProposal()
-  const { updateTrip } = useUpdateTrip()
+  const { updateProposal, isLoading: isUpdatingProposal } = useUpdateProposal()
+  const { updateTrip, isLoading: isUpdatingTrip } = useUpdateTrip()
   
   // Deduplicate proposals to show only the latest version per trip
   // This prevents the UI from showing multiple rows updating simultaneously when Trip details change
@@ -138,12 +162,123 @@ export default function MyProposalsPage() {
     router.push(`/proposals/create/${proposal.trip.id}`)
   }
 
-  const handleSendProposal = (proposal: Proposal) => {
+  const sendWhatsAppMessage = (proposal: Proposal, name: string, phone: string) => {
+    // Basic validation
+    if (!phone) {
+      toast({ title: "Error", description: "Phone number is required", type: "error" })
+      return
+    }
+
+    const proposalLink = `${window.location.origin}/proposal/${proposal.id}` // Assuming this is the public link structure
+    const message = `Hi ${name}, here is your travel proposal for ${proposal.name}. You can view the details here: ${proposalLink}\n\nBest regards,\n${proposal.trip.org?.name || 'DeYor Camps'}`
+    
+    // Format phone number (remove non-digits, ensure country code if needed - basic assumption here)
+    const formattedPhone = phone.replace(/\D/g, '')
+    
+    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`
+    window.open(whatsappUrl, '_blank')
+    
     toast({
-      title: 'Proposal Sent',
-      description: `Proposal "${proposal.name}" has been sent to ${proposal.trip.customer?.name || 'the client'}`,
+      title: 'WhatsApp Opened',
+      description: `Opening WhatsApp to send proposal to ${name}`,
       type: 'success'
     })
+  }
+
+  const handleSendProposal = (proposal: Proposal) => {
+    const customer = proposal.trip.customer
+    
+    if (customer && customer.name && customer.phone) {
+      sendWhatsAppMessage(proposal, customer.name, customer.phone)
+    } else {
+      // Pre-fill existing data if any
+      setClientFormData({
+        name: customer?.name || '',
+        phone: customer?.phone || '',
+        email: customer?.email || ''
+      })
+      setSelectedProposal(proposal)
+      setIsClientModalOpen(true)
+    }
+  }
+
+  const handleSaveClientAndSend = async () => {
+    if (!selectedProposal) return
+    if (!clientFormData.name || !clientFormData.phone) {
+      toast({ title: "Missing Information", description: "Name and Phone are required", type: "error" })
+      return
+    }
+
+    try {
+      const customer = selectedProposal.trip.customer
+      
+      if (customer && customer.id) {
+        // Update existing contact
+        await updateContact({
+          variables: {
+            data: {
+              id: customer.id,
+              name: clientFormData.name,
+              phone: clientFormData.phone,
+              email: clientFormData.email // Optional update
+            }
+          }
+        })
+      } else {
+        // Create new contact
+        // We need org ID. Assuming trip has org, or createdBy has org, or current user has org.
+        let orgId = selectedProposal.trip.org?.id || selectedProposal.trip.createdBy.org?.id
+        
+        // Fallback to current user's org if available
+        if (!orgId && userData?.user?.org?.id) {
+          orgId = userData.user.org.id
+          console.log('Using Current User Org ID:', orgId)
+        }
+        
+        console.log('Sending Proposal - Found Org ID:', orgId)
+        
+        if (!orgId) {
+            console.error('Organization ID missing in proposal data', selectedProposal)
+            toast({ title: "Error", description: "Organization ID missing. Cannot create contact.", type: "error" })
+            return
+        }
+
+        const { data: contactData } = await createContact({
+          variables: {
+            data: {
+              name: clientFormData.name,
+              phone: clientFormData.phone,
+              email: clientFormData.email || `client_${Date.now()}@placeholder.com`, // Email is required by schema usually
+              org: orgId
+            }
+          }
+        })
+
+        const newContactId = contactData?.createContact?.id
+        console.log('Created new contact:', newContactId)
+        
+        if (newContactId) {
+          // Link new contact to trip
+          console.log('Linking contact to trip:', selectedProposal.trip.id)
+          await updateTrip({
+             id: selectedProposal.trip.id,
+             customer: { set: newContactId } 
+          })
+        }
+      }
+      
+      // Refresh data to show new client info
+      await refetch()
+      setIsClientModalOpen(false)
+      
+      // Send WhatsApp
+      console.log('Opening WhatsApp...')
+      sendWhatsAppMessage(selectedProposal, clientFormData.name, clientFormData.phone)
+      
+    } catch (error: any) {
+      console.error("Error saving client info:", error)
+      toast({ title: "Error", description: "Failed to save client info: " + error.message, type: "error" })
+    }
   }
 
   const handleDownloadProposal = (proposal: Proposal) => {
@@ -745,10 +880,14 @@ export default function MyProposalsPage() {
                   <div className="flex w-full gap-3 mb-3 md:mb-0 md:w-auto md:mr-auto">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="flex-1 md:flex-none h-11">
-                          <Activity className="w-4 h-4 mr-2" />
-                          Update Status
-                          <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
+                        <Button variant="outline" className="flex-1 md:flex-none h-11" disabled={isUpdatingProposal}>
+                          {isUpdatingProposal ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2" />
+                          ) : (
+                            <Activity className="w-4 h-4 mr-2" />
+                          )}
+                          {isUpdatingProposal ? 'Updating...' : 'Update Status'}
+                          {!isUpdatingProposal && <ChevronDown className="w-4 h-4 ml-2 opacity-50" />}
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
@@ -762,10 +901,14 @@ export default function MyProposalsPage() {
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="flex-1 md:flex-none h-11">
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          Update Type
-                          <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
+                        <Button variant="outline" className="flex-1 md:flex-none h-11" disabled={isUpdatingTrip}>
+                          {isUpdatingTrip ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2" />
+                          ) : (
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                          )}
+                          {isUpdatingTrip ? 'Updating...' : 'Update Type'}
+                          {!isUpdatingTrip && <ChevronDown className="w-4 h-4 ml-2 opacity-50" />}
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
@@ -788,9 +931,19 @@ export default function MyProposalsPage() {
                   <Button
                     onClick={() => handleSendProposal(selectedProposal)}
                     className="flex-1 md:flex-none bg-green-600 hover:bg-green-700 text-white shadow-sm h-11"
+                    disabled={isUpdatingContact || isCreatingContact}
                   >
-                    <Send className="w-4 h-4 mr-2" />
-                    Send
+                    {isUpdatingContact || isCreatingContact ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 mr-2" />
+                        Send
+                      </>
+                    )}
                   </Button>
                   <Button
                     variant="outline"
@@ -803,6 +956,70 @@ export default function MyProposalsPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+      {/* Client Info Modal */}
+      <Dialog open={isClientModalOpen} onOpenChange={setIsClientModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Send to Client</DialogTitle>
+            <div className="text-sm text-gray-500">
+              Please provide the client&apos;s contact details to send the proposal via WhatsApp.
+            </div>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="name"
+                value={clientFormData.name}
+                onChange={(e) => setClientFormData({ ...clientFormData, name: e.target.value })}
+                className="col-span-3"
+                placeholder="Client Name"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="phone" className="text-right">
+                Phone
+              </Label>
+              <Input
+                id="phone"
+                value={clientFormData.phone}
+                onChange={(e) => setClientFormData({ ...clientFormData, phone: e.target.value })}
+                className="col-span-3"
+                placeholder="+1234567890"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="email" className="text-right">
+                Email
+              </Label>
+              <Input
+                id="email"
+                value={clientFormData.email}
+                onChange={(e) => setClientFormData({ ...clientFormData, email: e.target.value })}
+                className="col-span-3"
+                placeholder="client@example.com"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setIsClientModalOpen(false)} disabled={isUpdatingContact || isCreatingContact}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveClientAndSend} disabled={isUpdatingContact || isCreatingContact}>
+              {isUpdatingContact || isCreatingContact ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  Saving & Sending...
+                </>
+              ) : (
+                'Save & Send WhatsApp'
+              )}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

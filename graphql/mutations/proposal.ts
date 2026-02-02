@@ -795,3 +795,55 @@ export const UPDATE_TRANSFER = gql`
     }
   }
 `
+
+export const UPDATE_CONTACT = gql`
+  mutation UpdateContact($data: ContactPartialInput!) {
+    updateContact(data: $data) {
+      ... on ContactType {
+        id
+        name
+        email
+        phone
+        nationality
+        org {
+          id
+          name
+        }
+      }
+      ... on OperationInfo {
+        messages {
+          kind
+          message
+          field
+          code
+        }
+      }
+    }
+  }
+`
+
+export const CREATE_CONTACT = gql`
+  mutation CreateContact($data: ContactInput!) {
+    createContact(data: $data) {
+      ... on ContactType {
+        id
+        name
+        email
+        phone
+        nationality
+        org {
+          id
+          name
+        }
+      }
+      ... on OperationInfo {
+        messages {
+          kind
+          message
+          field
+          code
+        }
+      }
+    }
+  }
+`
