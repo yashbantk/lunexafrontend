@@ -705,6 +705,37 @@ export const DELETE_TRANSFER = gql`
   }
 `
 
+export const UPDATE_TRIP = gql`
+  mutation UpdateTrip($data: TripPartialInput!) {
+    updateTrip(data: $data) {
+      ... on TripType {
+        id
+        status
+        tripType
+        totalTravelers
+        starRating
+        transferOnly
+        landOnly
+        travelerDetails
+        markupFlightPercent
+        markupLandPercent
+        bookingReference
+        startDate
+        endDate
+        durationDays
+      }
+      ... on OperationInfo {
+        messages {
+          kind
+          message
+          field
+          code
+        }
+      }
+    }
+  }
+`
+
 export const UPDATE_TRANSFER = gql`
   mutation UpdateTransfer($data: TransferPartialInput!) {
     updateTransfer(data: $data) {

@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   Search, 
-  Filter, 
   Plus, 
   Eye, 
   Edit, 
@@ -15,21 +14,36 @@ import {
   Calendar,
   MapPin,
   Users,
-  DollarSign,
-  Clock,
+  Briefcase,
+  Palmtree,
+  Plane,
+  ChevronDown,
+  Filter,
+  X,
   Star,
-  ChevronUp,
-  ChevronDown
+  Activity,
+  CheckCircle
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger, 
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent
+} from '@/components/ui/dropdown-menu'
 import { useToast } from '@/hooks/useToast'
 import { useProposals, Proposal, ProposalFilters, ProposalOrder } from '@/hooks/useProposals'
+import { useUpdateProposal } from '@/hooks/useUpdateProposal'
+import { useUpdateTrip } from '@/hooks/useUpdateTrip'
 
 export default function MyProposalsPage() {
   const router = useRouter()
@@ -46,9 +60,27 @@ export default function MyProposalsPage() {
 
   // Fetch proposals with filters and sorting
   const { proposals, loading, error, refetch } = useProposals(filters, order)
+  const { updateProposal } = useUpdateProposal()
+  const { updateTrip } = useUpdateTrip()
+  
+  // Deduplicate proposals to show only the latest version per trip
+  // This prevents the UI from showing multiple rows updating simultaneously when Trip details change
+  const uniqueProposals = proposals.reduce((acc, current) => {
+    const existingIndex = acc.findIndex(p => p.trip.id === current.trip.id)
+    
+    if (existingIndex === -1) {
+      acc.push(current)
+    } else {
+      // If current version is higher, replace the existing one
+      if ((current.version || 0) > (acc[existingIndex].version || 0)) {
+        acc[existingIndex] = current
+      }
+    }
+    return acc
+  }, [] as Proposal[])
 
   // Filter proposals based on search term
-  const filteredProposals = proposals.filter(proposal => {
+  const filteredProposals = uniqueProposals.filter(proposal => {
     if (!searchTerm) return true
     
     const searchLower = searchTerm.toLowerCase()
@@ -92,6 +124,11 @@ export default function MyProposalsPage() {
     }))
   }
 
+  const clearFilters = () => {
+    setFilters({})
+    setSearchTerm('')
+  }
+
   const handleViewProposal = (proposal: Proposal) => {
     setSelectedProposal(proposal)
     setIsDetailsModalOpen(true)
@@ -125,16 +162,36 @@ export default function MyProposalsPage() {
     })
   }
 
+  const handleUpdateStatus = async (proposal: Proposal, status: string) => {
+    if (!proposal.id) return
+    
+    await updateProposal({
+      id: proposal.id,
+      status
+    })
+  }
+
+  const handleUpdateTripType = async (proposal: Proposal, tripType: string) => {
+    if (!proposal.trip.id) return
+    
+    await updateTrip({
+      id: proposal.trip.id,
+      tripType
+    })
+  }
+
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'draft':
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200'
       case 'sent':
-        return 'bg-blue-100 text-blue-800'
-      case 'approved':
-        return 'bg-green-100 text-green-800'
+        return 'bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200'
+      case 'accepted':
+        return 'bg-green-50 text-green-700 hover:bg-green-100 border-green-200'
       case 'rejected':
-        return 'bg-red-100 text-red-800'
+        return 'bg-red-50 text-red-700 hover:bg-red-100 border-red-200'
+      case 'expired':
+        return 'bg-orange-50 text-orange-700 hover:bg-orange-100 border-orange-200'
       default:
         return 'bg-gray-100 text-gray-800'
     }
@@ -143,21 +200,39 @@ export default function MyProposalsPage() {
   const getTypeColor = (type: string) => {
     switch (type.toLowerCase()) {
       case 'leisure':
-        return 'bg-purple-100 text-purple-800'
+        return 'text-purple-700 bg-purple-50 border-purple-200'
       case 'family':
-        return 'bg-pink-100 text-pink-800'
+        return 'text-pink-700 bg-pink-50 border-pink-200'
       case 'luxury':
-        return 'bg-yellow-100 text-yellow-800'
+        return 'text-amber-700 bg-amber-50 border-amber-200'
       case 'business':
-        return 'bg-blue-100 text-blue-800'
+        return 'text-blue-700 bg-blue-50 border-blue-200'
+      case 'group':
+        return 'text-indigo-700 bg-indigo-50 border-indigo-200'
+      case 'honeymoon':
+        return 'text-rose-700 bg-rose-50 border-rose-200'
+      case 'adventure':
+        return 'text-emerald-700 bg-emerald-50 border-emerald-200'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'text-gray-700 bg-gray-50 border-gray-200'
+    }
+  }
+
+  const getTypeIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'business': return <Briefcase className="w-3 h-3 mr-1" />
+      case 'leisure': return <Palmtree className="w-3 h-3 mr-1" />
+      case 'adventure': return <MapPin className="w-3 h-3 mr-1" />
+      default: return <Plane className="w-3 h-3 mr-1" />
     }
   }
 
   const formatCurrency = (amount: number, currency: string) => {
     const symbols: { [key: string]: string } = {
       'INR': '₹',
+      'USD': '$',
+      'EUR': '€',
+      'GBP': '£',
       'THB': '฿'
     }
     return `${symbols[currency] || currency} ${(amount / 100).toLocaleString()}`
@@ -181,12 +256,16 @@ export default function MyProposalsPage() {
     })
   }
 
-  if (loading) {
+  const formatStatus = (status: string) => {
+    return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+  }
+
+  if (loading && proposals.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading proposals...</p>
+          <p className="text-gray-500 font-medium">Loading proposals...</p>
         </div>
       </div>
     )
@@ -194,15 +273,15 @@ export default function MyProposalsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Error Loading Proposals</h2>
-          <p className="text-gray-600 mb-6">{error.message}</p>
-          <Button 
-            onClick={() => refetch()}
-            className="bg-primary hover:bg-primary/90 text-white"
-          >
-            Retry
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="bg-red-50 text-red-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+            <Filter className="w-8 h-8" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong</h2>
+          <p className="text-gray-500 mb-6">{error.message}</p>
+          <Button onClick={() => refetch()} variant="default">
+            Try Again
           </Button>
         </div>
       </div>
@@ -210,402 +289,517 @@ export default function MyProposalsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+    <div className="min-h-screen bg-gray-50/50">
+      {/* Top Navigation Bar */}
+      <header className="bg-white border-b sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">My Proposals</h1>
-              <p className="text-sm text-gray-600">Manage and track all your travel proposals</p>
+            <div className="flex items-center gap-2">
+              <div className="bg-primary/10 p-2 rounded-lg">
+                <Plane className="w-5 h-5 text-primary" />
+              </div>
+              <h1 className="text-xl font-bold text-gray-900">Proposals</h1>
             </div>
-            <Button 
-              onClick={() => router.push('/proposal')}
-              className="bg-primary hover:bg-primary/90 text-white"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create New Proposal
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Filters and Search */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Filters & Search</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search proposals..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-
-              {/* Status Filter */}
-              <Select value={filters.status || 'all'} onValueChange={(value) => handleFilterChange('status', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="sent">Sent</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Type Filter */}
-              <Select value={filters.tripType || 'all'} onValueChange={(value) => handleFilterChange('tripType', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="leisure">Leisure</SelectItem>
-                  <SelectItem value="family">Family</SelectItem>
-                  <SelectItem value="luxury">Luxury</SelectItem>
-                  <SelectItem value="business">Business</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Date Range */}
-              <div className="flex space-x-2">
-                <Input
-                  type="date"
-                  placeholder="From"
-                  value={filters.dateFrom || ''}
-                  onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
-                />
-                <Input
-                  type="date"
-                  placeholder="To"
-                  value={filters.dateTo || ''}
-                  onChange={(e) => handleFilterChange('dateTo', e.target.value)}
-                />
-              </div>
-
-              {/* Results Count */}
-              <div className="flex items-center text-sm text-gray-600">
-                <span>{filteredProposals.length} proposal{filteredProposals.length !== 1 ? 's' : ''} found</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Proposals Table */}
-        {filteredProposals.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-12">
-              <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <Search className="w-8 h-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No proposals found</h3>
-              <p className="text-gray-600 mb-6">Try adjusting your search or filter criteria.</p>
+            <div className="flex items-center gap-3">
               <Button 
                 onClick={() => router.push('/proposal')}
-                className="bg-primary hover:bg-primary/90 text-white"
+                className="bg-primary hover:bg-primary/90 text-white shadow-sm"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Create Your First Proposal
+                New Proposal
               </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <button
-                          onClick={() => handleSort('name')}
-                          className="flex items-center space-x-1 hover:text-gray-700"
-                        >
-                          <span>Proposal</span>
-                          {sortField === 'name' && (
-                            sortDirection === 'ASC' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
-                          )}
-                        </button>
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <button
-                          onClick={() => handleSort('trip.customer.name')}
-                          className="flex items-center space-x-1 hover:text-gray-700"
-                        >
-                          <span>Client</span>
-                          {sortField === 'trip.customer.name' && (
-                            sortDirection === 'ASC' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
-                          )}
-                        </button>
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Trip Details
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <button
-                          onClick={() => handleSort('totalPriceCents')}
-                          className="flex items-center space-x-1 hover:text-gray-700"
-                        >
-                          <span>Price</span>
-                          {sortField === 'totalPriceCents' && (
-                            sortDirection === 'ASC' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
-                          )}
-                        </button>
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <button
-                          onClick={() => handleSort('updatedAt')}
-                          className="flex items-center space-x-1 hover:text-gray-700"
-                        >
-                          <span>Updated</span>
-                          {sortField === 'updatedAt' && (
-                            sortDirection === 'ASC' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
-                          )}
-                        </button>
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredProposals.map((proposal) => (
-                      <tr key={proposal.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{proposal.name}</div>
-                            <div className="text-sm text-gray-500">v{proposal.version}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{proposal.trip.customer?.name || 'N/A'}</div>
-                            <div className="text-sm text-gray-500">{proposal.trip.customer?.email || 'N/A'}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center space-x-4">
-                            <div className="flex items-center text-sm text-gray-600">
-                              <MapPin className="w-4 h-4 mr-1" />
-                              <span>{proposal.trip.fromCity.name}</span>
-                            </div>
-                            <div className="flex items-center text-sm text-gray-600">
-                              <Users className="w-4 h-4 mr-1" />
-                              <span>{proposal.trip.totalTravelers}</span>
-                            </div>
-                            <div className="flex items-center text-sm text-gray-600">
-                              <Calendar className="w-4 h-4 mr-1" />
-                              <span>{proposal.trip.durationDays}d</span>
-                            </div>
-                          </div>
-                          <div className="mt-1">
-                            <Badge className={`text-xs font-medium ${getTypeColor(proposal.trip.tripType)}`}>
-                              {proposal.trip.tripType}
-                            </Badge>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {formatCurrency(proposal.totalPriceCents, proposal.currency.code)}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {proposal.currency.name}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge className={`text-xs font-medium ${getStatusColor(proposal.status)}`}>
-                            {proposal.status}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatDateTime(proposal.updatedAt)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleViewProposal(proposal)}>
-                                <Eye className="w-4 h-4 mr-2" />
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleEditProposal(proposal)}>
-                                <Edit className="w-4 h-4 mr-2" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleSendProposal(proposal)}>
-                                <Send className="w-4 h-4 mr-2" />
-                                Send to Client
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleDownloadProposal(proposal)}>
-                                <Download className="w-4 h-4 mr-2" />
-                                Download
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => handleDeleteProposal(proposal)}
-                                className="text-red-600"
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Filters Section */}
+        <div className="bg-white p-4 rounded-xl border shadow-sm">
+          <div className="flex flex-col lg:flex-row gap-4 justify-between">
+            <div className="flex-1 relative max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Search by client, destination, or ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-gray-50 border-gray-200 focus:bg-white transition-colors"
+              />
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="w-full sm:w-40">
+                <Select value={filters.status || 'all'} onValueChange={(value) => handleFilterChange('status', value)}>
+                  <SelectTrigger className="bg-gray-50 border-gray-200">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="sent">Sent</SelectItem>
+                    <SelectItem value="accepted">Accepted</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                    <SelectItem value="expired">Expired</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+
+              <div className="w-full sm:w-40">
+                <Select value={filters.tripType || 'all'} onValueChange={(value) => handleFilterChange('tripType', value)}>
+                  <SelectTrigger className="bg-gray-50 border-gray-200">
+                    <SelectValue placeholder="Trip Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="leisure">Leisure</SelectItem>
+                    <SelectItem value="business">Business</SelectItem>
+                    <SelectItem value="group">Group</SelectItem>
+                    <SelectItem value="honeymoon">Honeymoon</SelectItem>
+                    <SelectItem value="adventure">Adventure</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2 border-l pl-3 ml-1 border-gray-200">
+                <Input
+                  type="date"
+                  value={filters.dateFrom || ''}
+                  onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                  className="w-auto bg-gray-50 border-gray-200"
+                />
+                <span className="text-gray-400 text-sm">-</span>
+                <Input
+                  type="date"
+                  value={filters.dateTo || ''}
+                  onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+                  className="w-auto bg-gray-50 border-gray-200"
+                />
+              </div>
+
+              {(filters.status || filters.tripType || filters.dateFrom || filters.dateTo || searchTerm) && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={clearFilters}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 ml-auto lg:ml-0"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Clear
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Results Info */}
+        <div className="flex items-center justify-between text-sm text-gray-500 px-1">
+          <p>Showing <span className="font-medium text-gray-900">{filteredProposals.length}</span> proposal{filteredProposals.length !== 1 ? 's' : ''}</p>
+          <div className="flex items-center gap-2">
+            <span>Sort by:</span>
+            <button 
+              onClick={() => handleSort('updatedAt')}
+              className="font-medium text-gray-900 flex items-center hover:underline"
+            >
+              Last Updated
+              <ChevronDown className={`w-4 h-4 ml-1 transform transition-transform ${sortField === 'updatedAt' && sortDirection === 'ASC' ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+        </div>
+
+        {/* Proposals Table */}
+        <Card className="border shadow-sm overflow-hidden bg-white">
+          {filteredProposals.length === 0 ? (
+            <div className="text-center py-20 px-4">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">No proposals found</h3>
+              <p className="text-gray-500 max-w-sm mx-auto mb-6">
+                We couldn't find any proposals matching your current filters. Try adjusting your search criteria.
+              </p>
+              <Button 
+                variant="outline" 
+                onClick={clearFilters}
+              >
+                Clear all filters
+              </Button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50/80 border-b border-gray-100">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-[25%]">
+                      Proposal & Client
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-[20%]">
+                      Trip Details
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-[15%]">
+                      Type
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-[15%]">
+                      Value
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-[10%]">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-[10%]">
+                      Last Updated
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider w-[5%]">
+                      
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredProposals.map((proposal) => (
+                    <tr 
+                      key={proposal.id} 
+                      className="group hover:bg-gray-50/60 transition-colors cursor-pointer"
+                      onClick={() => handleViewProposal(proposal)}
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-gray-900 group-hover:text-primary transition-colors text-base">
+                            {proposal.name}
+                          </span>
+                          <div className="flex items-center text-sm text-gray-500 mt-1">
+                            <span className="bg-gray-100 text-gray-600 text-xs px-1.5 py-0.5 rounded mr-2 border border-gray-200 font-medium">v{proposal.version}</span>
+                            <span>{proposal.trip.customer?.name || 'No Client'}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center text-sm font-medium text-gray-700">
+                            <MapPin className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
+                            {proposal.trip.days.length > 0 ? proposal.trip.days[0].city.name : proposal.trip.fromCity.name}
+                          </div>
+                          <div className="flex items-center text-xs text-gray-500">
+                            <Calendar className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
+                            {formatDate(proposal.trip.startDate)}
+                            <span className="mx-1.5">•</span>
+                            {proposal.trip.durationDays} days
+                          </div>
+                          <div className="flex items-center text-xs text-gray-500">
+                            <Users className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
+                            {proposal.trip.totalTravelers} travelers
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant="outline" className={`font-medium rounded-md px-2.5 py-0.5 border ${getTypeColor(proposal.trip.tripType)}`}>
+                          {getTypeIcon(proposal.trip.tripType)}
+                          <span className="capitalize">{proposal.trip.tripType}</span>
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-bold text-gray-900">
+                          {formatCurrency(proposal.totalPriceCents, proposal.currency.code)}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          {proposal.currency.name}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge className={`font-medium rounded-full px-2.5 capitalize shadow-none border ${getStatusColor(proposal.status)}`}>
+                          {formatStatus(proposal.status)}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-gray-500 whitespace-nowrap">
+                          {formatDateTime(proposal.updatedAt)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-gray-900">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem onClick={() => handleViewProposal(proposal)}>
+                              <Eye className="w-4 h-4 mr-2" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditProposal(proposal)}>
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit Proposal
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleSendProposal(proposal)}>
+                              <Send className="w-4 h-4 mr-2" />
+                              Send to Client
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownloadProposal(proposal)}>
+                              <Download className="w-4 h-4 mr-2" />
+                              Download PDF
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>
+                                <Activity className="w-4 h-4 mr-2" />
+                                Update Status
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuSubContent>
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(proposal, 'draft')}>Draft</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(proposal, 'sent')}>Sent</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(proposal, 'accepted')}>Accepted</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(proposal, 'rejected')}>Rejected</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(proposal, 'expired')}>Expired</DropdownMenuItem>
+                              </DropdownMenuSubContent>
+                            </DropdownMenuSub>
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Update Type
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuSubContent>
+                                <DropdownMenuItem onClick={() => handleUpdateTripType(proposal, 'leisure')}>Leisure</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateTripType(proposal, 'business')}>Business</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateTripType(proposal, 'group')}>Group</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateTripType(proposal, 'honeymoon')}>Honeymoon</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateTripType(proposal, 'adventure')}>Adventure</DropdownMenuItem>
+                              </DropdownMenuSubContent>
+                            </DropdownMenuSub>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteProposal(proposal)}
+                              className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </main>
 
       {/* Proposal Details Modal */}
       <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-gray-900">
+            <DialogTitle className="text-2xl font-bold text-gray-900 flex items-center gap-3">
               {selectedProposal?.name}
+              {selectedProposal && (
+                <Badge className={`text-sm font-medium capitalize border shadow-none ${getStatusColor(selectedProposal.status)}`}>
+                  {formatStatus(selectedProposal.status)}
+                </Badge>
+              )}
             </DialogTitle>
           </DialogHeader>
           
           {selectedProposal && (
-            <div className="space-y-6">
-              {/* Status and Type */}
-              <div className="flex gap-3">
-                <Badge className={`text-sm font-medium ${getStatusColor(selectedProposal.status)}`}>
-                  {selectedProposal.status}
-                </Badge>
-                <Badge className={`text-sm font-medium ${getTypeColor(selectedProposal.trip.tripType)}`}>
-                  {selectedProposal.trip.tripType}
-                </Badge>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 py-4">
+              {/* Version History Sidebar */}
+              <div className="lg:col-span-1 border-r pr-0 lg:pr-6 border-gray-100">
+                <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+                  <Activity className="w-4 h-4 mr-2 text-primary" />
+                  Version History
+                </h3>
+                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                  {proposals
+                    .filter(p => p.trip.id === selectedProposal.trip.id)
+                    .sort((a, b) => (b.version || 0) - (a.version || 0))
+                    .map((version) => (
+                      <div 
+                        key={version.id}
+                        onClick={() => setSelectedProposal(version)}
+                        className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                          selectedProposal.id === version.id 
+                            ? 'bg-primary/5 border-primary ring-1 ring-primary/20' 
+                            : 'bg-white border-gray-100 hover:bg-gray-50 hover:border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium text-sm text-gray-900">Version {version.version}</span>
+                          <Badge className={`text-[10px] h-5 px-1.5 capitalize shadow-none border ${getStatusColor(version.status)}`}>
+                            {formatStatus(version.status)}
+                          </Badge>
+                        </div>
+                        <div className="text-xs text-gray-500 mb-1">
+                          {formatDateTime(version.updatedAt)}
+                        </div>
+                        <div className="text-xs font-semibold text-gray-900">
+                          {formatCurrency(version.totalPriceCents, version.currency.code)}
+                        </div>
+                      </div>
+                    ))}
+                </div>
               </div>
 
-              {/* Client Information */}
-              <div className="bg-gray-50 rounded-xl p-4">
-                <h3 className="font-semibold text-gray-900 mb-3">Client Information</h3>
-                {selectedProposal.trip.customer ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-sm text-gray-600">Name:</span>
-                      <p className="font-medium">{selectedProposal.trip.customer.name || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-600">Email:</span>
-                      <p className="font-medium">{selectedProposal.trip.customer.email || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-600">Phone:</span>
-                      <p className="font-medium">{selectedProposal.trip.customer.phone || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-600">Nationality:</span>
-                      <p className="font-medium">{selectedProposal.trip.customer.nationality || 'N/A'}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500">No customer information available</p>
-                )}
+              {/* Main Content */}
+              <div className="lg:col-span-3 space-y-8">
+                {/* Top Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <div className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Total Value</div>
+                  <div className="text-xl font-bold text-gray-900">{formatCurrency(selectedProposal.totalPriceCents, selectedProposal.currency.code)}</div>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <div className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Duration</div>
+                  <div className="text-xl font-bold text-gray-900">{selectedProposal.trip.durationDays} Days</div>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <div className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Travelers</div>
+                  <div className="text-xl font-bold text-gray-900">{selectedProposal.trip.totalTravelers}</div>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <div className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Type</div>
+                  <div className="text-xl font-bold text-gray-900 capitalize">{selectedProposal.trip.tripType}</div>
+                </div>
               </div>
 
-              {/* Trip Details */}
-              <div className="bg-gray-50 rounded-xl p-4">
-                <h3 className="font-semibold text-gray-900 mb-3">Trip Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <span className="text-sm text-gray-600">Duration:</span>
-                    <p className="font-medium">{selectedProposal.trip.durationDays} days</p>
+              <div className="grid md:grid-cols-2 gap-8">
+                {/* Client Information */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-gray-500" />
+                    Client Details
+                  </h3>
+                  <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+                    {selectedProposal.trip.customer ? (
+                      <div className="space-y-3">
+                        {selectedProposal.trip.customer.org && (
+                          <div className="flex justify-between border-b border-gray-100 pb-2 last:border-0 last:pb-0">
+                            <span className="text-sm text-gray-500">Organization</span>
+                            <span className="text-sm font-medium text-gray-900">{selectedProposal.trip.customer.org.name}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between border-b border-gray-100 pb-2 last:border-0 last:pb-0">
+                          <span className="text-sm text-gray-500">Name</span>
+                          <span className="text-sm font-medium text-gray-900">{selectedProposal.trip.customer.name || 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-gray-100 pb-2 last:border-0 last:pb-0">
+                          <span className="text-sm text-gray-500">Email</span>
+                          <span className="text-sm font-medium text-gray-900">{selectedProposal.trip.customer.email || 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-gray-100 pb-2 last:border-0 last:pb-0">
+                          <span className="text-sm text-gray-500">Phone</span>
+                          <span className="text-sm font-medium text-gray-900">{selectedProposal.trip.customer.phone || 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-gray-100 pb-2 last:border-0 last:pb-0">
+                          <span className="text-sm text-gray-500">Nationality</span>
+                          <span className="text-sm font-medium text-gray-900">{selectedProposal.trip.customer.nationality || 'N/A'}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 italic">No customer information available</p>
+                    )}
                   </div>
-                  <div>
-                    <span className="text-sm text-gray-600">Travelers:</span>
-                    <p className="font-medium">{selectedProposal.trip.totalTravelers} people</p>
-                  </div>
-                  <div>
-                    <span className="text-sm text-gray-600">Origin:</span>
-                    <p className="font-medium">{selectedProposal.trip.fromCity.name}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm text-gray-600">Destinations:</span>
-                    <p className="font-medium">{selectedProposal.trip.days.map(d => d.city.name).join(', ')}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm text-gray-600">Dates:</span>
-                    <p className="font-medium">{formatDate(selectedProposal.trip.startDate)} - {formatDate(selectedProposal.trip.endDate)}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm text-gray-600">Star Rating:</span>
-                    <p className="font-medium">{selectedProposal.trip.starRating} stars</p>
+                </div>
+
+                {/* Trip Details */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-gray-500" />
+                    Itinerary Overview
+                  </h3>
+                  <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+                    <div className="space-y-3">
+                      <div className="flex justify-between border-b border-gray-100 pb-2 last:border-0 last:pb-0">
+                        <span className="text-sm text-gray-500">Booking Ref</span>
+                        <span className="text-sm font-medium text-gray-900">{selectedProposal.trip.bookingReference || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-gray-100 pb-2 last:border-0 last:pb-0">
+                        <span className="text-sm text-gray-500">Origin</span>
+                        <span className="text-sm font-medium text-gray-900">{selectedProposal.trip.fromCity.name}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-gray-100 pb-2 last:border-0 last:pb-0">
+                        <span className="text-sm text-gray-500">Dates</span>
+                        <span className="text-sm font-medium text-gray-900">{formatDate(selectedProposal.trip.startDate)} - {formatDate(selectedProposal.trip.endDate)}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-gray-100 pb-2 last:border-0 last:pb-0">
+                        <span className="text-sm text-gray-500">Destinations</span>
+                        <span className="text-sm font-medium text-gray-900 text-right">{selectedProposal.trip.days.map(d => d.city.name).join(', ')}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-gray-100 pb-2 last:border-0 last:pb-0">
+                        <span className="text-sm text-gray-500">Rating</span>
+                        <div className="flex items-center text-amber-500">
+                          <span className="text-sm font-medium text-gray-900 mr-1">{selectedProposal.trip.starRating}</span>
+                          <Star className="w-3 h-3 fill-current" />
+                        </div>
+                      </div>
+                      <div className="flex justify-between border-b border-gray-100 pb-2 last:border-0 last:pb-0">
+                        <span className="text-sm text-gray-500">Created By</span>
+                        <div className="text-right">
+                          <div className="text-sm font-medium text-gray-900">{selectedProposal.trip.createdBy.name}</div>
+                          <div className="text-xs text-gray-500">{selectedProposal.trip.createdBy.email}</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Price Breakdown */}
-              <div className="bg-gray-50 rounded-xl p-4">
-                <h3 className="font-semibold text-gray-900 mb-3">Price Breakdown</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Total Price:</span>
-                    <span className="font-medium">{formatCurrency(selectedProposal.totalPriceCents, selectedProposal.currency.code)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Currency:</span>
-                    <span className="font-medium">{selectedProposal.currency.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Flights Booked:</span>
-                    <span className="font-medium">{selectedProposal.areFlightsBooked ? 'Yes' : 'No'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Flight Markup:</span>
-                    <span className="font-medium">{selectedProposal.flightsMarkup}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Land Markup:</span>
-                    <span className="font-medium">{selectedProposal.landMarkup}%</span>
-                  </div>
-                </div>
-              </div>
+                {/* Actions */}
+                <div className="flex flex-wrap gap-3 pt-6 border-t border-gray-100">
+                  <div className="flex w-full gap-3 mb-3 md:mb-0 md:w-auto md:mr-auto">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="flex-1 md:flex-none h-11">
+                          <Activity className="w-4 h-4 mr-2" />
+                          Update Status
+                          <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => handleUpdateStatus(selectedProposal, 'draft')}>Draft</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleUpdateStatus(selectedProposal, 'sent')}>Sent</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleUpdateStatus(selectedProposal, 'accepted')}>Accepted</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleUpdateStatus(selectedProposal, 'rejected')}>Rejected</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleUpdateStatus(selectedProposal, 'expired')}>Expired</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
 
-              {/* Actions */}
-              <div className="flex gap-3 pt-4">
-                <Button
-                  onClick={() => handleEditProposal(selectedProposal)}
-                  className="flex-1 bg-primary hover:bg-primary/90 text-white"
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit Proposal
-                </Button>
-                <Button
-                  onClick={() => handleSendProposal(selectedProposal)}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <Send className="w-4 h-4 mr-2" />
-                  Send to Client
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsDetailsModalOpen(false)}
-                  className="flex-1"
-                >
-                  Close
-                </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="flex-1 md:flex-none h-11">
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Update Type
+                          <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => handleUpdateTripType(selectedProposal, 'leisure')}>Leisure</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleUpdateTripType(selectedProposal, 'business')}>Business</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleUpdateTripType(selectedProposal, 'group')}>Group</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleUpdateTripType(selectedProposal, 'honeymoon')}>Honeymoon</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleUpdateTripType(selectedProposal, 'adventure')}>Adventure</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  <Button
+                    onClick={() => handleEditProposal(selectedProposal)}
+                    className="flex-1 md:flex-none bg-primary hover:bg-primary/90 text-white shadow-sm h-11"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit
+                  </Button>
+                  <Button
+                    onClick={() => handleSendProposal(selectedProposal)}
+                    className="flex-1 md:flex-none bg-green-600 hover:bg-green-700 text-white shadow-sm h-11"
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    Send
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsDetailsModalOpen(false)}
+                    className="flex-1 md:flex-none h-11 px-6"
+                  >
+                    Close
+                  </Button>
+                </div>
               </div>
             </div>
           )}

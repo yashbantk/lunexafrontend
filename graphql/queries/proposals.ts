@@ -51,6 +51,11 @@ export const GET_PROPOSALS = gql`
           email
           phone
           nationality
+          org {
+            id
+            name
+            website
+          }
         }
         fromCity {
           id

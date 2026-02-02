@@ -64,6 +64,11 @@ export interface Proposal {
       email: string
       phone: string
       nationality: string
+      org?: {
+        id: string
+        name: string
+        website?: string
+      }
     }
     fromCity: {
       id: string
@@ -132,13 +137,43 @@ export interface Proposal {
 }
 
 export function useProposals(filters?: ProposalFilters, order?: ProposalOrder) {
+  // Transform flat filters to GraphQL nested structure
+  const apiFilters: any = {}
+  
+  if (filters) {
+    if (filters.status) {
+      apiFilters.status = { exact: filters.status }
+    }
+    
+    if (filters.tripType) {
+      apiFilters.trip = {
+        ...(apiFilters.trip || {}),
+        tripType: { exact: filters.tripType }
+      }
+    }
+
+    if (filters.createdBy) {
+      apiFilters.trip = {
+        ...(apiFilters.trip || {}),
+        createdBy: { id: { exact: filters.createdBy } }
+      }
+    }
+
+    if (filters.dateFrom || filters.dateTo) {
+      apiFilters.updatedAt = {}
+      if (filters.dateFrom) apiFilters.updatedAt.gte = filters.dateFrom
+      if (filters.dateTo) apiFilters.updatedAt.lte = filters.dateTo
+    }
+  }
+
   const { data, loading, error, refetch } = useQuery<{ proposals: Proposal[] }>(GET_PROPOSALS, {
     variables: {
-      filters: filters || null,
+      filters: Object.keys(apiFilters).length > 0 ? apiFilters : null,
       order: order || null
     },
     errorPolicy: 'all',
-    fetchPolicy: 'cache-and-network'
+    fetchPolicy: 'cache-and-network',
+    notifyOnNetworkStatusChange: true // Ensure loading state updates correctly
   })
 
   return {
