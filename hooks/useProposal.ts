@@ -88,57 +88,6 @@ export interface ProposalDetails {
       } | null
       stay: {
         id: string
-        room: {
-          id: string
-          hotel: {
-            id: string
-            name: string
-            address: string | null
-            type: string | null
-            description: string | null
-            locationUrl: string | null
-            star: number | null
-            totalRatings: number | null
-            cancellationPolicy: string | null
-            instantBooking: boolean | null
-            cleanilessRating: number | null
-            serviceRating: number | null
-            comfortRating: number | null
-            conditionRating: number | null
-            amenitesRating: number | null
-            neighborhoodRating: number | null
-            amenities: string[] | null
-            instructions: string | null
-            policy: string | null
-            inclusions: string[] | null
-            exclusions: string[] | null
-            tags: string[] | null
-            commissionRate: number | null
-          } | null
-          name: string
-          priceCents: number | null
-          bedType: string | null
-          baseMealPlan: string | null
-          hotelRoomImages: Array<{
-            id: string
-            url: string
-            caption: string | null
-            priorityOrder: number | null
-          }> | null
-          roomAmenities: Array<{
-            id: string
-            name: string
-            description: string | null
-          }> | null
-          maxOccupancy: number | null
-          size: number | null
-          sizeUnit: string | null
-          details: string | null
-          amenities: string[] | null
-          tags: string[] | null
-          inclusions: string[] | null
-          exclusions: string[] | null
-        } | null
         checkIn: string
         checkOut: string
         nights: number
@@ -146,6 +95,37 @@ export interface ProposalDetails {
         mealPlan: string | null
         priceTotalCents: number | null
         confirmationStatus: string
+        rate?: {
+          room: {
+            id: string
+            hotel: {
+              id: string
+              name: string
+              address: string | null
+              star: number | null
+            } | null
+            name: string
+            amenities: string[] | null
+            bedType: string | null
+            baseMealPlan: string | null
+            maxOccupancy: number | null
+            hotelRoomImages: Array<{
+              id: string
+              url: string
+              caption: string | null
+              priorityOrder: number | null
+            }> | null
+            roomAmenities: Array<{
+              id: string
+              name: string
+              description: string | null
+            }> | null
+            size: number | null
+            sizeUnit: string | null
+            inclusions: string[] | null
+            exclusions: string[] | null
+          } | null
+        } | null
       } | null
       activityBookings: Array<{
         id: string

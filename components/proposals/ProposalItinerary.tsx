@@ -21,17 +21,19 @@ interface ProposalItineraryProps {
     }
     stay?: {
       id: string
-      room: {
-        id: string
-        hotel: {
-          id: string
-          name: string
-          star: number
-        }
-        name: string
-      }
       nights: number
       mealPlan: string
+      rate?: {
+        room: {
+          id: string
+          hotel?: {
+            id: string
+            name: string
+            star: number | null
+          }
+          name: string
+        }
+      }
     }
     activityBookings: {
       id: string
@@ -92,19 +94,19 @@ export function ProposalItinerary({ days }: ProposalItineraryProps) {
             </div>
 
             {/* Hotel Stay */}
-            {day.stay && (
+            {day.stay && day.stay.rate?.room && (
               <div className="mb-4 p-4 bg-blue-50 rounded-lg">
                 <div className="flex items-center space-x-2 mb-2">
                   <Home className="w-4 h-4 text-blue-600" />
                   <span className="font-medium text-blue-900">Accommodation</span>
                 </div>
                 <div className="text-sm text-blue-800">
-                  <div className="font-medium">{day.stay.room.hotel.name}</div>
-                  <div>{day.stay.room.name} • {day.stay.nights} night(s)</div>
+                  <div className="font-medium">{day.stay.rate.room.hotel?.name || 'Hotel'}</div>
+                  <div>{day.stay.rate.room.name || 'Room'} • {day.stay.nights} night(s)</div>
                   <div className="flex items-center space-x-4 mt-1">
                     <span className="flex items-center">
                       <Star className="w-3 h-3 mr-1" />
-                      {day.stay.room.hotel.star} stars
+                      {day.stay.rate.room.hotel?.star || 0} stars
                     </span>
                     <span>{day.stay.mealPlan}</span>
                   </div>

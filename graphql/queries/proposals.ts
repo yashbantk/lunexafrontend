@@ -74,22 +74,26 @@ export const GET_PROPOSALS = gql`
           }
           stay {
             id
-            room {
-              id
-              hotel {
+            checkIn
+            checkOut
+            nights
+            roomsCount
+            mealPlan
+            priceTotalCents
+            confirmationStatus
+            rate {
+              room {
                 id
+                hotel {
+                  id
+                  name
+                  address
+                  star
+                }
                 name
-                address
-                type
-                description
-                locationUrl
-                star
-                totalRatings
+                bedType
+                baseMealPlan
               }
-              name
-              priceCents
-              bedType
-              baseMealPlan
             }
           }
           activityBookings {

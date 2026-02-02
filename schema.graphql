@@ -1,0 +1,3249 @@
+"""Indicates an Input Object is a OneOf Input Object."""
+directive @oneOf on INPUT_OBJECT
+
+type Query {
+  me: LegacyUserType
+  user(id: ID!): UserType
+  users(filters: UserFilter = null, order: UserOrder = null): [UserType!]!
+  searchUsers(filters: UserSearchFilter = null, order: UserOrder = null): [UserType!]!
+  contact(id: ID!): ContactType
+  contacts(filters: ContactFilter = null, order: ContactOrder = null): [ContactType!]!
+  searchContacts(filters: ContactSearchFilter = null, order: ContactOrder = null): [ContactType!]!
+  managerDashboard: String!
+  adminDashboard: String!
+  userStats: UserStatsType!
+  country(iso2: String!): CountryType
+  countries(filters: CountryFilter = null, order: CountryOrder = null): [CountryType!]!
+  city(id: ID!): CityType
+  cities(filters: CityFilter = null, order: CityOrder = null): [CityType!]!
+  searchCities(filters: CitySearchFilter = null, order: CityOrder = null): [CityType!]!
+  currency(code: String!): CurrencyType
+  currencies(filters: CurrencyFilter = null, order: CurrencyOrder = null): [CurrencyType!]!
+  fxRate(id: ID!): FXRateType
+  fxRates(filters: FXRateFilter = null, order: FXRateOrder = null): [FXRateType!]!
+  destination(id: ID!): DestinationType
+  destinations(filters: DestinationFilter = null, order: DestinationOrder = null): [DestinationType!]!
+  searchDestinations(filters: DestinationSearchFilter = null, order: DestinationOrder = null): [DestinationType!]!
+  featuredDestinations(order: DestinationOrder = null): [DestinationType!]!
+  supplier(id: ID!): SupplierType
+  suppliers(filters: SupplierFilter = null, order: SupplierOrder = null): [SupplierType!]!
+  hotel(id: ID!): HotelType
+  hotels(filters: HotelFilter = null, order: HotelOrder = null): [HotelType!]!
+  searchHotels(filters: HotelSearchFilter = null, order: HotelOrder = null): [HotelType!]!
+  activity(id: ID!): ActivityType
+  activities(filters: ActivityFilter = null, order: ActivityOrder = null): [ActivityType!]!
+  searchActivities(filters: ActivitySearchFilter = null, order: ActivityOrder = null): [ActivityType!]!
+  transferProduct(id: ID!): TransferProductType
+  transferProducts(filters: TransferProductFilter = null, order: TransferProductOrder = null): [TransferProductType!]!
+  searchTransferProducts(filters: TransferProductSearchFilter = null, order: TransferProductOrder = null): [TransferProductType!]!
+  mealPlan(id: ID!): MealPlanType
+  mealPlans(filters: MealPlanFilter = null, order: MealPlanOrder = null): [MealPlanType!]!
+  activityCategory(id: ID!): ActivityCategoryType
+  activityCategories(filters: ActivityCategoryFilter = null, order: ActivityCategoryOrder = null): [ActivityCategoryType!]!
+  hotelImage(id: ID!): HotelImageType
+  hotelImages(filters: HotelImageFilter = null, order: HotelImageOrder = null): [HotelImageType!]!
+  hotelRoom(id: ID!): HotelRoomType
+  hotelRooms(filters: HotelRoomFilter = null, order: HotelRoomOrder = null): [HotelRoomType!]!
+  hotelRoomImage(id: ID!): HotelRoomImageType
+  hotelRoomImages(filters: HotelRoomImageFilter = null, order: HotelRoomImageOrder = null): [HotelRoomImageType!]!
+  hotelAmenity(id: ID!): HotelAmenityType
+  hotelAmenities(filters: HotelAmenityFilter = null, order: HotelAmenityOrder = null): [HotelAmenityType!]!
+  hotelRate(id: ID!): HotelRateType
+  hotelRates(filters: HotelRateFilter = null, order: HotelRateOrder = null): [HotelRateType!]!
+  activityCategoryMap(id: ID!): ActivityCategoryMapType
+  activityCategoryMaps(filters: ActivityCategoryMapFilter = null, order: ActivityCategoryMapOrder = null): [ActivityCategoryMapType!]!
+  activityImage(id: ID!): ActivityImageType
+  activityImages(filters: ActivityImageFilter = null, order: ActivityImageOrder = null): [ActivityImageType!]!
+  season(id: ID!): SeasonType
+  seasons(filters: SeasonFilter = null, order: SeasonOrder = null): [SeasonType!]!
+  activityOption(id: ID!): ActivityOptionType
+  activityOptions(filters: ActivityOptionFilter = null, order: ActivityOptionOrder = null): [ActivityOptionType!]!
+  activityAddon(id: ID!): ActivityAddonType
+  activityAddons(filters: ActivityAddonFilter = null, order: ActivityAddonOrder = null): [ActivityAddonType!]!
+  vehicle(id: ID!): VehicleType
+  vehicles(filters: VehicleFilter = null, order: VehicleOrder = null): [VehicleType!]!
+  priceRule(id: ID!): PriceRuleType
+  priceRules(filters: PriceRuleFilter = null, order: PriceRuleOrder = null): [PriceRuleType!]!
+  trip(id: ID!): TripType
+  trips(filters: TripFilter = null, order: TripOrder = null): [TripType!]!
+  searchTrips(filters: TripSearchFilter = null, order: TripOrder = null): [TripType!]!
+  tripDay(id: ID!): TripDayType
+  tripDays(filters: TripDayFilter = null, order: TripDayOrder = null): [TripDayType!]!
+  tripStay(id: ID!): TripStayType
+  tripStays(filters: TripStayFilter = null, order: TripStayOrder = null): [TripStayType!]!
+  activityBooking(id: ID!): ActivityBookingType
+  activityBookings(filters: ActivityBookingFilter = null, order: ActivityBookingOrder = null): [ActivityBookingType!]!
+  transfer(id: ID!): TransferType
+  transfers(filters: TransferFilter = null, order: TransferOrder = null): [TransferType!]!
+  flightSegment(id: ID!): FlightSegmentType
+  flightSegments(filters: FlightSegmentFilter = null, order: FlightSegmentOrder = null): [FlightSegmentType!]!
+  proposal(id: ID!): ProposalType
+  proposals(filters: ProposalFilter = null, order: ProposalOrder = null): [ProposalType!]!
+  myProposals(filters: ProposalFilter = null, order: ProposalOrder = null): [ProposalType!]!
+  daySlot(id: ID!): DaySlotType
+  daySlots(filters: DaySlotFilter = null, order: DaySlotOrder = null): [DaySlotType!]!
+  activityBookingAddon(id: ID!): ActivityBookingAddonType
+  activityBookingAddons(filters: ActivityBookingAddonFilter = null, order: ActivityBookingAddonOrder = null): [ActivityBookingAddonType!]!
+  priceBreakdown(id: ID!): PriceBreakdownType
+  priceBreakdowns(filters: PriceBreakdownFilter = null, order: PriceBreakdownOrder = null): [PriceBreakdownType!]!
+  tripDestination(id: ID!): TripDestinationType
+  tripDestinations(filters: TripDestinationFilter = null, order: TripDestinationOrder = null): [TripDestinationType!]!
+}
+
+type LegacyUserType {
+  id: ID!
+  email: String!
+  firstName: String
+  lastName: String
+  profileImageUrl: String
+  isActive: Boolean!
+  isStaff: Boolean!
+  isSuperuser: Boolean!
+  groups: [String!]!
+}
+
+type UserType {
+  id: ID!
+  email: String!
+  firstName: String!
+  lastName: String!
+  name: String
+  countryCode: String
+  phone: String
+  role: String!
+  dateOfBirth: Date
+  gender: String
+  profileImageUrl: String
+  preferences: JSON!
+  emailVerified: Boolean!
+  phoneVerified: Boolean!
+  referralCode: String
+  isActive: Boolean!
+  isStaff: Boolean!
+  isSuperuser: Boolean!
+  dateJoined: DateTime!
+  lastLogin: DateTime
+  createdAt: DateTime!
+  org: OrganizationType
+  referredBy: UserType
+
+  """User groups"""
+  groups: [String!]!
+}
+
+"""Date (isoformat)"""
+scalar Date
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf).
+"""
+scalar JSON
+
+"""Date with time (isoformat)"""
+scalar DateTime
+
+type OrganizationType {
+  id: ID!
+  name: String
+  billingEmail: String!
+  logoUrl: String
+  address: String
+  phone: String
+  email: String
+  website: String
+  taxNumber: String
+  taxRate: Decimal!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+"""Decimal (fixed-point)"""
+scalar Decimal
+
+input UserFilter {
+  id: IDBaseFilterLookup
+  email: StrFilterLookup
+  firstName: StrFilterLookup
+  lastName: StrFilterLookup
+  name: StrFilterLookup
+  countryCode: StrFilterLookup
+  phone: StrFilterLookup
+  role: StrFilterLookup
+  gender: StrFilterLookup
+  isActive: BoolBaseFilterLookup
+  isStaff: BoolBaseFilterLookup
+  isSuperuser: BoolBaseFilterLookup
+  emailVerified: BoolBaseFilterLookup
+  phoneVerified: BoolBaseFilterLookup
+  org: OrganizationFilter
+  referredBy: UserFilter
+  createdAt: DatetimeDatetimeFilterLookup
+  dateJoined: DatetimeDatetimeFilterLookup
+  lastLogin: DatetimeDatetimeFilterLookup
+  dateOfBirth: DateDateFilterLookup
+  AND: UserFilter
+  OR: UserFilter
+  NOT: UserFilter
+  DISTINCT: Boolean
+}
+
+input IDBaseFilterLookup {
+  """Exact match. Filter will be skipped on `null` value"""
+  exact: ID
+
+  """Assignment test. Filter will be skipped on `null` value"""
+  isNull: Boolean
+
+  """
+  Exact match of items in a given list. Filter will be skipped on `null` value
+  """
+  inList: [ID!]
+}
+
+input StrFilterLookup {
+  """Exact match. Filter will be skipped on `null` value"""
+  exact: String
+
+  """Assignment test. Filter will be skipped on `null` value"""
+  isNull: Boolean
+
+  """
+  Exact match of items in a given list. Filter will be skipped on `null` value
+  """
+  inList: [String!]
+
+  """Case-insensitive exact match. Filter will be skipped on `null` value"""
+  iExact: String
+
+  """
+  Case-sensitive containment test. Filter will be skipped on `null` value
+  """
+  contains: String
+
+  """
+  Case-insensitive containment test. Filter will be skipped on `null` value
+  """
+  iContains: String
+
+  """Case-sensitive starts-with. Filter will be skipped on `null` value"""
+  startsWith: String
+
+  """Case-insensitive starts-with. Filter will be skipped on `null` value"""
+  iStartsWith: String
+
+  """Case-sensitive ends-with. Filter will be skipped on `null` value"""
+  endsWith: String
+
+  """Case-insensitive ends-with. Filter will be skipped on `null` value"""
+  iEndsWith: String
+
+  """
+  Case-sensitive regular expression match. Filter will be skipped on `null` value
+  """
+  regex: String
+
+  """
+  Case-insensitive regular expression match. Filter will be skipped on `null` value
+  """
+  iRegex: String
+}
+
+input BoolBaseFilterLookup {
+  """Exact match. Filter will be skipped on `null` value"""
+  exact: Boolean
+
+  """Assignment test. Filter will be skipped on `null` value"""
+  isNull: Boolean
+
+  """
+  Exact match of items in a given list. Filter will be skipped on `null` value
+  """
+  inList: [Boolean!]
+}
+
+input OrganizationFilter {
+  id: IDBaseFilterLookup
+  name: StrFilterLookup
+  billingEmail: StrFilterLookup
+  logoUrl: StrFilterLookup
+  address: StrFilterLookup
+  phone: StrFilterLookup
+  email: StrFilterLookup
+  website: StrFilterLookup
+  taxNumber: StrFilterLookup
+  taxRate: DecimalComparisonFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: OrganizationFilter
+  OR: OrganizationFilter
+  NOT: OrganizationFilter
+  DISTINCT: Boolean
+  searchOrganizations: String
+}
+
+input DecimalComparisonFilterLookup {
+  """Exact match. Filter will be skipped on `null` value"""
+  exact: Decimal
+
+  """Assignment test. Filter will be skipped on `null` value"""
+  isNull: Boolean
+
+  """
+  Exact match of items in a given list. Filter will be skipped on `null` value
+  """
+  inList: [Decimal!]
+
+  """Greater than. Filter will be skipped on `null` value"""
+  gt: Decimal
+
+  """Greater than or equal to. Filter will be skipped on `null` value"""
+  gte: Decimal
+
+  """Less than. Filter will be skipped on `null` value"""
+  lt: Decimal
+
+  """Less than or equal to. Filter will be skipped on `null` value"""
+  lte: Decimal
+
+  """Inclusive range test (between)"""
+  range: DecimalRangeLookup
+}
+
+input DecimalRangeLookup {
+  start: Decimal = null
+  end: Decimal = null
+}
+
+input DatetimeDatetimeFilterLookup {
+  """Exact match. Filter will be skipped on `null` value"""
+  exact: DateTime
+
+  """Assignment test. Filter will be skipped on `null` value"""
+  isNull: Boolean
+
+  """
+  Exact match of items in a given list. Filter will be skipped on `null` value
+  """
+  inList: [DateTime!]
+
+  """Greater than. Filter will be skipped on `null` value"""
+  gt: DateTime
+
+  """Greater than or equal to. Filter will be skipped on `null` value"""
+  gte: DateTime
+
+  """Less than. Filter will be skipped on `null` value"""
+  lt: DateTime
+
+  """Less than or equal to. Filter will be skipped on `null` value"""
+  lte: DateTime
+
+  """Inclusive range test (between)"""
+  range: DatetimeRangeLookup
+  year: IntComparisonFilterLookup
+  month: IntComparisonFilterLookup
+  day: IntComparisonFilterLookup
+  weekDay: IntComparisonFilterLookup
+  isoWeekDay: IntComparisonFilterLookup
+  week: IntComparisonFilterLookup
+  isoYear: IntComparisonFilterLookup
+  quarter: IntComparisonFilterLookup
+  hour: IntComparisonFilterLookup
+  minute: IntComparisonFilterLookup
+  second: IntComparisonFilterLookup
+  date: IntComparisonFilterLookup
+  time: IntComparisonFilterLookup
+}
+
+input DatetimeRangeLookup {
+  start: DateTime = null
+  end: DateTime = null
+}
+
+input IntComparisonFilterLookup {
+  """Exact match. Filter will be skipped on `null` value"""
+  exact: Int
+
+  """Assignment test. Filter will be skipped on `null` value"""
+  isNull: Boolean
+
+  """
+  Exact match of items in a given list. Filter will be skipped on `null` value
+  """
+  inList: [Int!]
+
+  """Greater than. Filter will be skipped on `null` value"""
+  gt: Int
+
+  """Greater than or equal to. Filter will be skipped on `null` value"""
+  gte: Int
+
+  """Less than. Filter will be skipped on `null` value"""
+  lt: Int
+
+  """Less than or equal to. Filter will be skipped on `null` value"""
+  lte: Int
+
+  """Inclusive range test (between)"""
+  range: IntRangeLookup
+}
+
+input IntRangeLookup {
+  start: Int = null
+  end: Int = null
+}
+
+input DateDateFilterLookup {
+  """Exact match. Filter will be skipped on `null` value"""
+  exact: Date
+
+  """Assignment test. Filter will be skipped on `null` value"""
+  isNull: Boolean
+
+  """
+  Exact match of items in a given list. Filter will be skipped on `null` value
+  """
+  inList: [Date!]
+
+  """Greater than. Filter will be skipped on `null` value"""
+  gt: Date
+
+  """Greater than or equal to. Filter will be skipped on `null` value"""
+  gte: Date
+
+  """Less than. Filter will be skipped on `null` value"""
+  lt: Date
+
+  """Less than or equal to. Filter will be skipped on `null` value"""
+  lte: Date
+
+  """Inclusive range test (between)"""
+  range: DateRangeLookup
+  year: IntComparisonFilterLookup
+  month: IntComparisonFilterLookup
+  day: IntComparisonFilterLookup
+  weekDay: IntComparisonFilterLookup
+  isoWeekDay: IntComparisonFilterLookup
+  week: IntComparisonFilterLookup
+  isoYear: IntComparisonFilterLookup
+  quarter: IntComparisonFilterLookup
+}
+
+input DateRangeLookup {
+  start: Date = null
+  end: Date = null
+}
+
+input UserOrder {
+  id: Ordering
+  email: Ordering
+  firstName: Ordering
+  lastName: Ordering
+  name: Ordering
+  countryCode: Ordering
+  phone: Ordering
+  role: Ordering
+  gender: Ordering
+  isActive: Ordering
+  isStaff: Ordering
+  isSuperuser: Ordering
+  emailVerified: Ordering
+  phoneVerified: Ordering
+  createdAt: Ordering
+  dateJoined: Ordering
+  lastLogin: Ordering
+  dateOfBirth: Ordering
+  org_Name: Ordering
+}
+
+enum Ordering {
+  ASC
+  ASC_NULLS_FIRST
+  ASC_NULLS_LAST
+  DESC
+  DESC_NULLS_FIRST
+  DESC_NULLS_LAST
+}
+
+input UserSearchFilter {
+  """Search in name, email, and phone fields"""
+  search: String!
+  AND: UserSearchFilter
+  OR: UserSearchFilter
+  NOT: UserSearchFilter
+  DISTINCT: Boolean
+}
+
+type ContactType {
+  id: ID!
+  name: String
+  email: String!
+  phone: String
+  nationality: String
+  createdAt: DateTime!
+  org: OrganizationType!
+  createdBy: UserType!
+}
+
+input ContactFilter {
+  id: IDBaseFilterLookup
+  name: StrFilterLookup
+  email: StrFilterLookup
+  phone: StrFilterLookup
+  nationality: StrFilterLookup
+  org: OrganizationFilter
+  createdBy: UserFilter
+  createdAt: DatetimeDatetimeFilterLookup
+  AND: ContactFilter
+  OR: ContactFilter
+  NOT: ContactFilter
+  DISTINCT: Boolean
+}
+
+input ContactOrder {
+  id: Ordering
+  name: Ordering
+  email: Ordering
+  phone: Ordering
+  nationality: Ordering
+  createdAt: Ordering
+  org_Name: Ordering
+  createdBy_Name: Ordering
+  createdBy_Email: Ordering
+}
+
+input ContactSearchFilter {
+  """Search in name, email, and phone fields"""
+  search: String!
+  AND: ContactSearchFilter
+  OR: ContactSearchFilter
+  NOT: ContactSearchFilter
+  DISTINCT: Boolean
+}
+
+type UserStatsType {
+  totalUsers: Int!
+  activeUsers: Int!
+  staffUsers: Int!
+  usersByRole: [RoleCount!]!
+  usersByOrganization: [OrganizationCount!]!
+  recentRegistrations: Int!
+}
+
+type RoleCount {
+  role: String!
+  count: Int!
+}
+
+type OrganizationCount {
+  organization: String!
+  count: Int!
+}
+
+type CountryType {
+  iso2: String!
+  name: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input CountryFilter {
+  iso2: StrFilterLookup
+  name: StrFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: CountryFilter
+  OR: CountryFilter
+  NOT: CountryFilter
+  DISTINCT: Boolean
+  searchCountries: String
+}
+
+input CountryOrder {
+  iso2: Ordering
+  name: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+type CityType {
+  id: ID!
+  name: String
+  country: CountryType!
+  timezone: String!
+  lat: Float!
+  lon: Float!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input CityFilter {
+  id: IDBaseFilterLookup
+  name: StrFilterLookup
+  country: CountryFilter
+  timezone: StrFilterLookup
+  lat: FloatComparisonFilterLookup
+  lon: FloatComparisonFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: CityFilter
+  OR: CityFilter
+  NOT: CityFilter
+  DISTINCT: Boolean
+  searchCities: String
+}
+
+input FloatComparisonFilterLookup {
+  """Exact match. Filter will be skipped on `null` value"""
+  exact: Float
+
+  """Assignment test. Filter will be skipped on `null` value"""
+  isNull: Boolean
+
+  """
+  Exact match of items in a given list. Filter will be skipped on `null` value
+  """
+  inList: [Float!]
+
+  """Greater than. Filter will be skipped on `null` value"""
+  gt: Float
+
+  """Greater than or equal to. Filter will be skipped on `null` value"""
+  gte: Float
+
+  """Less than. Filter will be skipped on `null` value"""
+  lt: Float
+
+  """Less than or equal to. Filter will be skipped on `null` value"""
+  lte: Float
+
+  """Inclusive range test (between)"""
+  range: FloatRangeLookup
+}
+
+input FloatRangeLookup {
+  start: Float = null
+  end: Float = null
+}
+
+input CityOrder {
+  id: Ordering
+  name: Ordering
+  country: Ordering
+  timezone: Ordering
+  lat: Ordering
+  lon: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+input CitySearchFilter {
+  """Search in name and country fields"""
+  search: String!
+  AND: CitySearchFilter
+  OR: CitySearchFilter
+  NOT: CitySearchFilter
+  DISTINCT: Boolean
+}
+
+type CurrencyType {
+  code: String!
+  name: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input CurrencyFilter {
+  code: StrFilterLookup
+  name: StrFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: CurrencyFilter
+  OR: CurrencyFilter
+  NOT: CurrencyFilter
+  DISTINCT: Boolean
+  searchCurrencies: String
+}
+
+input CurrencyOrder {
+  code: Ordering
+  name: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+type FXRateType {
+  id: ID!
+  code: CurrencyType!
+  forDate: Date!
+  rateToUsd: Decimal!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input FXRateFilter {
+  id: IDBaseFilterLookup
+  code: CurrencyFilter
+  forDate: DateDateFilterLookup
+  rateToUsd: DecimalComparisonFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: FXRateFilter
+  OR: FXRateFilter
+  NOT: FXRateFilter
+  DISTINCT: Boolean
+  searchFxRates: String
+}
+
+input FXRateOrder {
+  id: Ordering
+  code: Ordering
+  forDate: Ordering
+  rateToUsd: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+type DestinationType {
+  id: ID!
+  city: CityType!
+  title: String
+  description: String
+  heroImageUrl: String!
+  highlights: JSON!
+  isFeatured: Boolean!
+  type: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input DestinationFilter {
+  id: IDBaseFilterLookup
+  city: CityFilter
+  title: StrFilterLookup
+  description: StrFilterLookup
+  heroImageUrl: StrFilterLookup
+  isFeatured: BoolBaseFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: DestinationFilter
+  OR: DestinationFilter
+  NOT: DestinationFilter
+  DISTINCT: Boolean
+  searchDestinations: String
+}
+
+input DestinationOrder {
+  id: Ordering
+  city: Ordering
+  title: Ordering
+  isFeatured: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+input DestinationSearchFilter {
+  """Search in title, description, and city fields"""
+  search: String!
+  AND: DestinationSearchFilter
+  OR: DestinationSearchFilter
+  NOT: DestinationSearchFilter
+  DISTINCT: Boolean
+}
+
+type SupplierType {
+  id: ID!
+  name: String
+  type: String!
+  contactEmail: String!
+  contractTerms: JSON!
+  commissionRate: Decimal!
+  isActive: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input SupplierFilter {
+  id: IDBaseFilterLookup
+  name: StrFilterLookup
+  type: StrFilterLookup
+  contactEmail: StrFilterLookup
+  commissionRate: DecimalComparisonFilterLookup
+  isActive: BoolBaseFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: SupplierFilter
+  OR: SupplierFilter
+  NOT: SupplierFilter
+  DISTINCT: Boolean
+  searchSuppliers: String
+}
+
+input SupplierOrder {
+  id: Ordering
+  name: Ordering
+  type: Ordering
+  contactEmail: Ordering
+  commissionRate: Ordering
+  isActive: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+type HotelType {
+  id: ID!
+  city: CityType!
+  supplier: SupplierType!
+  name: String
+  address: String
+  type: String!
+  description: String
+  locationUrl: String
+  star: Int!
+  totalRatings: Int
+  cancellationPolicy: String
+  instantBooking: Boolean!
+  cleanilessRating: Decimal
+  serviceRating: Decimal
+  hotelImages: [HotelImageType!]!
+  hotelRooms: [HotelRoomType!]!
+  comfortRating: Decimal
+  conditionRating: Decimal
+  amenitesRating: Decimal
+  neighborhoodRating: Decimal
+  amenities: JSON
+  instructions: String
+  policy: String
+  inclusions: String
+  exclusions: String
+  tags: [String!]
+  commissionRate: Decimal!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type HotelImageType {
+  id: ID!
+  hotel: DjangoModelType!
+  url: String!
+  caption: String
+  priorityOrder: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type DjangoModelType {
+  pk: ID!
+}
+
+type HotelRoomType {
+  id: ID!
+  hotel: HotelType!
+  name: String
+  currency: CurrencyType!
+  priceCents: Int
+  bedType: String
+  baseMealPlan: String
+  hotelRoomImages: [HotelRoomImageType!]!
+  roomAmenities: [HotelAmenityType!]!
+  rates: [HotelRateType!]!
+  maxOccupancy: Int!
+  size: Decimal
+  sizeUnit: String
+  details: String
+  amenities: JSON!
+  tags: [String!]!
+  inclusions: String
+  exclusions: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type HotelRoomImageType {
+  id: ID!
+  hotelRoom: DjangoModelType!
+  url: String!
+  caption: String
+  priorityOrder: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type HotelAmenityType {
+  id: ID!
+  hotelRoom: DjangoModelType!
+  name: String
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type HotelRateType {
+  id: ID!
+  room: HotelRoomType!
+  validFrom: Date!
+  validTo: Date!
+  currency: CurrencyType!
+  priceCents: Int
+  mealPlan: MealPlanType
+  refundable: Boolean!
+  transferProduct: TransferProductType
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type MealPlanType {
+  id: ID!
+  name: String
+  mealPlanType: String!
+  mealValue: Int
+  vegType: String!
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type TransferProductType {
+  id: ID!
+  city: CityType!
+  vehicle: VehicleType!
+  supplier: SupplierType!
+  name: String
+  description: String
+  currency: CurrencyType!
+  priceCents: Int
+  cancellationPolicy: String
+  commissionRate: Decimal!
+  pickup: DestinationType
+  dropoff: DestinationType
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type VehicleType {
+  id: ID!
+  type: String
+  name: String
+  capacityAdults: Int
+  capacityChildren: Int
+  amenities: JSON!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input HotelFilter {
+  id: IDBaseFilterLookup
+  city: CityFilter
+  supplier: SupplierFilter
+  name: StrFilterLookup
+  type: StrFilterLookup
+  star: IntComparisonFilterLookup
+  instantBooking: BoolBaseFilterLookup
+  commissionRate: DecimalComparisonFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: HotelFilter
+  OR: HotelFilter
+  NOT: HotelFilter
+  DISTINCT: Boolean
+  searchHotels: String
+}
+
+input HotelOrder {
+  id: Ordering
+  name: Ordering
+  city: Ordering
+  supplier: Ordering
+  type: Ordering
+  star: Ordering
+  instantBooking: Ordering
+  commissionRate: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+input HotelSearchFilter {
+  """Search in name, description, and city fields"""
+  search: String!
+  AND: HotelSearchFilter
+  OR: HotelSearchFilter
+  NOT: HotelSearchFilter
+  DISTINCT: Boolean
+}
+
+type ActivityType {
+  id: ID!
+  city: CityType!
+  supplier: SupplierType!
+  title: String
+  summary: String
+  description: String
+  rating: Decimal!
+  durationMinutes: Int
+  startTime: Time
+  highlights: JSON!
+  cancellationPolicy: String
+  slot: Int!
+  tags: [String!]!
+  instantBooking: Boolean!
+  commissionRate: Decimal!
+  activityImages: [ActivityImageType!]!
+  activityOptions: [ActivityOptionType!]!
+  activityAddons: [ActivityAddonType!]!
+  activityCategoryMaps: [ActivityCategoryMapType!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+"""Time (isoformat)"""
+scalar Time
+
+type ActivityImageType {
+  id: ID!
+  activity: ActivityType!
+  url: String!
+  caption: String
+  priorityOrder: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ActivityOptionType {
+  id: ID!
+  activity: ActivityType!
+  name: String
+  currency: CurrencyType!
+  mealPlan: MealPlanType
+  priceCents: Int
+  priceCentsChild: Int
+  durationMinutes: Int
+  maxParticipants: Int
+  maxParticipantsChild: Int
+  isRefundable: Boolean!
+  isRecommended: Boolean!
+  isAvailable: Boolean!
+  refundPolicy: String
+  cancellationPolicy: String
+  notes: String
+  startTime: Time!
+  endTime: Time!
+  inclusions: String
+  exclusions: String
+  season: SeasonType
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type SeasonType {
+  id: ID!
+  name: String
+  startDate: Date!
+  endDate: Date!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ActivityAddonType {
+  id: ID!
+  activity: ActivityType!
+  name: String
+  description: String
+  currency: CurrencyType!
+  priceCents: Int
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ActivityCategoryMapType {
+  id: ID!
+  activity: ActivityType!
+  category: ActivityCategoryType!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ActivityCategoryType {
+  id: ID!
+  name: String
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input ActivityFilter {
+  id: IDBaseFilterLookup
+  city: CityFilter
+  supplier: SupplierFilter
+  title: StrFilterLookup
+  rating: DecimalComparisonFilterLookup
+  durationMinutes: IntComparisonFilterLookup
+  startTime: TimeTimeFilterLookup
+  instantBooking: BoolBaseFilterLookup
+  commissionRate: DecimalComparisonFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: ActivityFilter
+  OR: ActivityFilter
+  NOT: ActivityFilter
+  DISTINCT: Boolean
+  searchActivities: String
+}
+
+input TimeTimeFilterLookup {
+  """Exact match. Filter will be skipped on `null` value"""
+  exact: Time
+
+  """Assignment test. Filter will be skipped on `null` value"""
+  isNull: Boolean
+
+  """
+  Exact match of items in a given list. Filter will be skipped on `null` value
+  """
+  inList: [Time!]
+
+  """Greater than. Filter will be skipped on `null` value"""
+  gt: Time
+
+  """Greater than or equal to. Filter will be skipped on `null` value"""
+  gte: Time
+
+  """Less than. Filter will be skipped on `null` value"""
+  lt: Time
+
+  """Less than or equal to. Filter will be skipped on `null` value"""
+  lte: Time
+
+  """Inclusive range test (between)"""
+  range: TimeRangeLookup
+  hour: IntComparisonFilterLookup
+  minute: IntComparisonFilterLookup
+  second: IntComparisonFilterLookup
+  date: IntComparisonFilterLookup
+  time: IntComparisonFilterLookup
+}
+
+input TimeRangeLookup {
+  start: Time = null
+  end: Time = null
+}
+
+input ActivityOrder {
+  id: Ordering
+  title: Ordering
+  city: Ordering
+  supplier: Ordering
+  rating: Ordering
+  durationMinutes: Ordering
+  instantBooking: Ordering
+  commissionRate: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+input ActivitySearchFilter {
+  """Search in title, summary, description, and city fields"""
+  search: String!
+  AND: ActivitySearchFilter
+  OR: ActivitySearchFilter
+  NOT: ActivitySearchFilter
+  DISTINCT: Boolean
+}
+
+input TransferProductFilter {
+  id: IDBaseFilterLookup
+  city: CityFilter
+  vehicle: VehicleFilter
+  supplier: SupplierFilter
+  name: StrFilterLookup
+  currency: CurrencyFilter
+  commissionRate: DecimalComparisonFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: TransferProductFilter
+  OR: TransferProductFilter
+  NOT: TransferProductFilter
+  DISTINCT: Boolean
+  searchTransferProducts: String
+}
+
+input VehicleFilter {
+  id: IDBaseFilterLookup
+  type: StrFilterLookup
+  name: StrFilterLookup
+  capacityAdults: IntComparisonFilterLookup
+  capacityChildren: IntComparisonFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: VehicleFilter
+  OR: VehicleFilter
+  NOT: VehicleFilter
+  DISTINCT: Boolean
+  searchVehicles: String
+}
+
+input TransferProductOrder {
+  id: Ordering
+  name: Ordering
+  city: Ordering
+  vehicle: Ordering
+  supplier: Ordering
+  commissionRate: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+input TransferProductSearchFilter {
+  """Search in name, description, and city fields"""
+  search: String!
+  AND: TransferProductSearchFilter
+  OR: TransferProductSearchFilter
+  NOT: TransferProductSearchFilter
+  DISTINCT: Boolean
+}
+
+input MealPlanFilter {
+  id: IDBaseFilterLookup
+  name: StrFilterLookup
+  mealPlanType: StrFilterLookup
+  mealValue: IntComparisonFilterLookup
+  vegType: StrFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: MealPlanFilter
+  OR: MealPlanFilter
+  NOT: MealPlanFilter
+  DISTINCT: Boolean
+  searchMealPlans: String
+}
+
+input MealPlanOrder {
+  id: Ordering
+  name: Ordering
+  mealPlanType: Ordering
+  mealValue: Ordering
+  vegType: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+input ActivityCategoryFilter {
+  id: IDBaseFilterLookup
+  name: StrFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: ActivityCategoryFilter
+  OR: ActivityCategoryFilter
+  NOT: ActivityCategoryFilter
+  DISTINCT: Boolean
+  searchActivityCategories: String
+}
+
+input ActivityCategoryOrder {
+  id: Ordering
+  name: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+input HotelImageFilter {
+  id: IDBaseFilterLookup
+  hotel: HotelFilter
+  url: StrFilterLookup
+  caption: StrFilterLookup
+  priorityOrder: IntComparisonFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: HotelImageFilter
+  OR: HotelImageFilter
+  NOT: HotelImageFilter
+  DISTINCT: Boolean
+  searchHotelImages: String
+}
+
+input HotelImageOrder {
+  id: Ordering
+  hotel: Ordering
+  url: Ordering
+  caption: Ordering
+  priorityOrder: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+input HotelRoomFilter {
+  id: IDBaseFilterLookup
+  hotel: HotelFilter
+  name: StrFilterLookup
+  currency: CurrencyFilter
+  priceCents: IntComparisonFilterLookup
+  bedType: StrFilterLookup
+  baseMealPlan: StrFilterLookup
+  maxOccupancy: IntComparisonFilterLookup
+  size: DecimalComparisonFilterLookup
+  sizeUnit: StrFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: HotelRoomFilter
+  OR: HotelRoomFilter
+  NOT: HotelRoomFilter
+  DISTINCT: Boolean
+  searchHotelRooms: String
+}
+
+input HotelRoomOrder {
+  id: Ordering
+  hotel: Ordering
+  name: Ordering
+  currency: Ordering
+  priceCents: Ordering
+  bedType: Ordering
+  baseMealPlan: Ordering
+  maxOccupancy: Ordering
+  size: Ordering
+  sizeUnit: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+input HotelRoomImageFilter {
+  id: IDBaseFilterLookup
+  hotelRoom: HotelRoomFilter
+  url: StrFilterLookup
+  caption: StrFilterLookup
+  priorityOrder: IntComparisonFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: HotelRoomImageFilter
+  OR: HotelRoomImageFilter
+  NOT: HotelRoomImageFilter
+  DISTINCT: Boolean
+  searchHotelRoomImages: String
+}
+
+input HotelRoomImageOrder {
+  id: Ordering
+  hotelRoom: Ordering
+  url: Ordering
+  caption: Ordering
+  priorityOrder: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+input HotelAmenityFilter {
+  id: IDBaseFilterLookup
+  hotelRoom: HotelRoomFilter
+  name: StrFilterLookup
+  description: StrFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: HotelAmenityFilter
+  OR: HotelAmenityFilter
+  NOT: HotelAmenityFilter
+  DISTINCT: Boolean
+  searchHotelAmenities: String
+}
+
+input HotelAmenityOrder {
+  id: Ordering
+  hotelRoom: Ordering
+  name: Ordering
+  description: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+input HotelRateFilter {
+  id: IDBaseFilterLookup
+  room: HotelRoomFilter
+  validFrom: DateDateFilterLookup
+  validTo: DateDateFilterLookup
+  currency: CurrencyFilter
+  priceCents: IntComparisonFilterLookup
+  mealPlan: MealPlanFilter
+  refundable: BoolBaseFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: HotelRateFilter
+  OR: HotelRateFilter
+  NOT: HotelRateFilter
+  DISTINCT: Boolean
+  searchHotelRates: String
+}
+
+input HotelRateOrder {
+  id: Ordering
+  room: Ordering
+  validFrom: Ordering
+  validTo: Ordering
+  currency: Ordering
+  priceCents: Ordering
+  mealPlan: Ordering
+  refundable: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+input ActivityCategoryMapFilter {
+  id: IDBaseFilterLookup
+  activity: ActivityFilter
+  category: ActivityCategoryFilter
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: ActivityCategoryMapFilter
+  OR: ActivityCategoryMapFilter
+  NOT: ActivityCategoryMapFilter
+  DISTINCT: Boolean
+  searchActivityCategoryMaps: String
+}
+
+input ActivityCategoryMapOrder {
+  id: Ordering
+  activity: Ordering
+  category: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+input ActivityImageFilter {
+  id: IDBaseFilterLookup
+  activity: ActivityFilter
+  url: StrFilterLookup
+  caption: StrFilterLookup
+  priorityOrder: IntComparisonFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: ActivityImageFilter
+  OR: ActivityImageFilter
+  NOT: ActivityImageFilter
+  DISTINCT: Boolean
+  searchActivityImages: String
+}
+
+input ActivityImageOrder {
+  id: Ordering
+  activity: Ordering
+  url: Ordering
+  caption: Ordering
+  priorityOrder: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+input SeasonFilter {
+  id: IDBaseFilterLookup
+  name: StrFilterLookup
+  startDate: DateDateFilterLookup
+  endDate: DateDateFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: SeasonFilter
+  OR: SeasonFilter
+  NOT: SeasonFilter
+  DISTINCT: Boolean
+  searchSeasons: String
+}
+
+input SeasonOrder {
+  id: Ordering
+  name: Ordering
+  startDate: Ordering
+  endDate: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+input ActivityOptionFilter {
+  id: IDBaseFilterLookup
+  activity: ActivityFilter
+  name: StrFilterLookup
+  currency: CurrencyFilter
+  mealPlan: MealPlanFilter
+  priceCents: IntComparisonFilterLookup
+  priceCentsChild: IntComparisonFilterLookup
+  durationMinutes: IntComparisonFilterLookup
+  maxParticipants: IntComparisonFilterLookup
+  maxParticipantsChild: IntComparisonFilterLookup
+  isRefundable: BoolBaseFilterLookup
+  isRecommended: BoolBaseFilterLookup
+  isAvailable: BoolBaseFilterLookup
+  startTime: TimeTimeFilterLookup
+  endTime: TimeTimeFilterLookup
+  season: SeasonFilter
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: ActivityOptionFilter
+  OR: ActivityOptionFilter
+  NOT: ActivityOptionFilter
+  DISTINCT: Boolean
+  searchActivityOptions: String
+}
+
+input ActivityOptionOrder {
+  id: Ordering
+  activity: Ordering
+  name: Ordering
+  currency: Ordering
+  mealPlan: Ordering
+  priceCents: Ordering
+  priceCentsChild: Ordering
+  durationMinutes: Ordering
+  maxParticipants: Ordering
+  maxParticipantsChild: Ordering
+  isRefundable: Ordering
+  isRecommended: Ordering
+  isAvailable: Ordering
+  startTime: Ordering
+  endTime: Ordering
+  season: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+input ActivityAddonFilter {
+  id: IDBaseFilterLookup
+  activity: ActivityFilter
+  name: StrFilterLookup
+  description: StrFilterLookup
+  currency: CurrencyFilter
+  priceCents: IntComparisonFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: ActivityAddonFilter
+  OR: ActivityAddonFilter
+  NOT: ActivityAddonFilter
+  DISTINCT: Boolean
+  searchActivityAddons: String
+}
+
+input ActivityAddonOrder {
+  id: Ordering
+  activity: Ordering
+  name: Ordering
+  description: Ordering
+  currency: Ordering
+  priceCents: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+input VehicleOrder {
+  id: Ordering
+  type: Ordering
+  name: Ordering
+  capacityAdults: Ordering
+  capacityChildren: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+type PriceRuleType {
+  id: ID!
+  entityType: String!
+  entity: Int
+  conditions: JSON!
+  multiplier: Decimal!
+  validFrom: Date!
+  validTo: Date!
+  isActive: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input PriceRuleFilter {
+  id: IDBaseFilterLookup
+  entityType: StrFilterLookup
+  entity: IntComparisonFilterLookup
+  multiplier: DecimalComparisonFilterLookup
+  validFrom: DateDateFilterLookup
+  validTo: DateDateFilterLookup
+  isActive: BoolBaseFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: PriceRuleFilter
+  OR: PriceRuleFilter
+  NOT: PriceRuleFilter
+  DISTINCT: Boolean
+  searchPriceRules: String
+}
+
+input PriceRuleOrder {
+  id: Ordering
+  entityType: Ordering
+  entity: Ordering
+  multiplier: Ordering
+  validFrom: Ordering
+  validTo: Ordering
+  isActive: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+type TripType {
+  id: ID!
+  org: OrganizationType
+  createdBy: UserType!
+  customer: ContactType
+  fromCity: CityType!
+  startDate: DateTime!
+  endDate: DateTime!
+  durationDays: Int
+  nationality: CountryType!
+  status: String!
+  tripType: String!
+  totalTravelers: Int
+  starRating: Decimal!
+  transferOnly: Boolean!
+  landOnly: Boolean!
+  travelerDetails: JSON!
+  currency: CurrencyType!
+  markupFlightPercent: Decimal!
+  markupLandPercent: Decimal!
+  bookingReference: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  """Trip days"""
+  days: [TripDayType!]!
+}
+
+type TripDayType {
+  id: ID!
+  trip: TripType!
+  dayNumber: Int
+  date: DateTime!
+  city: CityType!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  """Trip stay"""
+  stay: TripStayType
+
+  """Trip activity bookings"""
+  activityBookings: [ActivityBookingType!]!
+
+  """Trip transfers"""
+  transfers: [TransferType!]!
+}
+
+type TripStayType {
+  id: ID!
+  tripDay: TripDayType!
+  rate: HotelRateType!
+  checkIn: Date!
+  checkOut: Date!
+  nights: Int
+  roomsCount: Int
+  mealPlan: String
+  currency: CurrencyType!
+  priceTotalCents: Int
+  confirmationStatus: String!
+}
+
+type ActivityBookingType {
+  id: ID!
+  tripDay: TripDayType!
+  slot: String!
+  option: ActivityOptionType!
+  paxAdults: Int
+  paxChildren: Int
+  currency: CurrencyType!
+  priceBaseCents: Int
+  priceAddonsCents: Int!
+  pickupRequired: Boolean!
+  pickupHotel: HotelType
+  confirmationStatus: String!
+}
+
+type TransferType {
+  id: ID!
+  tripDay: TripDayType!
+  transferProduct: TransferProductType!
+  pickupTime: Time!
+  pickupLocation: String
+  dropoffLocation: String
+  vehiclesCount: Int
+  paxAdults: Int
+  paxChildren: Int
+  currency: CurrencyType!
+  priceTotalCents: Int
+  confirmationStatus: String!
+}
+
+input TripFilter {
+  id: IDBaseFilterLookup
+  org: OrganizationFilter
+  createdBy: UserFilter
+  customer: ContactFilter
+  fromCity: CityFilter
+  startDate: DatetimeDatetimeFilterLookup
+  endDate: DatetimeDatetimeFilterLookup
+  durationDays: IntComparisonFilterLookup
+  nationality: CountryFilter
+  status: StrFilterLookup
+  tripType: StrFilterLookup
+  totalTravelers: IntComparisonFilterLookup
+  starRating: DecimalComparisonFilterLookup
+  transferOnly: BoolBaseFilterLookup
+  landOnly: BoolBaseFilterLookup
+  currency: CurrencyFilter
+  markupFlightPercent: DecimalComparisonFilterLookup
+  markupLandPercent: DecimalComparisonFilterLookup
+  bookingReference: StrFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: TripFilter
+  OR: TripFilter
+  NOT: TripFilter
+  DISTINCT: Boolean
+  searchTrips: String
+}
+
+input TripOrder {
+  id: Ordering
+  startDate: Ordering
+  endDate: Ordering
+  status: Ordering
+  tripType: Ordering
+  totalTravelers: Ordering
+  starRating: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+input TripSearchFilter {
+  """Search in booking reference and customer fields"""
+  search: String!
+  AND: TripSearchFilter
+  OR: TripSearchFilter
+  NOT: TripSearchFilter
+  DISTINCT: Boolean
+}
+
+input TripDayFilter {
+  id: IDBaseFilterLookup
+  trip: TripFilter
+  dayNumber: IntComparisonFilterLookup
+  date: DatetimeDatetimeFilterLookup
+  city: CityFilter
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: TripDayFilter
+  OR: TripDayFilter
+  NOT: TripDayFilter
+  DISTINCT: Boolean
+  searchTripDays: String
+}
+
+input TripDayOrder {
+  id: Ordering
+  trip: Ordering
+  dayNumber: Ordering
+  date: Ordering
+  city: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+input TripStayFilter {
+  id: IDBaseFilterLookup
+  tripDay: TripDayFilter
+  room: HotelRoomFilter
+  checkIn: DateDateFilterLookup
+  checkOut: DateDateFilterLookup
+  nights: IntComparisonFilterLookup
+  roomsCount: IntComparisonFilterLookup
+  mealPlan: StrFilterLookup
+  currency: CurrencyFilter
+  priceTotalCents: IntComparisonFilterLookup
+  confirmationStatus: StrFilterLookup
+  AND: TripStayFilter
+  OR: TripStayFilter
+  NOT: TripStayFilter
+  DISTINCT: Boolean
+  searchTripStays: String
+}
+
+input TripStayOrder {
+  id: Ordering
+  tripDay: Ordering
+  room: Ordering
+  checkIn: Ordering
+  checkOut: Ordering
+  nights: Ordering
+  roomsCount: Ordering
+  mealPlan: Ordering
+  currency: Ordering
+  priceTotalCents: Ordering
+  confirmationStatus: Ordering
+}
+
+input ActivityBookingFilter {
+  id: IDBaseFilterLookup
+  tripDay: TripDayFilter
+  slot: StrFilterLookup
+  option: ActivityOptionFilter
+  paxAdults: IntComparisonFilterLookup
+  paxChildren: IntComparisonFilterLookup
+  currency: CurrencyFilter
+  priceBaseCents: IntComparisonFilterLookup
+  priceAddonsCents: IntComparisonFilterLookup
+  pickupRequired: BoolBaseFilterLookup
+  pickupHotel: HotelFilter
+  confirmationStatus: StrFilterLookup
+  AND: ActivityBookingFilter
+  OR: ActivityBookingFilter
+  NOT: ActivityBookingFilter
+  DISTINCT: Boolean
+  searchActivityBookings: String
+}
+
+input ActivityBookingOrder {
+  id: Ordering
+  tripDay: Ordering
+  slot: Ordering
+  option: Ordering
+  paxAdults: Ordering
+  paxChildren: Ordering
+  confirmationStatus: Ordering
+}
+
+input TransferFilter {
+  id: IDBaseFilterLookup
+  tripDay: TripDayFilter
+  transferProduct: TransferProductFilter
+  pickupTime: TimeTimeFilterLookup
+  pickupLocation: StrFilterLookup
+  dropoffLocation: StrFilterLookup
+  vehiclesCount: IntComparisonFilterLookup
+  paxAdults: IntComparisonFilterLookup
+  paxChildren: IntComparisonFilterLookup
+  currency: CurrencyFilter
+  priceTotalCents: IntComparisonFilterLookup
+  confirmationStatus: StrFilterLookup
+  AND: TransferFilter
+  OR: TransferFilter
+  NOT: TransferFilter
+  DISTINCT: Boolean
+  searchTransfers: String
+}
+
+input TransferOrder {
+  id: Ordering
+  tripDay: Ordering
+  transferProduct: Ordering
+  pickupTime: Ordering
+  vehiclesCount: Ordering
+  paxAdults: Ordering
+  paxChildren: Ordering
+  confirmationStatus: Ordering
+}
+
+type FlightSegmentType {
+  id: ID!
+  trip: TripType!
+  carrier: String
+  flightNumber: String!
+  departTime: DateTime!
+  arriveTime: DateTime!
+  departureAirport: String!
+  arrivalAirport: String!
+  cabinClass: String!
+  currency: CurrencyType!
+  priceCents: Int
+  confirmationStatus: String!
+}
+
+input FlightSegmentFilter {
+  id: IDBaseFilterLookup
+  trip: TripFilter
+  carrier: StrFilterLookup
+  flightNumber: StrFilterLookup
+  departTime: DatetimeDatetimeFilterLookup
+  arriveTime: DatetimeDatetimeFilterLookup
+  departureAirport: StrFilterLookup
+  arrivalAirport: StrFilterLookup
+  cabinClass: StrFilterLookup
+  currency: CurrencyFilter
+  priceCents: IntComparisonFilterLookup
+  confirmationStatus: StrFilterLookup
+  AND: FlightSegmentFilter
+  OR: FlightSegmentFilter
+  NOT: FlightSegmentFilter
+  DISTINCT: Boolean
+  searchFlightSegments: String
+}
+
+input FlightSegmentOrder {
+  id: Ordering
+  trip: Ordering
+  carrier: Ordering
+  flightNumber: Ordering
+  departTime: Ordering
+  arriveTime: Ordering
+  departureAirport: Ordering
+  arrivalAirport: Ordering
+  cabinClass: Ordering
+  confirmationStatus: Ordering
+}
+
+type ProposalType {
+  id: ID!
+  trip: TripType!
+  version: Int
+  name: String
+  status: String!
+  currency: CurrencyType!
+  totalPriceCents: Int
+  estimatedDateOfBooking: DateTime
+  areFlightsBooked: Boolean!
+  flightsMarkup: Decimal!
+  landMarkup: Decimal!
+  landMarkupType: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input ProposalFilter {
+  id: IDBaseFilterLookup
+  trip: TripFilter
+  version: IntComparisonFilterLookup
+  name: StrFilterLookup
+  status: StrFilterLookup
+  currency: CurrencyFilter
+  totalPriceCents: IntComparisonFilterLookup
+  estimatedDateOfBooking: DatetimeDatetimeFilterLookup
+  areFlightsBooked: BoolBaseFilterLookup
+  flightsMarkup: DecimalComparisonFilterLookup
+  landMarkup: DecimalComparisonFilterLookup
+  landMarkupType: StrFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: ProposalFilter
+  OR: ProposalFilter
+  NOT: ProposalFilter
+  DISTINCT: Boolean
+  searchProposals: String
+}
+
+input ProposalOrder {
+  id: Ordering
+  trip: Ordering
+  version: Ordering
+  name: Ordering
+  status: Ordering
+  totalPriceCents: Ordering
+  estimatedDateOfBooking: Ordering
+  areFlightsBooked: Ordering
+  flightsMarkup: Ordering
+  landMarkup: Ordering
+  landMarkupType: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+type DaySlotType {
+  id: ID!
+  tripDay: TripDayType!
+  slot: String!
+  note: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input DaySlotFilter {
+  id: IDBaseFilterLookup
+  tripDay: TripDayFilter
+  slot: StrFilterLookup
+  note: StrFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: DaySlotFilter
+  OR: DaySlotFilter
+  NOT: DaySlotFilter
+  DISTINCT: Boolean
+  searchDaySlots: String
+}
+
+input DaySlotOrder {
+  id: Ordering
+  tripDay: Ordering
+  slot: Ordering
+  note: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+type ActivityBookingAddonType {
+  id: ID!
+  booking: ActivityBookingType!
+  addon: ActivityAddonType!
+  quantity: Int
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input ActivityBookingAddonFilter {
+  id: IDBaseFilterLookup
+  booking: ActivityBookingFilter
+  addon: ActivityAddonFilter
+  quantity: IntComparisonFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: ActivityBookingAddonFilter
+  OR: ActivityBookingAddonFilter
+  NOT: ActivityBookingAddonFilter
+  DISTINCT: Boolean
+  searchActivityBookingAddons: String
+}
+
+input ActivityBookingAddonOrder {
+  id: Ordering
+  booking: Ordering
+  addon: Ordering
+  quantity: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+type PriceBreakdownType {
+  id: ID!
+  proposal: ProposalType!
+  item: String
+  priceCents: Int
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input PriceBreakdownFilter {
+  id: IDBaseFilterLookup
+  proposal: ProposalFilter
+  item: StrFilterLookup
+  priceCents: IntComparisonFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: PriceBreakdownFilter
+  OR: PriceBreakdownFilter
+  NOT: PriceBreakdownFilter
+  DISTINCT: Boolean
+  searchPriceBreakdowns: String
+}
+
+input PriceBreakdownOrder {
+  id: Ordering
+  proposal: Ordering
+  item: Ordering
+  priceCents: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+type TripDestinationType {
+  id: ID!
+  trip: TripType!
+  numberOfDays: Int!
+  destination: DestinationType!
+  order: Int
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input TripDestinationFilter {
+  id: IDBaseFilterLookup
+  trip: TripFilter
+  destination: DestinationFilter
+  order: IntComparisonFilterLookup
+  createdAt: DatetimeDatetimeFilterLookup
+  updatedAt: DatetimeDatetimeFilterLookup
+  AND: TripDestinationFilter
+  OR: TripDestinationFilter
+  NOT: TripDestinationFilter
+  DISTINCT: Boolean
+  searchTripDestinations: String
+}
+
+input TripDestinationOrder {
+  id: Ordering
+  trip: Ordering
+  destination: Ordering
+  order: Ordering
+  createdAt: Ordering
+  updatedAt: Ordering
+}
+
+type Mutation {
+  """Create a new user. Only admins can create users."""
+  createUser(data: UserInput!): CreateUserPayload!
+
+  """
+  Update a user. Users can update their own data, staff can update users in their org.
+  """
+  updateUser(data: UserPartialInput!): UpdateUserPayload!
+
+  """Delete a user. Only admins can delete users."""
+  deleteUser(data: DeleteInput!): DeleteUserPayload!
+
+  """
+  Create a new contact. Users can create contacts for their organization.
+  """
+  createContact(data: ContactInput!): CreateContactPayload!
+
+  """Update a contact. Users can update contacts from their organization."""
+  updateContact(data: ContactPartialInput!): UpdateContactPayload!
+
+  """Delete a contact. Users can delete contacts from their organization."""
+  deleteContact(data: DeleteInput!): DeleteContactPayload!
+
+  """Create multiple users at once. Only admins can create users."""
+  createUsers(data: [UserInput!]!): CreateUsersPayload!
+
+  """Update multiple users at once."""
+  updateUsers(data: [UserPartialInput!]!): UpdateUsersPayload!
+
+  """Delete multiple users at once. Only admins can delete users."""
+  deleteUsers(data: [DeleteInput!]!): DeleteUsersPayload!
+
+  """Create multiple contacts at once."""
+  createContacts(data: [ContactInput!]!): CreateContactsPayload!
+
+  """Update multiple contacts at once."""
+  updateContacts(data: [ContactPartialInput!]!): UpdateContactsPayload!
+
+  """Delete multiple contacts at once."""
+  deleteContacts(data: [DeleteInput!]!): DeleteContactsPayload!
+
+  """
+  Update users matching the filter criteria. Use with caution - only admins.
+  """
+  updateUsersByFilter(data: UserPartialInput!): UpdateUsersByFilterPayload!
+
+  """
+  Delete users matching the filter criteria. Use with caution - only admins.
+  """
+  deleteUsersByFilter: DeleteUsersByFilterPayload!
+
+  """Update contacts matching the filter criteria. Use with caution."""
+  updateContactsByFilter(data: ContactPartialInput!): UpdateContactsByFilterPayload!
+
+  """Delete contacts matching the filter criteria. Use with caution."""
+  deleteContactsByFilter: DeleteContactsByFilterPayload!
+  register(input: RegisterInput!): LegacyUserType!
+  login(input: LoginInput!): AuthPayload!
+  refresh(refreshToken: String!): AuthTokensType!
+  changePassword(input: ChangePasswordInput!): Boolean!
+  logout(refreshToken: String!): Boolean!
+  logoutAll: Boolean!
+
+  """Create a new country. Only admins can create countries."""
+  createCountry(data: CountryInput!): CreateCountryPayload!
+
+  """Update a country. Only admins can update countries."""
+  updateCountry(data: CountryPartialInput!): UpdateCountryPayload!
+
+  """Delete a country. Only admins can delete countries."""
+  deleteCountry(data: CoreDeleteInput!): DeleteCountryPayload!
+
+  """Create a new city. Only admins can create cities."""
+  createCity(data: CityInput!): CreateCityPayload!
+
+  """Update a city. Only admins can update cities."""
+  updateCity(data: CityPartialInput!): UpdateCityPayload!
+
+  """Delete a city. Only admins can delete cities."""
+  deleteCity(data: CoreDeleteInput!): DeleteCityPayload!
+
+  """Create a new currency. Only admins can create currencies."""
+  createCurrency(data: CurrencyInput!): CreateCurrencyPayload!
+
+  """Update a currency. Only admins can update currencies."""
+  updateCurrency(data: CurrencyPartialInput!): UpdateCurrencyPayload!
+
+  """Delete a currency. Only admins can delete currencies."""
+  deleteCurrency(data: CoreDeleteInput!): DeleteCurrencyPayload!
+
+  """Create a new FX rate. Only admins can create FX rates."""
+  createFxRate(data: FXRateInput!): CreateFxRatePayload!
+
+  """Update an FX rate. Only admins can update FX rates."""
+  updateFxRate(data: FXRatePartialInput!): UpdateFxRatePayload!
+
+  """Delete an FX rate. Only admins can delete FX rates."""
+  deleteFxRate(data: CoreDeleteInput!): DeleteFxRatePayload!
+
+  """Create a new destination. Only admins can create destinations."""
+  createDestination(data: DestinationInput!): CreateDestinationPayload!
+
+  """Update a destination. Only admins can update destinations."""
+  updateDestination(data: DestinationPartialInput!): UpdateDestinationPayload!
+
+  """Delete a destination. Only admins can delete destinations."""
+  deleteDestination(data: CoreDeleteInput!): DeleteDestinationPayload!
+
+  """Create multiple countries. Only admins can create countries."""
+  createCountries(data: [CountryInput!]!): CreateCountriesPayload!
+
+  """Create multiple cities. Only admins can create cities."""
+  createCities(data: [CityInput!]!): CreateCitiesPayload!
+
+  """Create multiple currencies. Only admins can create currencies."""
+  createCurrencies(data: [CurrencyInput!]!): CreateCurrenciesPayload!
+
+  """Create multiple destinations. Only admins can create destinations."""
+  createDestinations(data: [DestinationInput!]!): CreateDestinationsPayload!
+
+  """Update multiple countries. Only admins can update countries."""
+  updateCountries(data: [CountryPartialInput!]!): UpdateCountriesPayload!
+
+  """Update multiple cities. Only admins can update cities."""
+  updateCities(data: [CityPartialInput!]!): UpdateCitiesPayload!
+
+  """Update multiple currencies. Only admins can update currencies."""
+  updateCurrencies(data: [CurrencyPartialInput!]!): UpdateCurrenciesPayload!
+
+  """Update multiple destinations. Only admins can update destinations."""
+  updateDestinations(data: [DestinationPartialInput!]!): UpdateDestinationsPayload!
+
+  """Create a new supplier. Only admins can create suppliers."""
+  createSupplier(data: SupplierInput!): CreateSupplierPayload!
+
+  """Update a supplier. Only admins can update suppliers."""
+  updateSupplier(data: SupplierPartialInput!): UpdateSupplierPayload!
+
+  """Delete a supplier. Only admins can delete suppliers."""
+  deleteSupplier(data: InventoryDeleteInput!): DeleteSupplierPayload!
+
+  """Create a new hotel. Only admins can create hotels."""
+  createHotel(data: HotelInput!): CreateHotelPayload!
+
+  """Update a hotel. Only admins can update hotels."""
+  updateHotel(data: HotelPartialInput!): UpdateHotelPayload!
+
+  """Delete a hotel. Only admins can delete hotels."""
+  deleteHotel(data: InventoryDeleteInput!): DeleteHotelPayload!
+
+  """Create a new activity. Only admins can create activities."""
+  createActivity(data: ActivityInput!): CreateActivityPayload!
+
+  """Update an activity. Only admins can update activities."""
+  updateActivity(data: ActivityPartialInput!): UpdateActivityPayload!
+
+  """Delete an activity. Only admins can delete activities."""
+  deleteActivity(data: InventoryDeleteInput!): DeleteActivityPayload!
+
+  """
+  Create a new transfer product. Only admins can create transfer products.
+  """
+  createTransferProduct(data: TransferProductInput!): CreateTransferProductPayload!
+
+  """Update a transfer product. Only admins can update transfer products."""
+  updateTransferProduct(data: TransferProductPartialInput!): UpdateTransferProductPayload!
+
+  """Delete a transfer product. Only admins can delete transfer products."""
+  deleteTransferProduct(data: InventoryDeleteInput!): DeleteTransferProductPayload!
+
+  """Create a new meal plan. Only admins can create meal plans."""
+  createMealPlan(data: MealPlanInput!): CreateMealPlanPayload!
+
+  """Update a meal plan. Only admins can update meal plans."""
+  updateMealPlan(data: MealPlanPartialInput!): UpdateMealPlanPayload!
+
+  """Delete a meal plan. Only admins can delete meal plans."""
+  deleteMealPlan(data: InventoryDeleteInput!): DeleteMealPlanPayload!
+
+  """
+  Create a new activity category. Only admins can create activity categories.
+  """
+  createActivityCategory(data: ActivityCategoryInput!): CreateActivityCategoryPayload!
+
+  """
+  Update an activity category. Only admins can update activity categories.
+  """
+  updateActivityCategory(data: ActivityCategoryPartialInput!): UpdateActivityCategoryPayload!
+
+  """
+  Delete an activity category. Only admins can delete activity categories.
+  """
+  deleteActivityCategory(data: InventoryDeleteInput!): DeleteActivityCategoryPayload!
+
+  """Create multiple suppliers. Only admins can create suppliers."""
+  createSuppliers(data: [SupplierInput!]!): CreateSuppliersPayload!
+
+  """Create multiple hotels. Only admins can create hotels."""
+  createHotels(data: [HotelInput!]!): CreateHotelsPayload!
+
+  """Create multiple activities. Only admins can create activities."""
+  createActivities(data: [ActivityInput!]!): CreateActivitiesPayload!
+
+  """Create multiple meal plans. Only admins can create meal plans."""
+  createMealPlans(data: [MealPlanInput!]!): CreateMealPlansPayload!
+
+  """
+  Create multiple activity categories. Only admins can create activity categories.
+  """
+  createActivityCategories(data: [ActivityCategoryInput!]!): CreateActivityCategoriesPayload!
+
+  """Update multiple suppliers. Only admins can update suppliers."""
+  updateSuppliers(data: [SupplierPartialInput!]!): UpdateSuppliersPayload!
+
+  """Update multiple hotels. Only admins can update hotels."""
+  updateHotels(data: [HotelPartialInput!]!): UpdateHotelsPayload!
+
+  """Update multiple activities. Only admins can update activities."""
+  updateActivities(data: [ActivityPartialInput!]!): UpdateActivitiesPayload!
+
+  """Update multiple meal plans. Only admins can update meal plans."""
+  updateMealPlans(data: [MealPlanPartialInput!]!): UpdateMealPlansPayload!
+
+  """
+  Update multiple activity categories. Only admins can update activity categories.
+  """
+  updateActivityCategories(data: [ActivityCategoryPartialInput!]!): UpdateActivityCategoriesPayload!
+
+  """Create a new trip. Users can create trips for their organization."""
+  createTrip(data: TripInput!): CreateTripPayload!
+
+  """
+  Update a trip. Users can update trips they created or from their organization.
+  """
+  updateTrip(data: TripPartialInput!): UpdateTripPayload!
+
+  """
+  Delete a trip. Users can delete trips they created or from their organization.
+  """
+  deleteTrip(data: BookingDeleteInput!): DeleteTripPayload!
+
+  """Create a new trip day. Users can create trip days for their trips."""
+  createTripDay(data: TripDayInput!): CreateTripDayPayload!
+
+  """Update a trip day. Users can update trip days from their trips."""
+  updateTripDay(data: TripDayPartialInput!): UpdateTripDayPayload!
+
+  """Delete a trip day. Users can delete trip days from their trips."""
+  deleteTripDay(data: BookingDeleteInput!): DeleteTripDayPayload!
+
+  """Create a new trip stay. Users can create trip stays for their trips."""
+  createTripStay(data: TripStayInput!): CreateTripStayPayload!
+
+  """Update a trip stay. Users can update trip stays from their trips."""
+  updateTripStay(data: TripStayPartialInput!): UpdateTripStayPayload!
+
+  """Delete a trip stay. Users can delete trip stays from their trips."""
+  deleteTripStay(data: BookingDeleteInput!): DeleteTripStayPayload!
+
+  """
+  Create a new activity booking. Users can create activity bookings for their trips.
+  """
+  createActivityBooking(data: ActivityBookingInput!): CreateActivityBookingPayload!
+
+  """
+  Update an activity booking. Users can update activity bookings from their trips.
+  """
+  updateActivityBooking(data: ActivityBookingPartialInput!): UpdateActivityBookingPayload!
+
+  """
+  Delete an activity booking. Users can delete activity bookings from their trips.
+  """
+  deleteActivityBooking(data: BookingDeleteInput!): DeleteActivityBookingPayload!
+
+  """Create a new transfer. Users can create transfers for their trips."""
+  createTransfer(data: TransferInput!): CreateTransferPayload!
+
+  """Update a transfer. Users can update transfers from their trips."""
+  updateTransfer(data: TransferPartialInput!): UpdateTransferPayload!
+
+  """Delete a transfer. Users can delete transfers from their trips."""
+  deleteTransfer(data: BookingDeleteInput!): DeleteTransferPayload!
+
+  """
+  Create a new flight segment. Users can create flight segments for their trips.
+  """
+  createFlightSegment(data: FlightSegmentInput!): CreateFlightSegmentPayload!
+
+  """
+  Update a flight segment. Users can update flight segments from their trips.
+  """
+  updateFlightSegment(data: FlightSegmentPartialInput!): UpdateFlightSegmentPayload!
+
+  """
+  Delete a flight segment. Users can delete flight segments from their trips.
+  """
+  deleteFlightSegment(data: BookingDeleteInput!): DeleteFlightSegmentPayload!
+
+  """Create a new proposal. Users can create proposals for their trips."""
+  createProposal(data: ProposalInput!): CreateProposalPayload!
+
+  """Update a proposal. Users can update proposals from their trips."""
+  updateProposal(data: ProposalPartialInput!): UpdateProposalPayload!
+
+  """Delete a proposal. Users can delete proposals from their trips."""
+  deleteProposal(data: BookingDeleteInput!): DeleteProposalPayload!
+
+  """Create multiple trips. Users can create trips for their organization."""
+  createTrips(data: [TripInput!]!): CreateTripsPayload!
+
+  """Create multiple trip days. Users can create trip days for their trips."""
+  createTripDays(data: [TripDayInput!]!): CreateTripDaysPayload!
+
+  """
+  Create multiple trip stays. Users can create trip stays for their trips.
+  """
+  createTripStays(data: [TripStayInput!]!): CreateTripStaysPayload!
+
+  """
+  Create multiple activity bookings. Users can create activity bookings for their trips.
+  """
+  createActivityBookings(data: [ActivityBookingInput!]!): CreateActivityBookingsPayload!
+
+  """Create multiple transfers. Users can create transfers for their trips."""
+  createTransfers(data: [TransferInput!]!): CreateTransfersPayload!
+
+  """
+  Create multiple flight segments. Users can create flight segments for their trips.
+  """
+  createFlightSegments(data: [FlightSegmentInput!]!): CreateFlightSegmentsPayload!
+
+  """Create multiple proposals. Users can create proposals for their trips."""
+  createProposals(data: [ProposalInput!]!): CreateProposalsPayload!
+
+  """
+  Update multiple trips. Users can update trips they created or from their organization.
+  """
+  updateTrips(data: [TripPartialInput!]!): UpdateTripsPayload!
+
+  """
+  Update multiple trip days. Users can update trip days from their trips.
+  """
+  updateTripDays(data: [TripDayPartialInput!]!): UpdateTripDaysPayload!
+
+  """
+  Update multiple trip stays. Users can update trip stays from their trips.
+  """
+  updateTripStays(data: [TripStayPartialInput!]!): [TripStayType!]!
+
+  """
+  Update multiple activity bookings. Users can update activity bookings from their trips.
+  """
+  updateActivityBookings(data: [ActivityBookingPartialInput!]!): UpdateActivityBookingsPayload!
+
+  """
+  Update multiple transfers. Users can update transfers from their trips.
+  """
+  updateTransfers(data: [TransferPartialInput!]!): UpdateTransfersPayload!
+
+  """
+  Update multiple flight segments. Users can update flight segments from their trips.
+  """
+  updateFlightSegments(data: [FlightSegmentPartialInput!]!): UpdateFlightSegmentsPayload!
+
+  """
+  Update multiple proposals. Users can update proposals from their trips.
+  """
+  updateProposals(data: [ProposalPartialInput!]!): UpdateProposalsPayload!
+  createItineraryProposal(input: CreateItineraryProposalInput!): CreateItineraryProposalResult!
+}
+
+union CreateUserPayload = UserType | OperationInfo
+
+type OperationInfo {
+  """List of messages returned by the operation."""
+  messages: [OperationMessage!]!
+}
+
+type OperationMessage {
+  """The kind of this message."""
+  kind: OperationMessageKind!
+
+  """The error message."""
+  message: String!
+
+  """
+  The field that caused the error, or `null` if it isn't associated with any particular field.
+  """
+  field: String
+
+  """The error code, or `null` if no error code was set."""
+  code: String
+}
+
+enum OperationMessageKind {
+  INFO
+  WARNING
+  ERROR
+  PERMISSION
+  VALIDATION
+}
+
+input UserInput {
+  email: String!
+  firstName: String
+  lastName: String
+  name: String
+  countryCode: String
+  phone: String
+  role: String
+  dateOfBirth: Date
+  gender: String
+  profileImageUrl: String
+  preferences: JSON
+  org: ID = null
+}
+
+union UpdateUserPayload = UserType | OperationInfo
+
+input UserPartialInput {
+  id: ID!
+  email: String
+  firstName: String
+  lastName: String
+  name: String
+  countryCode: String
+  phone: String
+  role: String
+  dateOfBirth: Date
+  gender: String
+  profileImageUrl: String
+  preferences: JSON
+  org: OneToManyInput
+}
+
+input OneToManyInput {
+  set: ID
+}
+
+union DeleteUserPayload = UserType | OperationInfo
+
+input DeleteInput {
+  id: ID!
+}
+
+union CreateContactPayload = ContactType | OperationInfo
+
+input ContactInput {
+  name: String
+  email: String!
+  phone: String
+  nationality: String
+  org: ID!
+}
+
+union UpdateContactPayload = ContactType | OperationInfo
+
+input ContactPartialInput {
+  id: ID!
+  name: String
+  email: String
+  phone: String
+  nationality: String
+  org: OneToManyInput
+}
+
+union DeleteContactPayload = ContactType | OperationInfo
+
+union CreateUsersPayload = UserType | OperationInfo
+
+union UpdateUsersPayload = UserType | OperationInfo
+
+union DeleteUsersPayload = UserType | OperationInfo
+
+union CreateContactsPayload = ContactType | OperationInfo
+
+union UpdateContactsPayload = ContactType | OperationInfo
+
+union DeleteContactsPayload = ContactType | OperationInfo
+
+union UpdateUsersByFilterPayload = UserType | OperationInfo
+
+union DeleteUsersByFilterPayload = UserType | OperationInfo
+
+union UpdateContactsByFilterPayload = ContactType | OperationInfo
+
+union DeleteContactsByFilterPayload = ContactType | OperationInfo
+
+input RegisterInput {
+  email: String!
+  password: String!
+  firstName: String = null
+  lastName: String = null
+  profileImageUrl: String = null
+  org: ID = null
+}
+
+type AuthPayload {
+  tokens: AuthTokensType!
+  user: LegacyUserType!
+}
+
+type AuthTokensType {
+  access: String!
+  refresh: String
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+input ChangePasswordInput {
+  oldPassword: String!
+  newPassword: String!
+}
+
+union CreateCountryPayload = CountryType | OperationInfo
+
+input CountryInput {
+  iso2: String!
+  name: String
+}
+
+union UpdateCountryPayload = CountryType | OperationInfo
+
+input CountryPartialInput {
+  id: ID!
+  iso2: String
+  name: String
+}
+
+union DeleteCountryPayload = CountryType | OperationInfo
+
+input CoreDeleteInput {
+  id: ID!
+}
+
+union CreateCityPayload = CityType | OperationInfo
+
+input CityInput {
+  name: String
+  country: ID!
+  timezone: String!
+  lat: Float!
+  lon: Float!
+}
+
+union UpdateCityPayload = CityType | OperationInfo
+
+input CityPartialInput {
+  id: ID!
+  name: String
+  country: OneToManyInput
+  timezone: String
+  lat: Float
+  lon: Float
+}
+
+union DeleteCityPayload = CityType | OperationInfo
+
+union CreateCurrencyPayload = CurrencyType | OperationInfo
+
+input CurrencyInput {
+  code: String!
+  name: String
+}
+
+union UpdateCurrencyPayload = CurrencyType | OperationInfo
+
+input CurrencyPartialInput {
+  id: ID!
+  code: String
+  name: String
+}
+
+union DeleteCurrencyPayload = CurrencyType | OperationInfo
+
+union CreateFxRatePayload = FXRateType | OperationInfo
+
+input FXRateInput {
+  code: ID!
+  forDate: Date!
+  rateToUsd: Decimal!
+}
+
+union UpdateFxRatePayload = FXRateType | OperationInfo
+
+input FXRatePartialInput {
+  id: ID!
+  code: OneToManyInput
+  forDate: Date
+  rateToUsd: Decimal
+}
+
+union DeleteFxRatePayload = FXRateType | OperationInfo
+
+union CreateDestinationPayload = DestinationType | OperationInfo
+
+input DestinationInput {
+  city: ID!
+  title: String
+  description: String
+  heroImageUrl: String!
+  highlights: JSON
+  isFeatured: Boolean
+  type: String
+}
+
+union UpdateDestinationPayload = DestinationType | OperationInfo
+
+input DestinationPartialInput {
+  id: ID!
+  city: OneToManyInput
+  title: String
+  description: String
+  heroImageUrl: String
+  highlights: JSON
+  isFeatured: Boolean
+  type: String
+}
+
+union DeleteDestinationPayload = DestinationType | OperationInfo
+
+union CreateCountriesPayload = CountryType | OperationInfo
+
+union CreateCitiesPayload = CityType | OperationInfo
+
+union CreateCurrenciesPayload = CurrencyType | OperationInfo
+
+union CreateDestinationsPayload = DestinationType | OperationInfo
+
+union UpdateCountriesPayload = CountryType | OperationInfo
+
+union UpdateCitiesPayload = CityType | OperationInfo
+
+union UpdateCurrenciesPayload = CurrencyType | OperationInfo
+
+union UpdateDestinationsPayload = DestinationType | OperationInfo
+
+union CreateSupplierPayload = SupplierType | OperationInfo
+
+input SupplierInput {
+  name: String
+  type: String!
+  contactEmail: String!
+  contractTerms: JSON
+  commissionRate: Decimal
+  isActive: Boolean
+}
+
+union UpdateSupplierPayload = SupplierType | OperationInfo
+
+input SupplierPartialInput {
+  id: ID!
+  name: String
+  type: String
+  contactEmail: String
+  contractTerms: JSON
+  commissionRate: Decimal
+  isActive: Boolean
+}
+
+union DeleteSupplierPayload = SupplierType | OperationInfo
+
+input InventoryDeleteInput {
+  id: ID!
+}
+
+union CreateHotelPayload = HotelType | OperationInfo
+
+input HotelInput {
+  city: ID!
+  supplier: ID!
+  name: String
+  address: String
+  type: String!
+  description: String
+  locationUrl: String
+  star: Int
+  totalRatings: Int
+  cancellationPolicy: String
+  instantBooking: Boolean
+  cleanilessRating: Decimal
+  serviceRating: Decimal
+  comfortRating: Decimal
+  conditionRating: Decimal
+  amenitesRating: Decimal
+  neighborhoodRating: Decimal
+  amenities: JSON
+  instructions: String
+  policy: String
+  inclusions: String
+  exclusions: String
+  tags: [String!]
+  commissionRate: Decimal
+}
+
+union UpdateHotelPayload = HotelType | OperationInfo
+
+input HotelPartialInput {
+  id: ID!
+  city: OneToManyInput
+  supplier: OneToManyInput
+  name: String
+  address: String
+  type: String
+  description: String
+  locationUrl: String
+  star: Int
+  totalRatings: Int
+  cancellationPolicy: String
+  instantBooking: Boolean
+  cleanilessRating: Decimal
+  serviceRating: Decimal
+  comfortRating: Decimal
+  conditionRating: Decimal
+  amenitesRating: Decimal
+  neighborhoodRating: Decimal
+  amenities: JSON
+  instructions: String
+  policy: String
+  inclusions: String
+  exclusions: String
+  tags: [String!]
+  commissionRate: Decimal
+}
+
+union DeleteHotelPayload = HotelType | OperationInfo
+
+union CreateActivityPayload = ActivityType | OperationInfo
+
+input ActivityInput {
+  city: ID!
+  supplier: ID!
+  title: String
+  summary: String
+  description: String
+  rating: Decimal
+  durationMinutes: Int
+  highlights: JSON
+  cancellationPolicy: String
+  slot: Int
+  tags: [String!]
+  instantBooking: Boolean
+  commissionRate: Decimal
+}
+
+union UpdateActivityPayload = ActivityType | OperationInfo
+
+input ActivityPartialInput {
+  id: ID!
+  city: OneToManyInput
+  supplier: OneToManyInput
+  title: String
+  summary: String
+  description: String
+  rating: Decimal
+  durationMinutes: Int
+  highlights: JSON
+  cancellationPolicy: String
+  slot: Int
+  tags: [String!]
+  instantBooking: Boolean
+  commissionRate: Decimal
+}
+
+union DeleteActivityPayload = ActivityType | OperationInfo
+
+union CreateTransferProductPayload = TransferProductType | OperationInfo
+
+input TransferProductInput {
+  city: ID!
+  vehicle: ID!
+  supplier: ID!
+  name: String
+  description: String
+  currency: ID!
+  priceCents: Int
+  cancellationPolicy: String
+  commissionRate: Decimal
+  pickup: ID = null
+  dropoff: ID = null
+}
+
+union UpdateTransferProductPayload = TransferProductType | OperationInfo
+
+input TransferProductPartialInput {
+  id: ID!
+  city: OneToManyInput
+  vehicle: OneToManyInput
+  supplier: OneToManyInput
+  name: String
+  description: String
+  currency: OneToManyInput
+  priceCents: Int
+  cancellationPolicy: String
+  commissionRate: Decimal
+  pickup: OneToManyInput
+  dropoff: OneToManyInput
+}
+
+union DeleteTransferProductPayload = TransferProductType | OperationInfo
+
+union CreateMealPlanPayload = MealPlanType | OperationInfo
+
+input MealPlanInput {
+  name: String
+  mealPlanType: String!
+  mealValue: Int
+  vegType: String!
+  description: String
+}
+
+union UpdateMealPlanPayload = MealPlanType | OperationInfo
+
+input MealPlanPartialInput {
+  id: ID!
+  name: String
+  mealPlanType: String
+  mealValue: Int
+  vegType: String
+  description: String
+}
+
+union DeleteMealPlanPayload = MealPlanType | OperationInfo
+
+union CreateActivityCategoryPayload = ActivityCategoryType | OperationInfo
+
+input ActivityCategoryInput {
+  name: String
+  description: String
+}
+
+union UpdateActivityCategoryPayload = ActivityCategoryType | OperationInfo
+
+input ActivityCategoryPartialInput {
+  id: ID!
+  name: String
+  description: String
+}
+
+union DeleteActivityCategoryPayload = ActivityCategoryType | OperationInfo
+
+union CreateSuppliersPayload = SupplierType | OperationInfo
+
+union CreateHotelsPayload = HotelType | OperationInfo
+
+union CreateActivitiesPayload = ActivityType | OperationInfo
+
+union CreateMealPlansPayload = MealPlanType | OperationInfo
+
+union CreateActivityCategoriesPayload = ActivityCategoryType | OperationInfo
+
+union UpdateSuppliersPayload = SupplierType | OperationInfo
+
+union UpdateHotelsPayload = HotelType | OperationInfo
+
+union UpdateActivitiesPayload = ActivityType | OperationInfo
+
+union UpdateMealPlansPayload = MealPlanType | OperationInfo
+
+union UpdateActivityCategoriesPayload = ActivityCategoryType | OperationInfo
+
+union CreateTripPayload = TripType | OperationInfo
+
+input TripInput {
+  org: ID!
+  createdBy: ID!
+  customer: ID!
+  fromCity: ID!
+  startDate: DateTime!
+  endDate: DateTime!
+  durationDays: Int
+  nationality: ID!
+  status: String!
+  tripType: String!
+  totalTravelers: Int
+  starRating: Decimal!
+  transferOnly: Boolean
+  landOnly: Boolean
+  travelerDetails: JSON
+  currency: ID!
+  markupFlightPercent: Decimal
+  markupLandPercent: Decimal
+  bookingReference: String
+}
+
+union UpdateTripPayload = TripType | OperationInfo
+
+input TripPartialInput {
+  id: ID!
+  org: OneToManyInput
+  createdBy: OneToManyInput
+  customer: OneToManyInput
+  fromCity: OneToManyInput
+  startDate: DateTime
+  endDate: DateTime
+  durationDays: Int
+  nationality: OneToManyInput
+  status: String
+  tripType: String
+  totalTravelers: Int
+  starRating: Decimal
+  transferOnly: Boolean
+  landOnly: Boolean
+  travelerDetails: JSON
+  currency: OneToManyInput
+  markupFlightPercent: Decimal
+  markupLandPercent: Decimal
+  bookingReference: String
+}
+
+union DeleteTripPayload = TripType | OperationInfo
+
+input BookingDeleteInput {
+  id: ID!
+}
+
+union CreateTripDayPayload = TripDayType | OperationInfo
+
+input TripDayInput {
+  trip: ID!
+  dayNumber: Int
+  date: DateTime!
+  city: ID!
+}
+
+union UpdateTripDayPayload = TripDayType | OperationInfo
+
+input TripDayPartialInput {
+  id: ID!
+  trip: OneToManyInput
+  dayNumber: Int
+  date: DateTime
+  city: OneToManyInput
+}
+
+union DeleteTripDayPayload = TripDayType | OperationInfo
+
+union CreateTripStayPayload = TripStayType | OperationInfo
+
+input TripStayInput {
+  tripDay: ID!
+  rate: ID!
+  checkIn: Date!
+  checkOut: Date!
+  nights: Int
+  roomsCount: Int
+  mealPlan: String
+  currency: ID!
+  priceTotalCents: Int
+  confirmationStatus: String!
+}
+
+union UpdateTripStayPayload = TripStayType | OperationInfo
+
+input TripStayPartialInput {
+  id: ID!
+  tripDay: OneToOneInput
+  rate: OneToManyInput
+  checkIn: Date
+  checkOut: Date
+  nights: Int
+  roomsCount: Int
+  mealPlan: String
+  currency: OneToManyInput
+  priceTotalCents: Int
+  confirmationStatus: String
+}
+
+input OneToOneInput {
+  set: ID
+}
+
+union DeleteTripStayPayload = TripStayType | OperationInfo
+
+union CreateActivityBookingPayload = ActivityBookingType | OperationInfo
+
+input ActivityBookingInput {
+  tripDay: ID!
+  slot: String!
+  option: ID!
+  paxAdults: Int
+  paxChildren: Int
+  currency: ID!
+  priceBaseCents: Int
+  priceAddonsCents: Int
+  pickupRequired: Boolean
+  pickupHotel: ID!
+  confirmationStatus: String!
+}
+
+union UpdateActivityBookingPayload = ActivityBookingType | OperationInfo
+
+input ActivityBookingPartialInput {
+  id: ID!
+  tripDay: OneToManyInput
+  slot: String
+  option: OneToManyInput
+  paxAdults: Int
+  paxChildren: Int
+  currency: OneToManyInput
+  priceBaseCents: Int
+  priceAddonsCents: Int
+  pickupRequired: Boolean
+  pickupHotel: OneToManyInput
+  confirmationStatus: String
+}
+
+union DeleteActivityBookingPayload = ActivityBookingType | OperationInfo
+
+union CreateTransferPayload = TransferType | OperationInfo
+
+input TransferInput {
+  tripDay: ID!
+  transferProduct: ID!
+  pickupTime: Time!
+  pickupLocation: String
+  dropoffLocation: String
+  vehiclesCount: Int
+  paxAdults: Int
+  paxChildren: Int
+  currency: ID!
+  priceTotalCents: Int
+  confirmationStatus: String!
+}
+
+union UpdateTransferPayload = TransferType | OperationInfo
+
+input TransferPartialInput {
+  id: ID!
+  tripDay: OneToManyInput
+  transferProduct: OneToManyInput
+  pickupTime: Time
+  pickupLocation: String
+  dropoffLocation: String
+  vehiclesCount: Int
+  paxAdults: Int
+  paxChildren: Int
+  currency: OneToManyInput
+  priceTotalCents: Int
+  confirmationStatus: String
+}
+
+union DeleteTransferPayload = TransferType | OperationInfo
+
+union CreateFlightSegmentPayload = FlightSegmentType | OperationInfo
+
+input FlightSegmentInput {
+  trip: ID!
+  carrier: String
+  flightNumber: String!
+  departTime: DateTime!
+  arriveTime: DateTime!
+  departureAirport: String!
+  arrivalAirport: String!
+  cabinClass: String!
+  currency: ID!
+  priceCents: Int
+  confirmationStatus: String!
+}
+
+union UpdateFlightSegmentPayload = FlightSegmentType | OperationInfo
+
+input FlightSegmentPartialInput {
+  id: ID!
+  trip: OneToManyInput
+  carrier: String
+  flightNumber: String
+  departTime: DateTime
+  arriveTime: DateTime
+  departureAirport: String
+  arrivalAirport: String
+  cabinClass: String
+  currency: OneToManyInput
+  priceCents: Int
+  confirmationStatus: String
+}
+
+union DeleteFlightSegmentPayload = FlightSegmentType | OperationInfo
+
+union CreateProposalPayload = ProposalType | OperationInfo
+
+input ProposalInput {
+  trip: ID!
+  version: Int
+  name: String
+  status: String!
+  currency: ID!
+  totalPriceCents: Int
+  estimatedDateOfBooking: DateTime
+  areFlightsBooked: Boolean
+  flightsMarkup: Decimal
+  landMarkup: Decimal
+  landMarkupType: String
+}
+
+union UpdateProposalPayload = ProposalType | OperationInfo
+
+input ProposalPartialInput {
+  id: ID!
+  trip: OneToManyInput
+  version: Int
+  name: String
+  status: String
+  currency: OneToManyInput
+  totalPriceCents: Int
+  estimatedDateOfBooking: DateTime
+  areFlightsBooked: Boolean
+  flightsMarkup: Decimal
+  landMarkup: Decimal
+  landMarkupType: String
+}
+
+union DeleteProposalPayload = ProposalType | OperationInfo
+
+union CreateTripsPayload = TripType | OperationInfo
+
+union CreateTripDaysPayload = TripDayType | OperationInfo
+
+union CreateTripStaysPayload = TripStayType | OperationInfo
+
+union CreateActivityBookingsPayload = ActivityBookingType | OperationInfo
+
+union CreateTransfersPayload = TransferType | OperationInfo
+
+union CreateFlightSegmentsPayload = FlightSegmentType | OperationInfo
+
+union CreateProposalsPayload = ProposalType | OperationInfo
+
+union UpdateTripsPayload = TripType | OperationInfo
+
+union UpdateTripDaysPayload = TripDayType | OperationInfo
+
+union UpdateActivityBookingsPayload = ActivityBookingType | OperationInfo
+
+union UpdateTransfersPayload = TransferType | OperationInfo
+
+union UpdateFlightSegmentsPayload = FlightSegmentType | OperationInfo
+
+union UpdateProposalsPayload = ProposalType | OperationInfo
+
+type CreateItineraryProposalResult {
+  trip: TripType!
+  destinations: [TripDestinationType!]!
+  days: [TripDayType!]!
+  stays: [TripStayType!]!
+}
+
+input CreateItineraryProposalInput {
+  org: ID = null
+  customer: ID = null
+  fromCity: ID!
+  startDate: DateTime!
+  nationality: ID!
+  status: String! = "draft"
+  tripType: String! = "leisure"
+  totalTravelers: Int = null
+  starRating: Float = null
+  transferOnly: Boolean! = false
+  landOnly: Boolean! = false
+  travelerDetails: JSON = null
+  currency: ID!
+  markupFlightPercent: Float = 0
+  markupLandPercent: Float = 0
+  bookingReference: String = null
+  roomsCount: Int = 1
+  destinations: [TripDestinationDataInput!]!
+}
+
+input TripDestinationDataInput {
+  destination: ID!
+  numberOfDays: Int!
+  order: Int = null
+}

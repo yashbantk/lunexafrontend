@@ -87,22 +87,26 @@ export interface Proposal {
       }
       stay?: {
         id: string
-        room: {
-          id: string
-          hotel: {
+        checkIn: string
+        checkOut: string
+        nights: number
+        roomsCount: number
+        mealPlan: string
+        priceTotalCents: number
+        confirmationStatus: string
+        rate?: {
+          room: {
             id: string
+            hotel: {
+              id: string
+              name: string
+              address: string
+              star: number
+            }
             name: string
-            address: string
-            type: string
-            description: string
-            locationUrl: string
-            star: number
-            totalRatings: number
+            bedType: string
+            baseMealPlan: string
           }
-          name: string
-          priceCents: number
-          bedType: string
-          baseMealPlan: string
         }
       }
       activityBookings: Array<{

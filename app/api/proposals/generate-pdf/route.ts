@@ -971,7 +971,7 @@ async function generateDynamicCoverPage(proposal: any): Promise<string> {
   const nights = days.reduce((acc: number, day: any) => acc + (day.stay?.nights || 0), 0) || duration - 1
   
   // Get first hotel name
-  const firstHotel = days.find((d: any) => d.stay?.room?.hotel?.name)?.stay?.room?.hotel?.name || ''
+  const firstHotel = days.find((d: any) => d.stay?.rate?.room?.hotel?.name)?.stay?.rate?.room?.hotel?.name || ''
   
   // Get highlights (hotels, activities count)
   const hotelsCount = new Set(days.filter((d: any) => d.stay?.rate?.room?.hotel?.id).map((d: any) => d.stay.rate.room.hotel.id)).size

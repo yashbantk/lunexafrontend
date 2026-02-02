@@ -529,7 +529,7 @@ export default function ProposalDetailPage() {
                   {proposal.trip.days
                     .filter(day => day.stay)
                     .map((day) => {
-                      const hotelId = day.stay?.room?.hotel?.id
+                      const hotelId = day.stay?.rate?.room?.hotel?.id
                       const checkIn = day.stay?.checkIn || "2025-10-16T15:00:00"
                       const checkOut = day.stay?.checkOut || "2025-10-19T12:00:00"
                       
@@ -538,18 +538,18 @@ export default function ProposalDetailPage() {
                           key={day.stay?.id}
                           hotel={{
                             id: day.stay?.id || "unknown",
-                            name: day.stay?.room?.hotel?.name || "Hotel Name",
-                            location: day.stay?.room?.hotel?.address || "Hotel Location",
-                            rating: day.stay?.room?.hotel?.star || 4.0,
-                            reviewCount: day.stay?.room?.hotel?.totalRatings || 315,
+                            name: day.stay?.rate?.room?.hotel?.name || "Hotel Name",
+                            location: day.stay?.rate?.room?.hotel?.address || "Hotel Location",
+                            rating: day.stay?.rate?.room?.hotel?.star || 4.0,
+                            reviewCount: (day.stay?.rate?.room?.hotel as any)?.totalRatings || 315,
                             checkIn: checkIn,
                             checkOut: checkOut,
-                            roomType: day.stay?.room?.name || "Standard Room",
+                            roomType: day.stay?.rate?.room?.name || "Standard Room",
                             mealPlan: day.stay?.mealPlan || "Breakfast",
                             refundable: true, // Default
-                            image: day.stay?.room?.hotelRoomImages?.[0]?.url || "/api/placeholder/600/300",
-                            amenities: day.stay?.room?.hotel?.amenities || ["Pool", "Spa", "Fitness Center", "WiFi", "Restaurant"],
-                            description: day.stay?.room?.hotel?.description || "A beautiful resort with traditional architecture"
+                            image: (day.stay?.rate?.room as any)?.hotelRoomImages?.[0]?.url || "/api/placeholder/600/300",
+                            amenities: (day.stay?.rate?.room?.hotel as any)?.amenities || ["Pool", "Spa", "Fitness Center", "WiFi", "Restaurant"],
+                            description: (day.stay?.rate?.room?.hotel as any)?.description || "A beautiful resort with traditional architecture"
                           }}
                           onView={() => {
                             if (hotelId) {
@@ -680,13 +680,13 @@ export default function ProposalDetailPage() {
                       description: day.city?.name ? `Exploring ${day.city.name}` : "Day description",
                       activities: activities,
                       transfers: transfers,
-                      accommodation: day.stay?.room?.hotel?.name || undefined,
+                      accommodation: day.stay?.rate?.room?.hotel?.name || undefined,
                       meals: {
                         breakfast: day.stay?.mealPlan?.toLowerCase().includes('breakfast') || false,
                         lunch: day.stay?.mealPlan?.toLowerCase().includes('lunch') || false,
                         dinner: day.stay?.mealPlan?.toLowerCase().includes('dinner') || false
                       },
-                      image: day.stay?.room?.hotelRoomImages?.[0]?.url || "/api/placeholder/600/300"
+                      image: (day.stay?.rate?.room as any)?.hotelRoomImages?.[0]?.url || "/api/placeholder/600/300"
                     }
                   })}
                     onViewActivity={(activity: any) => {
@@ -710,10 +710,10 @@ export default function ProposalDetailPage() {
                     if (type === 'accommodation') {
                       // Find the hotel and open hotel details
                       const accommodationDay = proposal?.trip?.days?.find(day => day.stay)
-                      if (accommodationDay?.stay?.room?.hotel?.id) {
+                      if (accommodationDay?.stay?.rate?.room?.hotel?.id) {
                         const checkIn = accommodationDay.stay.checkIn || "2025-10-16T15:00:00"
                         const checkOut = accommodationDay.stay.checkOut || "2025-10-19T12:00:00"
-                        handleViewHotel(accommodationDay.stay.room.hotel.id, checkIn, checkOut)
+                        handleViewHotel(accommodationDay.stay.rate?.room?.hotel?.id, checkIn, checkOut)
                       } else {
                         toast({ description: item.title, type: "info" })
                       }
@@ -726,8 +726,8 @@ export default function ProposalDetailPage() {
                       .filter(day => day.stay)
                       .map((day, index) => ({
                         id: `accommodation-${index + 1}`,
-                        title: `Stay for ${day.stay?.nights || 1} night${(day.stay?.nights || 1) > 1 ? 's' : ''} at ${day.stay?.room?.hotel?.name || 'Hotel'}`,
-                        description: `${day.stay?.room?.name || 'Standard Room'} (${day.stay?.mealPlan || 'Breakfast'})`,
+                        title: `Stay for ${day.stay?.nights || 1} night${(day.stay?.nights || 1) > 1 ? 's' : ''} at ${day.stay?.rate?.room?.hotel?.name || 'Hotel'}`,
+                        description: `${day.stay?.rate?.room?.name || 'Standard Room'} (${day.stay?.mealPlan || 'Breakfast'})`,
                         included: true,
                         details: [`${day.stay?.nights || 1} night${(day.stay?.nights || 1) > 1 ? 's' : ''}`]
                       })) : [],
