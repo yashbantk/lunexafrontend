@@ -90,9 +90,6 @@ export const GET_HOTEL_DETAILS = gql`
         baseMealPlan
         hotelRoomImages {
           id
-          hotelRoom {
-            id
-          }
           url
           caption
           priorityOrder

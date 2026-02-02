@@ -66,9 +66,6 @@ export interface HotelFilters {
   type?: {
     exact?: string
   }
-  amenities?: {
-    contains?: string[]
-  }
   instantBooking?: {
     exact?: boolean
   }

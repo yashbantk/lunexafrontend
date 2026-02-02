@@ -3,29 +3,16 @@ import { gql } from '@apollo/client';
 export const COUNTRIES_QUERY = gql`
   query Countries(
     $filters: CountryFilter
-    $pagination: PaginationInput
-    $sort: SortInput
+    $order: CountryOrder
   ) {
     countries(
       filters: $filters
-      pagination: $pagination
-      sort: $sort
+      order: $order
     ) {
-      data {
-        iso2
-        name
-        createdAt
-        updatedAt
-      }
-      pagination {
-        total
-        limit
-        offset
-        hasNextPage
-        hasPreviousPage
-        totalPages
-        currentPage
-      }
+      iso2
+      name
+      createdAt
+      updatedAt
     }
   }
 `;

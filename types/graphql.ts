@@ -135,18 +135,19 @@ export interface PaginationInfo {
 }
 
 export interface CountriesResponse {
-  data: Country[];
-  pagination: PaginationInfo;
-}
-
-export interface CountriesSimpleResponse {
   countries: Country[];
 }
 
 export interface CountriesVariables {
   filters?: CountryFilter;
-  pagination?: PaginationInput;
-  sort?: SortInput;
+  order?: CountryOrder;
+}
+
+export interface CountryOrder {
+  iso2?: 'ASC' | 'DESC' | 'ASC_NULLS_FIRST' | 'ASC_NULLS_LAST' | 'DESC_NULLS_FIRST' | 'DESC_NULLS_LAST';
+  name?: 'ASC' | 'DESC' | 'ASC_NULLS_FIRST' | 'ASC_NULLS_LAST' | 'DESC_NULLS_FIRST' | 'DESC_NULLS_LAST';
+  createdAt?: 'ASC' | 'DESC' | 'ASC_NULLS_FIRST' | 'ASC_NULLS_LAST' | 'DESC_NULLS_FIRST' | 'DESC_NULLS_LAST';
+  updatedAt?: 'ASC' | 'DESC' | 'ASC_NULLS_FIRST' | 'ASC_NULLS_LAST' | 'DESC_NULLS_FIRST' | 'DESC_NULLS_LAST';
 }
 
 // Destination types for the Destinations GraphQL query

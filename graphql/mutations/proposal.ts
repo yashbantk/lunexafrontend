@@ -333,56 +333,58 @@ export const UPDATE_PROPOSAL = gql`
             }
             stay {
               id
-              room {
-                id
-                hotel {
+              rate {
+                room {
                   id
+                  hotel {
+                    id
+                    name
+                    address
+                    type
+                    description
+                    locationUrl
+                    star
+                    totalRatings
+                    cancellationPolicy
+                    instantBooking
+                    cleanilessRating
+                    serviceRating
+                    comfortRating
+                    conditionRating
+                    amenitesRating
+                    neighborhoodRating
+                    amenities
+                    instructions
+                    policy
+                    inclusions
+                    exclusions
+                    tags
+                    commissionRate
+                  }
                   name
-                  address
-                  type
-                  description
-                  locationUrl
-                  star
-                  totalRatings
-                  cancellationPolicy
-                  instantBooking
-                  cleanilessRating
-                  serviceRating
-                  comfortRating
-                  conditionRating
-                  amenitesRating
-                  neighborhoodRating
+                  priceCents
+                  bedType
+                  baseMealPlan
+                  hotelRoomImages {
+                    id
+                    url
+                    caption
+                    priorityOrder
+                  }
+                  roomAmenities {
+                    id
+                    name
+                    description
+                  }
+                  maxOccupancy
+                  size
+                  sizeUnit
+                  details
                   amenities
-                  instructions
-                  policy
+                  tags
                   inclusions
                   exclusions
-                  tags
-                  commissionRate
                 }
-                name
-                priceCents
-                bedType
-                baseMealPlan
-                hotelRoomImages {
-                  id
-                  url
-                  caption
-                  priorityOrder
-                }
-                roomAmenities {
-                  id
-                  name
-                  description
-                }
-                maxOccupancy
-                size
-                sizeUnit
-                details
-                amenities
-                tags
-                inclusions
-                exclusions
               }
               checkIn
               checkOut
@@ -517,44 +519,46 @@ export const CREATE_TRIP_STAY = gql`
           dayNumber
           date
         }
-        room {
-          id
-          hotel {
+        rate {
+          room {
             id
+            hotel {
+              id
+              name
+              address
+              type
+              description
+              locationUrl
+              star
+            }
             name
-            address
-            type
-            description
-            locationUrl
-            star
-          }
-          name
-          priceCents
-          bedType
-          baseMealPlan
-          hotelRoomImages {
-            id
-            url
-            caption
-            priorityOrder
-          }
-          roomAmenities {
-            id
-            name
-            description
+            priceCents
+            bedType
+            baseMealPlan
+            hotelRoomImages {
+              id
+              url
+              caption
+              priorityOrder
+            }
+            roomAmenities {
+              id
+              name
+              description
+              createdAt
+              updatedAt
+            }
+            maxOccupancy
+            size
+            sizeUnit
+            details
+            amenities
+            tags
+            inclusions
+            exclusions
             createdAt
             updatedAt
           }
-          maxOccupancy
-          size
-          sizeUnit
-          details
-          amenities
-          tags
-          inclusions
-          exclusions
-          createdAt
-          updatedAt
         }
         checkIn
         checkOut

@@ -4,10 +4,8 @@ import { COUNTRIES_QUERY, COUNTRIES_SIMPLE_QUERY } from '@/graphql/queries/count
 import { 
   Country, 
   CountryFilter, 
-  PaginationInput, 
-  SortInput, 
-  CountriesResponse, 
-  CountriesSimpleResponse,
+  CountryOrder,
+  SortInput,
   CountriesVariables 
 } from '@/types/graphql';
 
@@ -15,16 +13,9 @@ interface UseCountriesSearchReturn {
   countries: Country[];
   loading: boolean;
   error: string | null;
-  pagination: {
-    total: number;
-    limit: number;
-    offset: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
-    totalPages: number;
-    currentPage: number;
-  } | null;
-  searchCountries: (filters: CountryFilter, pagination?: PaginationInput, sort?: SortInput) => void;
+  // Kept for compatibility but always null
+  pagination: null;
+  searchCountries: (filters: CountryFilter, pagination?: any, sort?: SortInput) => void;
   fetchNextPage: () => void;
   fetchPreviousPage: () => void;
   clearResults: () => void;
@@ -51,9 +42,7 @@ function debounce<T extends (...args: any[]) => any>(
 
 export function useCountriesSearch(): UseCountriesSearchReturn {
   const [countries, setCountries] = useState<Country[]>([]);
-  const [pagination, setPagination] = useState<UseCountriesSearchReturn['pagination']>(null);
   const [currentFilters, setCurrentFilters] = useState<CountryFilter>({});
-  const [currentPagination, setCurrentPagination] = useState<PaginationInput>({ limit: 20, offset: 0 });
   const [currentSort, setCurrentSort] = useState<SortInput>({ field: 'name', direction: 'ASC' });
 
   const [fetchCountries, { data, loading, error }] = useLazyQuery(COUNTRIES_QUERY as any, {
@@ -63,9 +52,8 @@ export function useCountriesSearch(): UseCountriesSearchReturn {
   // Handle data when it changes
   useEffect(() => {
     if (data && typeof data === 'object' && data !== null && 'countries' in data) {
-      const countriesData = (data as any).countries;
-      setCountries(countriesData?.data || []);
-      setPagination(countriesData?.pagination || null);
+      // Direct array response now
+      setCountries((data as any).countries || []);
     }
   }, [data]);
 
@@ -74,90 +62,43 @@ export function useCountriesSearch(): UseCountriesSearchReturn {
     if (error) {
       console.error('Countries search error:', error);
       setCountries([]);
-      setPagination(null);
     }
   }, [error]);
 
-  const searchCountries = useCallback(async (
+  const searchCountriesInternal = useCallback(async (
     filters: CountryFilter, 
-    paginationInput?: PaginationInput, 
+    _pagination?: any, // Ignored
     sort?: SortInput
   ) => {
+    const sortToUse = sort || currentSort;
+    const order: CountryOrder = {
+      [sortToUse.field]: sortToUse.direction
+    };
+
     const variables: CountriesVariables = {
       filters,
-      pagination: paginationInput || currentPagination,
-      sort: sort || currentSort
+      order
     };
 
     setCurrentFilters(filters);
-    setCurrentPagination(paginationInput || currentPagination);
-    setCurrentSort(sort || currentSort);
+    if (sort) setCurrentSort(sort);
 
     await fetchCountries({
       variables
     });
-  }, [fetchCountries, currentPagination, currentSort]);
+  }, [fetchCountries, currentSort]);
 
   // Debounced search function
   const debouncedSearch = useCallback(
-    debounce((filters: CountryFilter, paginationInput?: PaginationInput, sort?: SortInput) => {
-      const variables: CountriesVariables = {
-        filters,
-        pagination: paginationInput || currentPagination,
-        sort: sort || currentSort
-      };
-
-      setCurrentFilters(filters);
-      setCurrentPagination(paginationInput || currentPagination);
-      setCurrentSort(sort || currentSort);
-
-      fetchCountries({
-        variables
-      });
+    debounce((filters: CountryFilter, _pagination?: any, sort?: SortInput) => {
+      searchCountriesInternal(filters, _pagination, sort);
     }, 300),
-    [fetchCountries, currentPagination, currentSort]
+    [searchCountriesInternal]
   );
-
-  const searchCountriesDebounced = useCallback((
-    filters: CountryFilter, 
-    paginationInput?: PaginationInput, 
-    sort?: SortInput
-  ) => {
-    debouncedSearch(filters, paginationInput, sort);
-  }, [debouncedSearch]);
-
-  const fetchNextPage = useCallback(() => {
-    if (!pagination?.hasNextPage || loading) return;
-    
-    const nextOffset = (currentPagination.offset || 0) + (currentPagination.limit || 20);
-    const nextPagination = { ...currentPagination, offset: nextOffset };
-    
-    searchCountries(currentFilters, nextPagination, currentSort);
-  }, [pagination, loading, currentPagination, currentFilters, currentSort, searchCountries]);
-
-  const fetchPreviousPage = useCallback(() => {
-    if (!pagination?.hasPreviousPage || loading) return;
-    
-    const prevOffset = Math.max(0, (currentPagination.offset || 0) - (currentPagination.limit || 20));
-    const prevPagination = { ...currentPagination, offset: prevOffset };
-    
-    searchCountries(currentFilters, prevPagination, currentSort);
-  }, [pagination, loading, currentPagination, currentFilters, currentSort, searchCountries]);
-
-  const setPage = useCallback((page: number) => {
-    if (loading || !pagination) return;
-    
-    const offset = (page - 1) * (currentPagination.limit || 20);
-    const newPagination = { ...currentPagination, offset };
-    
-    searchCountries(currentFilters, newPagination, currentSort);
-  }, [loading, pagination, currentPagination, currentFilters, currentSort, searchCountries]);
 
   const clearResults = useCallback(() => {
     setCountries([]);
-    setPagination(null);
     setCurrentFilters({});
-    setCurrentPagination({ limit: 20, offset: 0 });
     setCurrentSort({ field: 'name', direction: 'ASC' });
   }, []);
 
@@ -165,12 +106,12 @@ export function useCountriesSearch(): UseCountriesSearchReturn {
     countries,
     loading,
     error: error?.message || null,
-    pagination,
-    searchCountries: searchCountriesDebounced,
-    fetchNextPage,
-    fetchPreviousPage,
+    pagination: null,
+    searchCountries: debouncedSearch,
+    fetchNextPage: () => {}, // No-op
+    fetchPreviousPage: () => {}, // No-op
     clearResults,
-    setPage
+    setPage: (_page: number) => {} // No-op
   };
 }
 

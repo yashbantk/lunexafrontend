@@ -40,11 +40,7 @@ export function CountriesExplorer({ onSelectCountry, className = "" }: Countries
     countries,
     loading,
     error,
-    pagination,
     searchCountries,
-    fetchNextPage,
-    fetchPreviousPage,
-    setPage,
     clearResults
   } = useCountriesSearch();
 
@@ -67,7 +63,7 @@ export function CountriesExplorer({ onSelectCountry, className = "" }: Countries
     };
 
     setFilters(searchFilters);
-    searchCountries(searchFilters, { limit: 20, offset: 0 }, sort);
+    searchCountries(searchFilters, undefined, sort);
   };
 
   const handleClear = () => {
@@ -95,7 +91,7 @@ export function CountriesExplorer({ onSelectCountry, className = "" }: Countries
     setSort(newSort);
     
     if (Object.keys(filters).length > 0) {
-      searchCountries(filters, { limit: 20, offset: 0 }, newSort);
+      searchCountries(filters, undefined, newSort);
     }
   };
 
@@ -222,9 +218,9 @@ export function CountriesExplorer({ onSelectCountry, className = "" }: Countries
               <Globe className="h-5 w-5 mr-2" />
               Countries
             </span>
-            {pagination && (
+            {countries.length > 0 && (
               <span className="text-sm text-gray-500">
-                {pagination.total} countries found
+                {countries.length} countries found
               </span>
             )}
           </CardTitle>
@@ -289,53 +285,6 @@ export function CountriesExplorer({ onSelectCountry, className = "" }: Countries
                   ))}
                 </AnimatePresence>
               </div>
-
-              {/* Pagination */}
-              {pagination && pagination.totalPages > 1 && (
-                <div className="flex items-center justify-between mt-6 pt-4 border-t">
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={fetchPreviousPage}
-                      disabled={!pagination.hasPreviousPage || loading}
-                    >
-                      <ChevronLeft className="h-4 w-4 mr-1" />
-                      Previous
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={fetchNextPage}
-                      disabled={!pagination.hasNextPage || loading}
-                    >
-                      Next
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-500">
-                      Page {pagination.currentPage} of {pagination.totalPages}
-                    </span>
-                    <Select
-                      value={pagination.currentPage.toString()}
-                      onValueChange={(value) => setPage(parseInt(value))}
-                    >
-                      <SelectTrigger className="w-20">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(page => (
-                          <SelectItem key={page} value={page.toString()}>
-                            {page}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              )}
             </>
           )}
 
