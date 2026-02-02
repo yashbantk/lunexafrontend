@@ -11,7 +11,7 @@ interface ProposalPriceCardProps {
     id: string
     totalPriceCents: number
     estimatedDateOfBooking: string
-    currency?: {
+    currency?: string | {
       code: string
       name: string
     }
@@ -42,7 +42,9 @@ export function ProposalPriceCard({
     const convertCurrency = async () => {
       setLoading(true)
       try {
-        const currencyCode = proposal.currency?.code || 'INR'
+        const currencyCode = typeof proposal.currency === 'string' 
+          ? proposal.currency 
+          : proposal.currency?.code || 'INR'
         const inrCents = await convertCentsToINR(proposal.totalPriceCents, currencyCode)
         setConvertedTotalPriceCents(inrCents)
       } catch (error) {
@@ -55,7 +57,7 @@ export function ProposalPriceCard({
     }
 
     convertCurrency()
-  }, [proposal.totalPriceCents, proposal.currency?.code])
+  }, [proposal.totalPriceCents, proposal.currency])
 
   // Format date
   const formatDate = (dateString: string) => {

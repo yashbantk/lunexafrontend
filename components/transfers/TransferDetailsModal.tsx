@@ -11,7 +11,8 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { TransferDetailsModalProps, TransferSelection } from '@/types/transfer'
 import { useTransferDetails } from '@/hooks/useTransferDetails'
-import { formatPrice, formatTime } from '@/lib/utils/formatUtils'
+import { formatTime } from '@/lib/utils/formatUtils'
+import { PriceDisplay } from '@/components/PriceDisplay'
 
 export default function TransferDetailsModal({
   isOpen,
@@ -382,10 +383,10 @@ export default function TransferDetailsModal({
                 <div className="text-right">
                   <div className="text-sm text-gray-500">Total Price</div>
                   <div className="text-2xl font-bold text-brand">
-                    {formatPrice(totalPrice * 100, transferProduct.currency.code)}
+                    <PriceDisplay priceCents={totalPrice * 100} sourceCurrency={transferProduct.currency.code} />
                   </div>
-                  <div className="text-xs text-gray-500">
-                    {selection.vehiclesCount || 1} vehicle{(selection.vehiclesCount || 1) > 1 ? 's' : ''} × {formatPrice(transferProduct.priceCents, transferProduct.currency.code)}
+                  <div className="text-xs text-gray-500 flex items-center justify-end gap-1">
+                    {selection.vehiclesCount || 1} vehicle{(selection.vehiclesCount || 1) > 1 ? 's' : ''} × <PriceDisplay priceCents={transferProduct.priceCents} sourceCurrency={transferProduct.currency.code} />
                   </div>
                 </div>
                 <Button

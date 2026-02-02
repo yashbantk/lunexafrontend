@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useState } from 'react'
+import { memo, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { Clock, Star, MapPin, Users, Eye, CheckCircle, Loader2 } from 'lucide-react'
@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Activity } from '@/types/activity'
 import { formatDuration, formatPrice } from '@/lib/utils/formatUtils'
+import { convertCentsToINR } from '@/lib/utils/currencyConverter'
 
 interface ActivityCardProps {
   activity: Activity
@@ -28,6 +29,29 @@ const ActivityCard = memo(function ActivityCard({
   className = ''
 }: ActivityCardProps) {
   const [isAdding, setIsAdding] = useState(false)
+  const [displayPrice, setDisplayPrice] = useState<string>('')
+
+  useEffect(() => {
+    const loadPrice = async () => {
+      try {
+        // Activity basePrice is in IDR whole units. 
+        // Convert to cents (x100) before passing to converter which expects cents.
+        // Assuming basePrice is in IDR as per original code context (Intl.NumberFormat with IDR)
+        const inrCents = await convertCentsToINR(activity.basePrice * 100, 'IDR')
+        setDisplayPrice(formatPrice(inrCents, 'INR'))
+      } catch (error) {
+        // Fallback: format original price (assuming IDR) but displaying as is might be confusing if currency symbol changes.
+        // The original code used IDR formatting.
+        setDisplayPrice(new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        }).format(activity.basePrice))
+      }
+    }
+    loadPrice()
+  }, [activity.basePrice])
 
   const handleSelect = async () => {
     setIsAdding(true)
@@ -128,7 +152,7 @@ const ActivityCard = memo(function ActivityCard({
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-lg font-bold text-brand">
-                    {formatPrice(activity.basePrice)}
+                    {displayPrice || formatPrice(activity.basePrice * 100, 'IDR')}
                   </div>
                   <div className="text-xs text-gray-500">
                     {activity.pricingType === 'person' ? 'per person' : 'per activity'}
@@ -246,7 +270,7 @@ const ActivityCard = memo(function ActivityCard({
                 <div className="flex items-center space-x-3">
                   <div className="text-right">
                     <div className="text-lg font-bold text-brand">
-                      {formatPrice(activity.basePrice)}
+                      {displayPrice || formatPrice(activity.basePrice * 100, 'IDR')}
                     </div>
                     <div className="text-xs text-gray-500">
                       {activity.pricingType === 'person' ? 'per person' : 'per activity'}

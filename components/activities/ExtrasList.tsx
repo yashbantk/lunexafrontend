@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Extra, ExtrasListProps } from '@/types/activity'
+import { PriceDisplay } from '@/components/PriceDisplay'
 
 export default function ExtrasList({
   extras,
@@ -18,14 +19,6 @@ export default function ExtrasList({
   className = ''
 }: ExtrasListProps) {
   const [expandedExtras, setExpandedExtras] = useState<Set<string>>(new Set())
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0
-    }).format(price)
-  }
 
   const calculateExtraPrice = (extra: Extra) => {
     if (extra.priceType === 'per_person') {
@@ -156,7 +149,7 @@ export default function ExtrasList({
                     
                     <div className="text-right ml-4">
                       <div className="text-lg font-bold text-brand">
-                        {formatPrice(extraPrice)}
+                        <PriceDisplay priceCents={extraPrice * 100} sourceCurrency="IDR" />
                       </div>
                       <div className="text-xs text-gray-500">
                         {extra.priceType === 'per_person' ? 'per person' : 'flat rate'}
@@ -175,8 +168,8 @@ export default function ExtrasList({
                         <Info className="h-4 w-4 mr-2 text-blue-500" />
                         <span>
                           {extra.priceType === 'per_person' 
-                            ? `This extra costs ${formatPrice(extra.price)} per person (${adults + childrenCount} people = ${formatPrice(extraPrice)} total)`
-                            : `This extra costs ${formatPrice(extra.price)} for the entire group`
+                            ? <span>This extra costs <PriceDisplay priceCents={extra.price * 100} sourceCurrency="IDR" /> per person ({adults + childrenCount} people = <PriceDisplay priceCents={extraPrice * 100} sourceCurrency="IDR" /> total)</span>
+                            : <span>This extra costs <PriceDisplay priceCents={extra.price * 100} sourceCurrency="IDR" /> for the entire group</span>
                           }
                         </span>
                       </div>
@@ -202,7 +195,9 @@ export default function ExtrasList({
               return (
                 <div key={extra.id} className="flex justify-between text-sm">
                   <span className="text-gray-700">{extra.label}</span>
-                  <span className="font-medium text-brand">{formatPrice(extraPrice)}</span>
+                  <span className="font-medium text-brand">
+                    <PriceDisplay priceCents={extraPrice * 100} sourceCurrency="IDR" />
+                  </span>
                 </div>
               )
             })}
@@ -211,7 +206,7 @@ export default function ExtrasList({
             <div className="flex justify-between font-semibold">
               <span>Total Extras</span>
               <span className="text-brand">
-                {formatPrice(selectedExtras.reduce((total, extra) => total + calculateExtraPrice(extra), 0))}
+                <PriceDisplay priceCents={selectedExtras.reduce((total, extra) => total + calculateExtraPrice(extra), 0) * 100} sourceCurrency="IDR" />
               </span>
             </div>
           </div>

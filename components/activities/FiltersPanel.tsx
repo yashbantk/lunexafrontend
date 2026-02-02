@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { ActivityFilters } from '@/types/activity'
 import CitySearchDropdown from './CitySearchDropdown'
+import { PriceDisplay } from '@/components/PriceDisplay'
 
 interface FiltersPanelProps {
   filters: ActivityFilters
@@ -75,14 +76,6 @@ export default function FiltersPanel({
 
   const handleDurationChange = (value: number[]) => {
     handleFilterChange('duration', value)
-  }
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0
-    }).format(price)
   }
 
   const formatDuration = (minutes: number) => {
@@ -234,8 +227,8 @@ export default function FiltersPanel({
               className="w-full"
             />
             <div className="flex justify-between text-xs text-gray-500 mt-2">
-              <span>{formatPrice(localFilters.priceRange[0])}</span>
-              <span>{formatPrice(localFilters.priceRange[1])}</span>
+              <span><PriceDisplay priceCents={localFilters.priceRange[0] * 100} sourceCurrency="IDR" /></span>
+              <span><PriceDisplay priceCents={localFilters.priceRange[1] * 100} sourceCurrency="IDR" /></span>
             </div>
           </div>
         </div>

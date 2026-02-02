@@ -48,6 +48,16 @@ import {
 
 import ConfirmationModal from "@/components/ui/ConfirmationModal"
 
+// Helper to check for time overlaps
+const isTimeOverlap = (start1: string, end1: string, start2: string, end2: string) => {
+  const s1 = new Date(`1970-01-01T${start1}`).getTime()
+  const e1 = new Date(`1970-01-01T${end1}`).getTime()
+  const s2 = new Date(`1970-01-01T${start2}`).getTime()
+  const e2 = new Date(`1970-01-01T${end2}`).getTime()
+  
+  return s1 < e2 && s2 < e1
+}
+
 export default function CreateProposalPage() {
   const params = useParams()
   const tripId = params.id as string

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Edit, Trash2, Star, MapPin, ExternalLink, CheckCircle, Clock } from "lucide-react"
 import { Hotel } from "@/types/proposal"
 import Image from "next/image"
+import { PriceDisplay } from "@/components/PriceDisplay"
 
 interface HotelCardProps {
   hotel: Hotel
@@ -18,14 +19,6 @@ interface HotelCardProps {
 }
 
 export const HotelCard = memo(function HotelCard({ hotel, onEdit, onRemove, onChangeRoom, onChangeHotel }: HotelCardProps) {
-  const formatPrice = (price: number, currency: string = 'INR') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      maximumFractionDigits: 2
-    }).format(price)
-  }
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       weekday: 'short',
@@ -148,7 +141,7 @@ export const HotelCard = memo(function HotelCard({ hotel, onEdit, onRemove, onCh
               {/* Price */}
               <div className="text-right">
                 <div className="text-xl font-bold text-primary">
-                  {formatPrice(hotel.pricePerNight, hotel.currency)}
+                  <PriceDisplay priceCents={hotel.pricePerNight * 100} sourceCurrency={hotel.currency} />
                 </div>
                 <div className="text-sm text-gray-500">per night</div>
               </div>

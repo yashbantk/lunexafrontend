@@ -11,7 +11,7 @@ interface ProposalPriceBreakdownProps {
   proposal: {
     totalPriceCents: number
     landMarkup: number
-    currency: {
+    currency: string | {
       code: string
       name: string
     }
@@ -27,7 +27,10 @@ export function ProposalPriceBreakdown({ proposal }: ProposalPriceBreakdownProps
     const convertCurrency = async () => {
       setLoading(true)
       try {
-        const inrCents = await convertCentsToINR(proposal.totalPriceCents, proposal.currency.code)
+        const currencyCode = typeof proposal.currency === 'string' 
+          ? proposal.currency 
+          : proposal.currency?.code || 'INR'
+        const inrCents = await convertCentsToINR(proposal.totalPriceCents, currencyCode)
         setConvertedSubtotal(inrCents)
       } catch (error) {
         console.error('Currency conversion error:', error)
@@ -39,7 +42,7 @@ export function ProposalPriceBreakdown({ proposal }: ProposalPriceBreakdownProps
     }
 
     convertCurrency()
-  }, [proposal.totalPriceCents, proposal.currency.code])
+  }, [proposal.totalPriceCents, proposal.currency])
 
   // Calculate price breakdown (all in INR)
   const subtotal = convertedSubtotal

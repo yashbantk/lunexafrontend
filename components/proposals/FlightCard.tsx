@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Edit, Trash2, Plane, Clock, MapPin, CheckCircle } from "lucide-react"
 import { Flight } from "@/types/proposal"
+import { PriceDisplay } from "@/components/PriceDisplay"
 
 interface FlightCardProps {
   flight: Flight
@@ -14,14 +15,6 @@ interface FlightCardProps {
 }
 
 export function FlightCard({ flight, onEdit, onRemove }: FlightCardProps) {
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(price)
-  }
-
   const getFlightTypeColor = (type: string) => {
     return type === 'return' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
   }
@@ -111,7 +104,7 @@ export function FlightCard({ flight, onEdit, onRemove }: FlightCardProps) {
                 </div>
                 <div className="text-right">
                   <div className="text-lg font-bold text-primary">
-                    {formatPrice(flight.price)}
+                    <PriceDisplay priceCents={flight.price * 100} sourceCurrency="INR" />
                   </div>
                   <div className="text-xs text-gray-500">per person</div>
                 </div>

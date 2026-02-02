@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { HotelQuickViewProps } from '@/types/hotel'
+import { PriceDisplay } from '@/components/PriceDisplay'
 
 const amenityIcons: Record<string, any> = {
   'WiFi': Wifi,
@@ -50,15 +51,6 @@ export default function HotelQuickView({
   const [imageError, setImageError] = useState(false)
 
   if (!hotel) return null
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price)
-  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -232,7 +224,7 @@ export default function HotelQuickView({
                           </div>
                           <div className="text-right">
                             <div className="font-bold text-primary">
-                              {formatPrice(room.pricePerNight)}
+                              <PriceDisplay priceCents={room.pricePerNight * 100} sourceCurrency={room.currency} />
                             </div>
                             <div className="text-xs text-gray-500">per night</div>
                           </div>
@@ -249,18 +241,18 @@ export default function HotelQuickView({
                   <CardContent className="p-6">
                     <div className="text-center mb-6">
                       <div className="text-3xl font-bold text-primary mb-1">
-                        {formatPrice(hotel.minPrice)}
+                        <PriceDisplay priceCents={hotel.minPrice * 100} sourceCurrency="INR" />
                       </div>
                       <div className="text-sm text-gray-500">per night</div>
                       <div className="text-lg font-semibold text-gray-900 mt-2">
-                        {formatPrice(hotel.minPrice * nights)} total
+                        <PriceDisplay priceCents={hotel.minPrice * nights * 100} sourceCurrency="INR" /> total
                       </div>
                     </div>
 
                     <div className="space-y-3 mb-6">
                       <div className="flex justify-between text-sm">
                         <span>Price per night</span>
-                        <span>{formatPrice(hotel.minPrice)}</span>
+                        <span><PriceDisplay priceCents={hotel.minPrice * 100} sourceCurrency="INR" /></span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span>Nights</span>
@@ -273,7 +265,7 @@ export default function HotelQuickView({
                       <div className="border-t pt-3">
                         <div className="flex justify-between font-semibold">
                           <span>Total</span>
-                          <span>{formatPrice(hotel.minPrice * nights)}</span>
+                          <span><PriceDisplay priceCents={hotel.minPrice * nights * 100} sourceCurrency="INR" /></span>
                         </div>
                       </div>
                     </div>

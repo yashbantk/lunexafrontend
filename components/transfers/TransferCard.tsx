@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { TransferProduct } from '@/types/transfer'
-import { formatPrice } from '@/lib/utils/formatUtils'
+import { PriceDisplay } from '@/components/PriceDisplay'
 
 interface TransferCardProps {
   transferProduct: TransferProduct
@@ -87,7 +87,7 @@ const TransferCard = memo(function TransferCard({
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-lg font-bold text-brand">
-                    {formatPrice(transferProduct.priceCents, transferProduct.currency.code)}
+                    <PriceDisplay priceCents={transferProduct.priceCents} sourceCurrency={transferProduct.currency.code} />
                   </div>
                   <div className="text-xs text-gray-500">
                     per vehicle
@@ -173,7 +173,7 @@ const TransferCard = memo(function TransferCard({
                 <div className="flex items-center space-x-3">
                   <div className="text-right">
                     <div className="text-lg font-bold text-brand">
-                      {formatPrice(transferProduct.priceCents, transferProduct.currency.code)}
+                      <PriceDisplay priceCents={transferProduct.priceCents} sourceCurrency={transferProduct.currency.code} />
                     </div>
                     <div className="text-xs text-gray-500">
                       per vehicle

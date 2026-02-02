@@ -123,6 +123,13 @@ export const ACTIVITIES_QUERY = gql`
 
 export interface ActivityFilter {
   searchActivities?: string | null
+  startTime?: {
+    range?: {
+      start?: string | null
+      end?: string | null
+    }
+  }
+  OR?: ActivityFilter
   AND?: {
     city?: {
       id:{
@@ -135,6 +142,7 @@ export interface ActivityFilter {
         end?: number | null
       }
     }
+    AND?: ActivityFilter // For nesting if needed
   } | null
 }
 

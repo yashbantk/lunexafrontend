@@ -25,7 +25,7 @@ interface ProposalDetailHeaderProps {
     status: string
     version: number
     totalPriceCents: number
-    currency: {
+    currency: string | {
       code: string
       name: string
     }
@@ -65,7 +65,10 @@ export function ProposalDetailHeader({
     const convertCurrency = async () => {
       setLoading(true)
       try {
-        const inrCents = await convertCentsToINR(proposal.totalPriceCents, proposal.currency.code)
+        const currencyCode = typeof proposal.currency === 'string' 
+          ? proposal.currency 
+          : proposal.currency?.code || 'INR'
+        const inrCents = await convertCentsToINR(proposal.totalPriceCents, currencyCode)
         setConvertedTotalPriceCents(inrCents)
       } catch (error) {
         console.error('Currency conversion error:', error)
@@ -77,7 +80,7 @@ export function ProposalDetailHeader({
     }
 
     convertCurrency()
-  }, [proposal.totalPriceCents, proposal.currency.code])
+  }, [proposal.totalPriceCents, proposal.currency])
 
   // Format date
   const formatDate = (dateString: string) => {

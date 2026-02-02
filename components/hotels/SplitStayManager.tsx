@@ -17,6 +17,7 @@ import {
   Edit
 } from 'lucide-react'
 import { Hotel as HotelType } from '@/types/hotel'
+import { convertCentsToINR } from '@/lib/utils/currencyConverter'
 import { SplitStayToggle } from './SplitStayToggle'
 import { SplitStayDurationSelector } from './SplitStayDurationSelector'
 import { SplitStayDisplay } from './SplitStayDisplay'
@@ -35,6 +36,7 @@ interface SplitStaySegment {
     pricePerNight?: number
     baseMealPlan?: string
     boardBasis?: string
+    currency?: string
   }
   segmentIndex: number
 }
@@ -82,6 +84,7 @@ export function SplitStayManager({
   const [showHotelSelector, setShowHotelSelector] = useState(false)
   const previousSegmentsRef = useRef<SplitStaySegment[]>([])
   const previousInitialSegmentsRef = useRef<SplitStaySegment[]>(initialSegments)
+  const [convertedTotalDisplay, setConvertedTotalDisplay] = useState<string>('')
   
   // Restore segments from initialSegments prop when they change externally (from parent)
   useEffect(() => {
@@ -171,6 +174,29 @@ export function SplitStayManager({
         onSplitStayChange(segments)
       }
     }
+
+    const updatePrice = async () => {
+        let totalCents = 0
+        for (const segment of segments) {
+            if (segment.hotel) {
+                // segment.hotel.minPrice is in UNITS (from transformer)
+                // We need to convert to CENTS first: * 100
+                // We assume currency is consistent or we default to 'USD' or 'INR'
+                // Let's try to find currency from selectedRoom
+                const currency = segment.selectedRoom?.currency || 'INR' 
+                const priceUnits = (segment.selectedRoom?.pricePerNight || segment.hotel.minPrice) * segment.duration
+                const priceCents = priceUnits * 100
+                const converted = await convertCentsToINR(priceCents, currency)
+                totalCents += converted
+            }
+        }
+        setConvertedTotalDisplay(new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            maximumFractionDigits: 0
+        }).format(totalCents / 100))
+    }
+    updatePrice()
   }, [segments, currentStep, onSplitStayChange]) // Added missing dependencies
 
   const handleToggle = (enabled: boolean) => {
@@ -237,7 +263,8 @@ export function SplitStayManager({
         priceCents: room.priceCents,
         pricePerNight: room.pricePerNight,
         baseMealPlan: room.baseMealPlan,
-        boardBasis: room.boardBasis
+        boardBasis: room.boardBasis,
+        currency: room.currency
       } : undefined
       
       const updatedSegments = segments.map(segment => 
@@ -300,14 +327,6 @@ export function SplitStayManager({
       }
       return total
     }, 0)
-  }
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(price)
   }
 
   // Don't render split stay manager for trips with 1 day or less
@@ -428,7 +447,7 @@ export function SplitStayManager({
               
               <div className="text-right">
                 <div className="text-lg font-bold text-primary">
-                  {formatPrice(getTotalPrice())}
+                  {convertedTotalDisplay || '₹0'}
                 </div>
                 <div className="text-sm text-gray-600">Total estimated cost</div>
               </div>

@@ -10,6 +10,7 @@ import { useActivitySearch } from '@/hooks/useActivitySearch'
 import FiltersPanel from './FiltersPanel'
 import ActivityList from './ActivityList'
 import ActivityDetailsModal from './ActivityDetailsModal'
+import { PriceDisplay } from '@/components/PriceDisplay'
 
 // Constants for default values
 const DEFAULT_DURATION: [number, number] = [1, 1440]; // 1 minute to 24 hours
@@ -156,7 +157,7 @@ export default function ActivityExplorerModal({
     ...filters.difficulty.map(d => ({ key: 'difficulty', label: d, value: d })),
     ...(filters.rating > 0 ? [{ key: 'rating', label: `${filters.rating}+ Stars` }] : []),
     { key: 'duration', label: `${formatDuration(filters.duration[0])} - ${formatDuration(filters.duration[1])}` },
-    { key: 'priceRange', label: `${formatPrice(filters.priceRange[0])} - ${formatPrice(filters.priceRange[1])}` },
+    { key: 'priceRange', label: <span className="flex items-center gap-1"><PriceDisplay priceCents={filters.priceRange[0] * 100} sourceCurrency="IDR" /> - <PriceDisplay priceCents={filters.priceRange[1] * 100} sourceCurrency="IDR" /></span> },
   ]
 
   const activeFiltersCount = activeFiltersList.length
@@ -257,9 +258,9 @@ export default function ActivityExplorerModal({
                 >
                   {filter.label}
                   <button
-                    onClick={() => handleRemoveFilter(filter.key as keyof ActivityFilters, filter.value)}
+                    onClick={() => handleRemoveFilter(filter.key as keyof ActivityFilters, (filter as any).value)}
                     className="hover:bg-gray-100 rounded-full p-0.5 transition-colors focus:outline-none"
-                    aria-label={`Remove filter ${filter.label}`}
+                    aria-label={`Remove filter ${typeof filter.label === 'string' ? filter.label : 'filter'}`}
                   >
                     <X className="h-3 w-3 text-gray-400 hover:text-gray-600" />
                   </button>

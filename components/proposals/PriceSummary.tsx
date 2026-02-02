@@ -15,6 +15,9 @@ import {
   Users
 } from "lucide-react"
 import { Proposal } from "@/types/proposal"
+import { convertCentsToINR } from '@/lib/utils/currencyConverter'
+import { formatPrice } from '@/lib/utils/formatUtils'
+import { useState, useEffect } from 'react'
 
 interface PriceSummaryProps {
   proposal: Proposal | null
@@ -23,16 +26,35 @@ interface PriceSummaryProps {
 }
 
 export function PriceSummary({ proposal, onSaveProposal, onPreview }: PriceSummaryProps) {
-  if (!proposal) return null
+  const [prices, setPrices] = useState({
+    total: 0,
+    pricePerAdult: 0,
+    pricePerChild: 0,
+    taxes: 0,
+    markup: 0
+  })
 
-  const formatPrice = (price: number) => {
-    const currency = proposal?.currency || 'INR'
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      maximumFractionDigits: 2
-    }).format(price)
-  }
+  useEffect(() => {
+    if (!proposal) return
+
+    const convert = async () => {
+       const currency = proposal.currency || 'INR'
+       const { priceBreakdown } = proposal
+       
+       const [total, perAdult, perChild, taxes, markup] = await Promise.all([
+         convertCentsToINR(priceBreakdown.total, currency),
+         convertCentsToINR(priceBreakdown.pricePerAdult, currency),
+         convertCentsToINR(priceBreakdown.pricePerChild, currency),
+         convertCentsToINR(priceBreakdown.taxes, currency),
+         convertCentsToINR(priceBreakdown.markup, currency)
+       ])
+       
+       setPrices({ total, pricePerAdult: perAdult, pricePerChild: perChild, taxes, markup })
+    }
+    convert()
+  }, [proposal])
+
+  if (!proposal) return null
 
   const { priceBreakdown } = proposal
   const totalAdults = proposal.adults || 0
@@ -57,7 +79,7 @@ export function PriceSummary({ proposal, onSaveProposal, onPreview }: PriceSumma
             {/* Total Price and Travelers Info */}
             <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg p-4 text-center border border-primary/20">
               <div className="text-3xl font-bold text-primary mb-2">
-                {formatPrice(priceBreakdown.total)}
+                {formatPrice(prices.total, 'INR')}
               </div>
               <div className="text-sm text-gray-600 flex items-center justify-center space-x-1">
                 <Users className="h-4 w-4" />
@@ -68,26 +90,26 @@ export function PriceSummary({ proposal, onSaveProposal, onPreview }: PriceSumma
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Price per adult</span>
-                <span className="font-medium">{formatPrice(priceBreakdown.pricePerAdult)}</span>
+                <span className="font-medium">{formatPrice(prices.pricePerAdult, 'INR')}</span>
               </div>
-              {priceBreakdown.pricePerChild > 0 && (
+              {prices.pricePerChild > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Price per child</span>
-                  <span className="font-medium">{formatPrice(priceBreakdown.pricePerChild)}</span>
+                  <span className="font-medium">{formatPrice(prices.pricePerChild, 'INR')}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Taxes & Fees</span>
-                <span className="font-medium">{formatPrice(priceBreakdown.taxes)}</span>
+                <span className="font-medium">{formatPrice(prices.taxes, 'INR')}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Markup {proposal.markupLandPercent != null ? `(${proposal.markupLandPercent}%)` : ''}</span>
-                <span className="font-medium">{formatPrice(priceBreakdown.markup)}</span>
+                <span className="font-medium">{formatPrice(prices.markup, 'INR')}</span>
               </div>
               <div className="border-t border-gray-200 pt-2">
                 <div className="flex justify-between text-lg font-bold text-primary">
                   <span>Total Price</span>
-                  <span>{formatPrice(priceBreakdown.total)}</span>
+                  <span>{formatPrice(prices.total, 'INR')}</span>
                 </div>
               </div>
             </div>

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import { Hotel as HotelType } from '@/types/hotel'
+import { PriceDisplay } from '@/components/PriceDisplay'
 
 interface SplitStaySegment {
   id: string
@@ -53,14 +54,6 @@ export function SplitStayDisplay({
       month: 'short',
       day: 'numeric'
     })
-  }
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(price)
   }
 
   const renderStars = (rating: number) => {
@@ -206,7 +199,7 @@ export function SplitStayDisplay({
                                 </div>
                                 <div className="mt-2">
                                   <div className="text-lg font-bold text-primary">
-                                    {formatPrice(segment.hotel.minPrice)} per night
+                                    <PriceDisplay priceCents={segment.hotel.minPrice * 100} sourceCurrency="INR" /> per night
                                   </div>
                                 </div>
                               </div>
@@ -278,7 +271,7 @@ export function SplitStayDisplay({
                     
                     {segment.hotel && (
                       <div className="text-sm text-gray-600">
-                        Total: {formatPrice(segment.hotel.minPrice * segment.duration)}
+                        Total: <PriceDisplay priceCents={segment.hotel.minPrice * segment.duration * 100} sourceCurrency="INR" />
                       </div>
                     )}
                   </div>

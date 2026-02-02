@@ -14,7 +14,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Textarea } from '@/components/ui/textarea'
 import { ActivityDetailsModalProps, ActivitySelection, ScheduleSlot, PickupOption } from '@/types/activity'
 import { useActivityDetails } from '@/hooks/useActivityDetails'
-import { formatDuration, formatTime, formatPrice } from '@/lib/utils/formatUtils'
+import { formatDuration, formatTime } from '@/lib/utils/formatUtils'
+import { PriceDisplay } from '@/components/PriceDisplay'
 import ExtrasList from './ExtrasList'
 
 export default function ActivityDetailsModal({
@@ -339,7 +340,7 @@ export default function ActivityDetailsModal({
                                   </div>
                                   <div className="text-right">
                                     <div className="font-medium">
-                                      {formatPrice(option.priceCents / 100)}
+                                      <PriceDisplay priceCents={option.priceCents} sourceCurrency={option.currency?.code || 'IDR'} />
                                     </div>
                                     {option.isRecommended && (
                                       <Badge className="bg-green-100 text-green-800 text-xs">
@@ -369,7 +370,7 @@ export default function ActivityDetailsModal({
                             </div>
                             <div className="text-right">
                               <div className="font-medium">
-                                {formatPrice(activity.activityOptions[0].priceCents / 100)}
+                                <PriceDisplay priceCents={activity.activityOptions[0].priceCents} sourceCurrency={activity.activityOptions[0].currency?.code || 'IDR'} />
                               </div>
                               {activity.activityOptions[0].isRecommended && (
                                 <Badge className="bg-green-100 text-green-800 text-xs">
@@ -458,7 +459,7 @@ export default function ActivityDetailsModal({
                                   <p className="text-sm text-gray-500">{option.description}</p>
                                 </div>
                                 <div className="text-sm font-medium text-brand">
-                                  {formatPrice(option.price)}
+                                  <PriceDisplay priceCents={option.price * 100} sourceCurrency="IDR" />
                                 </div>
                               </div>
                             </Label>
@@ -521,10 +522,12 @@ export default function ActivityDetailsModal({
                 <div className="text-right">
                   <div className="text-sm text-gray-500">Total Price</div>
                   <div className="text-2xl font-bold text-brand">
-                    {formatPrice(totalPrice)}
+                    <PriceDisplay priceCents={totalPrice * 100} sourceCurrency="IDR" />
                   </div>
-                  <div className="text-xs text-gray-500">
-                    Base: {formatPrice(basePrice)} + Extras: {formatPrice(extrasPrice)} + Pickup: {formatPrice(pickupPrice)}
+                  <div className="text-xs text-gray-500 flex items-center justify-end gap-1">
+                    Base: <PriceDisplay priceCents={basePrice * 100} sourceCurrency="IDR" /> + 
+                    Extras: <PriceDisplay priceCents={extrasPrice * 100} sourceCurrency="IDR" /> + 
+                    Pickup: <PriceDisplay priceCents={pickupPrice * 100} sourceCurrency="IDR" />
                   </div>
                 </div>
                 <Button

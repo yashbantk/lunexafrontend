@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Hotel } from '@/types/hotel'
+import { PriceDisplay } from '@/components/PriceDisplay'
 
 interface HotelMapPanelProps {
   hotels: Hotel[]
@@ -20,15 +21,6 @@ export default function HotelMapPanel({
   selectedHotel
 }: HotelMapPanelProps) {
   const [showMap, setShowMap] = useState(true)
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price)
-  }
 
   const getBadgeColor = (badge: string) => {
     switch (badge) {
@@ -153,7 +145,7 @@ export default function HotelMapPanel({
                       </div>
                       <div className="text-right ml-2">
                         <div className="text-sm font-bold text-primary">
-                          {formatPrice(hotel.minPrice)}
+                          <PriceDisplay priceCents={hotel.minPrice * 100} sourceCurrency="INR" />
                         </div>
                         <div className="text-xs text-gray-500">per night</div>
                       </div>
@@ -195,7 +187,7 @@ export default function HotelMapPanel({
                   ))}
                 </div>
                 <div className="text-sm font-bold text-primary">
-                  {formatPrice(selectedHotel.minPrice)}
+                  <PriceDisplay priceCents={selectedHotel.minPrice * 100} sourceCurrency="INR" />
                 </div>
               </div>
             </CardContent>

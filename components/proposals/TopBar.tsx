@@ -3,6 +3,9 @@
 import { motion } from "framer-motion"
 import { Save, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { convertCentsToINR } from '@/lib/utils/currencyConverter'
+import { formatPrice } from '@/lib/utils/formatUtils'
+import { useState, useEffect } from 'react'
 
 interface TopBarProps {
   totalPrice: number
@@ -14,13 +17,15 @@ interface TopBarProps {
 }
 
 export function TopBar({ totalPrice, currency = 'INR', adults = 2, childrenCount = 0, onSaveDraft, isSaving = false }: TopBarProps) {
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      maximumFractionDigits: 2
-    }).format(price)
-  }
+  const [displayPrice, setDisplayPrice] = useState<string>('')
+
+  useEffect(() => {
+    const convert = async () => {
+        const inrCents = await convertCentsToINR(totalPrice, currency)
+        setDisplayPrice(formatPrice(inrCents, 'INR'))
+    }
+    convert()
+  }, [totalPrice, currency])
 
   return (
     <motion.div
@@ -34,7 +39,7 @@ export function TopBar({ totalPrice, currency = 'INR', adults = 2, childrenCount
           {/* Center - Total Price */}
           <div className="text-center">
             <div className="text-3xl font-bold text-primary">
-              {formatPrice(totalPrice)}
+              {displayPrice}
             </div>
             <div className="text-sm text-gray-500 flex items-center justify-center space-x-1">
               <Users className="h-4 w-4" />
